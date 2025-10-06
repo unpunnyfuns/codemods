@@ -39,7 +39,7 @@ JSCODESHIFT="./node_modules/.bin/jscodeshift"
 
 if [ ! -f "$JSCODESHIFT" ]; then
   echo "Error: jscodeshift not found at ${JSCODESHIFT}"
-  echo "Run: pnpm install"
+  echo "Run: npm install"
   exit 1
 fi
 
@@ -51,7 +51,7 @@ echo ""
 
 echo ""
 echo "Formatting with Biome..."
-pnpm biome format --write "$FILE_PATTERN"
+npx biome format --write "$FILE_PATTERN"
 
 echo ""
 echo "Done!"
