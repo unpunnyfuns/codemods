@@ -1,0 +1,55 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`nb/typography > migrates Typography with spacing props to wrapped version 1`] = `
+"import { Typography } from '@target/components/Typography';
+import { View, StyleSheet } from 'react-native';
+import { space } from '@design-tokens';
+
+export function Example() {
+  return (
+    <>
+      {/* Simple with type/size/color - should work */}
+      <Typography type="headline" size="sm" color="text.quaternary-alternate">
+        Simple headline
+      </Typography>
+      {/* With spacing props - needs View wrapper */}
+
+      {/* Dropped during migration (not supported in React Native):
+        fontWeight="normal" */
+      }
+      <View style={styles.typography1}>
+        <Typography type="label" size="sm" color="text.secondary">Label with spacing
+                </Typography>
+      </View>
+      {/* With margin spacing */}
+      <Typography ml="-1" size="lg" type="body" color="text.primary">
+        Body with margin
+      </Typography>
+      {/* With conditional mb */}
+      <View
+        style={{
+          marginBottom: someCondition ? space.xs : undefined
+        }}>
+        <Typography type="label" size="sm" color="text.tertiary">Conditional margin
+                </Typography>
+      </View>
+      {/* With textAlign (allowed) */}
+      <View style={styles.typography4}>
+        <Typography type="heading" size="sm" textAlign="center">Centered heading
+                </Typography>
+      </View>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  typography1: {
+    paddingHorizontal: space.sm
+  },
+
+  typography4: {
+    marginTop: space.sm
+  }
+});
+"
+`;

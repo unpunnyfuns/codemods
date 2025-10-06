@@ -1,0 +1,33 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`box HOC migration > migrates HOC-wrapped Box (Animated.createAnimatedComponent) 1`] = `
+"import Animated from 'react-native-reanimated'
+
+import { View, StyleSheet } from 'react-native';
+import { space } from '@design-tokens';
+
+const AnimatedBox = Animated.createAnimatedComponent(View)
+
+export function Example() {
+  return (
+    <>
+      <View style={styles.box0}>Direct Box</View>
+      <AnimatedBox style={styles.box1}>
+        Animated Box
+      </AnimatedBox>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  box0: {
+    marginBottom: space.lg
+  },
+
+  box1: {
+    marginTop: space.md,
+    padding: space.sm
+  }
+});
+"
+`;
