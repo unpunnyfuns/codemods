@@ -1,0 +1,139 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`remove-unused > preserves StyleSheet styles variable 1`] = `
+"import { StyleSheet, View } from 'react-native'
+
+export function Component() {
+  return <View style={styles.container} />
+}
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+  },
+})
+"
+`;
+
+exports[`remove-unused > preserves advanced TypeScript type usage 1`] = `
+"import { useState } from 'react';
+import {
+  type EncryptionDetailsResponseProps,
+  type PreventSecondApplicationSheetProps,
+  type RootStack,
+  type SharedValue,
+} from './app-types';
+import type { ResponseType } from './types'
+
+export function Component() {
+  const [_data, _setData] = useState<ResponseType<EncryptionDetailsResponseProps>>()
+  const [_value, _setValue] = useState<SharedValue<number> | null>(null)
+
+  type NavRef = typeof RootStack
+
+  type Variant = PreventSecondApplicationSheetProps['variant']
+
+  return null
+}
+"
+`;
+
+exports[`remove-unused > preserves types in type literals 1`] = `
+"import type { PreventSecondApplicationSheetProps } from './types'
+
+it.each<{ variant: PreventSecondApplicationSheetProps['variant'] }>([
+  { variant: 'in_progress' },
+  { variant: 'waiting' },
+])('renders $variant sheet info', ({ variant }) => {
+  console.log(variant)
+})
+"
+`;
+
+exports[`remove-unused > preserves types used in generics 1`] = `
+"import { useRoute } from '@app/navigation/useRoute'
+import type { PhoneNumberFormValues, Screens } from '@app/types'
+import { useForm } from 'react-hook-form'
+
+export function Component() {
+  const form = useForm<PhoneNumberFormValues>()
+  const route = useRoute<Screens.UPDATE_PHONE_NUMBER>()
+
+  return (
+    <div>
+      {form.getValues()}
+      {route.name}
+    </div>
+  )
+}
+"
+`;
+
+exports[`remove-unused > preserves used identifiers 1`] = `
+"import { Button, Text } from 'native-base'
+import { useState } from 'react'
+
+export function Component() {
+  const [count, setCount] = useState(0)
+  const doubled = count * 2
+
+  return (
+    <Button onPress={() => setCount(count + 1)}>
+      <Text>
+        Count: {count}, Doubled: {doubled}
+      </Text>
+    </Button>
+  )
+}
+"
+`;
+
+exports[`remove-unused > removes both imports and variables 1`] = `
+"import { Text } from 'native-base'
+import { useState } from 'react'
+
+export function Component() {
+  const [value, _setValue] = useState('')
+  const config = { enabled: true }
+
+  return (
+    <Text>
+      Value: {value}
+      Config: {config.enabled ? 'on' : 'off'}
+    </Text>
+  )
+}
+"
+`;
+
+exports[`remove-unused > removes unused imports 1`] = `
+"import { Text } from 'native-base'
+import { useEffect, useState } from 'react'
+
+export function Example() {
+  const [count, _setCount] = useState(0)
+
+  useEffect(() => {
+    console.log(count)
+  }, [count])
+
+  return <Text>Count: {count}</Text>
+}
+"
+`;
+
+exports[`remove-unused > removes unused variables 1`] = `
+"export function calculate() {
+  const result = 42
+  const temp = 100
+
+  return result + temp
+}
+
+export function multipleDeclarations() {
+  const a = 1, c = 3;
+
+  return a + c
+}
+"
+`;

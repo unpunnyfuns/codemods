@@ -1,0 +1,55 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`nb/button > migrates Button with leftIcon and children to nordlys Button 1`] = `
+"import { useTranslation } from 'react-i18next'
+
+import { Button } from '@target/components/Button';
+import { View, StyleSheet } from 'react-native';
+import { space } from '@design-tokens';
+
+export function MyComponent() {
+  const { t } = useTranslation()
+  const text = 'Submit'
+
+  return (
+    <>
+
+      {/* Dropped during migration (not supported in React Native):
+        leftIcon={...} */
+      }
+      <View style={styles.button0}>
+        <Button
+          testID="button1"
+          onPress={() => {}}
+          size={"md"}
+          icon={'PlusOutlined'}
+          text={t('addNew')}
+          variant='secondary'
+          type='solid' />
+      </View>
+      <Button
+        onPress={() => {}}
+        isDisabled
+        size={"lg"}
+        icon={undefined}
+        text={'Simple text'}
+        variant='primary'
+        type='solid' />
+      <Button
+        onPress={() => {}}
+        size={"md"}
+        icon={undefined}
+        text={text}
+        variant='secondary'
+        type='solid' />
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  button0: {
+    marginTop: space['2xl']
+  }
+});
+"
+`;

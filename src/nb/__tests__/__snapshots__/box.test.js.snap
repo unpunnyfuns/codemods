@@ -1,0 +1,224 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`box migration > adds View import when some elements are migrated and some are skipped 1`] = `
+"import { Box } from 'native-base'
+
+import { View, StyleSheet } from 'react-native';
+import { space, color } from '@design-tokens';
+
+export function Example() {
+  return (
+    <>
+      <View style={styles.box0}>
+        Successfully migrated
+      </View>
+
+      {/* TODO: Box - manual migration required
+
+      This element could not be automatically migrated. Reasons:
+        textAlign="left"
+          Reason: Text-only prop (move to child Text component or keep as NativeBase component)
+
+      Action required: Fix the issues above or migrate this element manually. */
+      }
+      <Box textAlign="left" p="md">
+        Skipped due to textAlign
+      </Box>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  box0: {
+    padding: space.lg,
+    backgroundColor: color.blue['500']
+  }
+});
+"
+`;
+
+exports[`box migration > does not process local components that use Box in JSX 1`] = `
+"import { HStack } from 'native-base';
+import { FC } from 'react'
+
+import { View, StyleSheet } from 'react-native';
+import { space } from '@design-tokens';
+
+type SectionProps = {
+  testID?: string
+  title: string
+  value: string
+}
+
+// Local component that uses Box in its JSX - should NOT be processed
+const Section: FC<SectionProps> = ({ testID, title, value }) => {
+  return (
+    <HStack mt="lg">
+      <View style={styles.box0}>
+        <Icon name="test" />
+      </View>
+      <HStack ml="sm" testID={testID}>
+        <Text>{title}</Text>
+        <Text>{value}</Text>
+      </HStack>
+    </HStack>
+  );
+}
+
+export function Example() {
+  return (
+    <View style={styles.box1}>
+      <Section testID="test-section" title="Title" value="Value" />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  box0: {
+    marginTop: space['2xs']
+  },
+
+  box1: {
+    padding: space.lg
+  }
+});
+"
+`;
+
+exports[`box migration > handles variant borderRadius and disableTopRounding/disableBottomRounding props 1`] = `
+"import { View, StyleSheet } from 'react-native';
+
+export function Example() {
+  return (
+    <>
+      {/* With variant="container" */}
+
+      {/* Dropped during migration (not supported in React Native):
+        variant="container" */
+      }
+      <View style={styles.box0}>Content</View>
+      {/* With variant="container" and disableTopRounding */}
+
+      {/* Dropped during migration (not supported in React Native):
+        variant="container" */
+      }
+      <View style={styles.box1}>
+        Content
+      </View>
+      {/* With variant="container" and disableBottomRounding */}
+
+      {/* Dropped during migration (not supported in React Native):
+        variant="container" */
+      }
+      <View style={styles.box2}>
+        Content
+      </View>
+      {/* With variant="content" */}
+
+      {/* Dropped during migration (not supported in React Native):
+        variant="content" */
+      }
+      <View style={styles.box3}>Content</View>
+      {/* With disableTopRounding only (no variant) */}
+      <View style={styles.box4}>Content</View>
+      {/* With disableBottomRounding only (no variant) */}
+      <View style={styles.box5}>Content</View>
+      {/* With both disable props (no variant) */}
+      <View style={styles.box6}>
+        Content
+      </View>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  box0: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12
+  },
+
+  box1: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12
+  },
+
+  box2: {
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0
+  },
+
+  box3: {
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    borderBottomLeftRadius: 8,
+    borderBottomRightRadius: 8
+  },
+
+  box4: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0
+  },
+
+  box5: {
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0
+  },
+
+  box6: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0
+  }
+});
+"
+`;
+
+exports[`box migration > migrates Box to View with StyleSheet styles 1`] = `
+"import { View, StyleSheet } from 'react-native';
+import { space, color, radius } from '@design-tokens';
+
+export function MyComponent() {
+  return (
+    <>
+      <View style={styles.box0}>
+        Content 1
+      </View>
+      <View style={styles.box1}>
+        Content 2
+      </View>
+      <View style={styles.box2}>
+        Content 3
+      </View>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  box0: {
+    width: "100%",
+    padding: space.lg,
+    backgroundColor: color.background.secondary,
+    borderRadius: radius.md
+  },
+
+  box1: {
+    marginBottom: space['2xl'],
+    backgroundColor: color.white.HW1,
+    flex: 1
+  },
+
+  box2: {
+    backgroundColor: color.background.secondary,
+    paddingHorizontal: space.sm,
+    borderRadius: 16
+  }
+});
+"
+`;

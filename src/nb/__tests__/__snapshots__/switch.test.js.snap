@@ -1,0 +1,33 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`nb/switch > migrates Switch to Nordlys with children wrapping and prop transformations 1`] = `
+"import { Typography } from '@source/components';
+
+import { Switch } from '@target/components/Switch';
+
+export function MyComponent() {
+  return (
+    <>
+
+      {/* Dropped during migration (not supported in React Native):
+        switchPosition="right"
+        hStackProps={...}
+        label="Additional info" */
+      }
+      <Switch testID="switch1" value={true} onValueChange={(val) => console.log(val)}>
+        <Switch.Label>
+          <Typography type="heading" size="sm">
+            Main label
+          </Typography>
+        </Switch.Label>
+        <Switch.Description>Additional info</Switch.Description>
+      </Switch>
+      <Switch value={false} onValueChange={() => {}} disabled>
+        <Switch.Label>Simple switch
+                </Switch.Label>
+      </Switch>
+    </>
+  );
+}
+"
+`;
