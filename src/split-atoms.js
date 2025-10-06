@@ -21,6 +21,9 @@
  * node.source = '@org/common/src/components'
  */
 
+import { toFormattedSource } from './utils/formatting.js'
+import { insertImports, matchesImportPath } from './utils/imports.js'
+
 // Path constants
 const IMPORT_PATH = '@org/common/src/components'
 const ATOM_PREFIX = '@org/common/src/components/atoms/'
@@ -123,25 +126,15 @@ function processImports(imports, j) {
   return atoms
 }
 
-function insertImports(root, atoms, j) {
-  if (atoms.size === 0) {
-    return
-  }
+function createAtomImports(atoms, j) {
   // The following code looks like a war crime, and probably is...
-  const newImports = Array.from(atoms.values()).map(({ path, isType, specifiers }) => {
+  return Array.from(atoms.values()).map(({ path, isType, specifiers }) => {
     const declaration = j.importDeclaration(specifiers, j.literal(path))
     if (isType) {
       declaration.importKind = 'type'
     }
     return declaration
   })
-  // Insert after the last existing import, or at the top if none exist
-  const lastImport = root.find(j.ImportDeclaration).at(-1)
-  if (lastImport.length) {
-    lastImport.insertAfter(newImports)
-  } else {
-    root.get().node.program.body.unshift(...newImports)
-  }
 }
 
 function main(fileInfo, api) {
@@ -151,7 +144,7 @@ function main(fileInfo, api) {
   // Find the imports we care about
   const imports = root.find(j.ImportDeclaration, {
     source: {
-      value: (value) => value === IMPORT_PATH || value === `${IMPORT_PATH}/`,
+      value: matchesImportPath(IMPORT_PATH),
     },
   })
 
@@ -164,14 +157,11 @@ function main(fileInfo, api) {
   const atoms = processImports(imports, j)
 
   // Finally, we can insert all teh tings back to the source file!!1
-  insertImports(root, atoms, j)
+  const newImports = createAtomImports(atoms, j)
+  insertImports(root, newImports, j)
 
   // Dump to disk
-  return root.toSource({
-    quote: 'single',
-    tabWidth: 2,
-    useTabs: false,
-  })
+  return toFormattedSource(root)
   // Run lint:fix afterwards to solve import orders and whatnot
 }
 
