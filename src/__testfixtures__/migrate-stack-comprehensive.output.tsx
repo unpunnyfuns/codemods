@@ -1,18 +1,18 @@
 import { SomeOtherComponent } from '@org/common/src/other'
 
 import { Stack } from 'aurora';
-import { radius } from '@org/aurora';
+import { space, radius } from '@hb-frontend/nordlys';
 import { StyleSheet } from 'react-native';
 
 export function ComprehensiveExample() {
   return (
     <>
       {/* Test multi-property expansion with tokens */}
-      <Stack gap="md" direction='vertical' style={styles.vstack0}>
+      <Stack gap={space.md} direction='vertical' style={styles.vstack0}>
         <SomeOtherComponent />
       </Stack>
       {/* Test marginX/marginY expansion */}
-      <Stack gap="sm" direction='horizontal' style={styles.hstack0}>
+      <Stack gap={space.sm} direction='horizontal' style={styles.hstack0}>
         <SomeOtherComponent />
       </Stack>
       {/* Test flexbox props */}
@@ -70,17 +70,17 @@ const styles = StyleSheet.create({
   },
 
   hstack3: {
-    borderTopLeftRadius: radius('xs'),
-    borderTopRightRadius: radius('sm'),
-    borderBottomLeftRadius: radius('md'),
-    borderBottomRightRadius: radius('lg')
+    borderTopLeftRadius: radius.xs,
+    borderTopRightRadius: radius.sm,
+    borderBottomLeftRadius: radius.md,
+    borderBottomRightRadius: radius.lg
   },
 
   vstack0: {
-    borderTopLeftRadius: radius('lg'),
-    borderTopRightRadius: radius('lg'),
-    borderBottomLeftRadius: radius('md'),
-    borderBottomRightRadius: radius('md'),
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    borderBottomLeftRadius: radius.md,
+    borderBottomRightRadius: radius.md,
     width: "full",
     height: "full"
   },
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 200,
     backgroundColor: "blue.500",
-    borderRadius: radius('xl'),
+    borderRadius: radius.xl,
     borderWidth: 2,
     borderColor: "gray.200"
   },
@@ -107,9 +107,9 @@ const styles = StyleSheet.create({
   vstack3: {
     width: 100,
     height: 100,
-    borderTopLeftRadius: radius('sm'),
-    borderBottomLeftRadius: radius('sm'),
-    borderTopRightRadius: radius('md'),
-    borderBottomRightRadius: radius('md')
+    borderTopLeftRadius: radius.sm,
+    borderBottomLeftRadius: radius.sm,
+    borderTopRightRadius: radius.md,
+    borderBottomRightRadius: radius.md
   }
 });

@@ -23,6 +23,9 @@
 
 import { toFormattedSource } from './utils/formatting.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
+import { extractOptions, normalizeComponents } from './utils/options.js'
+import { buildNestedMemberExpression } from './utils/token-helpers.js'
+import { getNordlysColorPath } from './mappings/color-mappings.js'
 
 // Default mappings for backward compatibility (basic style props only)
 const DEFAULT_MAPPINGS = {
@@ -48,10 +51,30 @@ const DEFAULT_MAPPINGS = {
   DROP_PROPS: [],
 }
 
+// Check if a value can be extracted to StyleSheet (literal or token helper reference)
+function canExtractToStyleSheet(value, isTokenHelper = false) {
+  if (!value) return false
+
+  // Literals can be extracted
+  if (value.type === 'StringLiteral' || value.type === 'NumericLiteral' || value.type === 'BooleanLiteral') {
+    return true
+  }
+
+  // Token helper member expressions can be extracted (e.g., radius.md)
+  // User member expressions like props.spacing should stay inline
+  if (value.type === 'MemberExpression' && isTokenHelper) {
+    return true
+  }
+
+  // Everything else (variables, function calls, user member expressions) stays inline
+  return false
+}
+
 // Extract and categorize props from JSX element
 function extractProps(attributes, mappings, j) {
   const { STYLE_PROPS, TRANSFORM_PROPS, DROP_PROPS } = mappings
   const styleProps = {}
+  const inlineStyles = {}
   const transformedProps = {}
   const propsToRemove = []
   const usedTokenHelpers = new Set()
@@ -91,11 +114,23 @@ function extractProps(attributes, mappings, j) {
       }
 
       if (value) {
+        let processedValue = value
+        let isTokenHelperCall = false
+
         // Apply tokenHelper transformation for string literals
         if (tokenHelper && value.type === 'StringLiteral') {
-          // Transform to: tokenHelper('value')
-          value = j.callExpression(j.identifier(tokenHelper), [j.stringLiteral(value.value)])
+          // Transform to: tokenHelper.value (e.g., radius.md)
+          // Supports nested paths: "background.secondary" → color.background.secondary
+          let tokenPath = value.value
+
+          // Apply color remapping if this is a color token
+          if (tokenHelper === 'color') {
+            tokenPath = getNordlysColorPath(tokenPath)
+          }
+
+          processedValue = buildNestedMemberExpression(j, tokenHelper, tokenPath)
           usedTokenHelpers.add(tokenHelper)
+          isTokenHelperCall = true
         }
         // Apply value mapping if configured
         else if (valueMap) {
@@ -104,7 +139,7 @@ function extractProps(attributes, mappings, j) {
             const mappedValue = valueMap[value.value]
             if (mappedValue !== undefined) {
               // Determine if mapped value should be numeric or string
-              value =
+              processedValue =
                 typeof mappedValue === 'number'
                   ? j.numericLiteral(mappedValue)
                   : j.stringLiteral(mappedValue)
@@ -114,7 +149,7 @@ function extractProps(attributes, mappings, j) {
           else if (value.type === 'NumericLiteral') {
             const mappedValue = valueMap[value.value]
             if (mappedValue !== undefined) {
-              value =
+              processedValue =
                 typeof mappedValue === 'number'
                   ? j.numericLiteral(mappedValue)
                   : j.stringLiteral(mappedValue)
@@ -123,14 +158,19 @@ function extractProps(attributes, mappings, j) {
           // If no mapping found or not a literal, keep original value
         }
 
+        // Decide whether to extract to StyleSheet or keep inline
+        const targetStyles = canExtractToStyleSheet(processedValue, isTokenHelperCall)
+          ? styleProps
+          : inlineStyles
+
         // Handle multi-property expansion or single property
         if (properties) {
           // Expand to multiple properties with same value
           for (const prop of properties) {
-            styleProps[prop] = value
+            targetStyles[prop] = processedValue
           }
         } else {
-          styleProps[styleName] = value
+          targetStyles[styleName] = processedValue
         }
         propsToRemove.push(attr)
       }
@@ -140,25 +180,55 @@ function extractProps(attributes, mappings, j) {
       const config = TRANSFORM_PROPS[propName]
       let newPropName
       let valueMap
+      let tokenHelper
 
-      // Support both string (backward compat) and object with valueMap
+      // Support both string (backward compat) and object with valueMap/tokenHelper
       if (typeof config === 'string') {
         newPropName = config
         valueMap = null
+        tokenHelper = null
       } else {
         newPropName = config.propName
         valueMap = config.valueMap
+        tokenHelper = config.tokenHelper
       }
 
       let value = attr.value
 
+      // Extract actual value from JSXExpressionContainer or StringLiteral
+      if (value?.type === 'JSXExpressionContainer') {
+        value = value.expression
+      }
+
+      // Apply tokenHelper transformation for string literals
+      if (tokenHelper && value?.type === 'StringLiteral') {
+        // Transform to: tokenHelper.value (e.g., space.md)
+        // Supports nested paths: "background.secondary" → color.background.secondary
+        let tokenPath = value.value
+
+        // Apply color remapping if this is a color token
+        if (tokenHelper === 'color') {
+          tokenPath = getNordlysColorPath(tokenPath)
+        }
+
+        value = j.jsxExpressionContainer(buildNestedMemberExpression(j, tokenHelper, tokenPath))
+        usedTokenHelpers.add(tokenHelper)
+      }
       // Apply value mapping if configured and value is a string literal
-      if (valueMap && value?.type === 'StringLiteral') {
+      else if (valueMap && value?.type === 'StringLiteral') {
         const mappedValue = valueMap[value.value]
         if (mappedValue !== undefined) {
-          value = j.stringLiteral(mappedValue)
+          value = j.jsxExpressionContainer(j.stringLiteral(mappedValue))
         }
         // If no mapping found, keep original value
+      }
+      // Wrap other expression types back in JSXExpressionContainer
+      else if (value && value.type !== 'StringLiteral' && attr.value?.type === 'JSXExpressionContainer') {
+        value = j.jsxExpressionContainer(value)
+      }
+      // Keep StringLiteral as-is for JSX attributes
+      else if (value?.type === 'StringLiteral') {
+        // Already correct format
       }
 
       transformedProps[newPropName] = value
@@ -171,7 +241,7 @@ function extractProps(attributes, mappings, j) {
     // DIRECT_PROPS stay on the element as-is
   })
 
-  return { styleProps, transformedProps, propsToRemove, usedTokenHelpers }
+  return { styleProps, inlineStyles, transformedProps, propsToRemove, usedTokenHelpers }
 }
 
 // Transform JSX elements to use target component with prop mappings
@@ -183,7 +253,7 @@ function transformElements(jsxElements, targetName, sourceComponentName, staticP
     const attributes = path.node.openingElement.attributes || []
 
     // Extract and categorize props
-    const { styleProps, transformedProps, propsToRemove, usedTokenHelpers } = extractProps(
+    const { styleProps, inlineStyles, transformedProps, propsToRemove, usedTokenHelpers } = extractProps(
       attributes,
       mappings,
       j,
@@ -220,18 +290,38 @@ function transformElements(jsxElements, targetName, sourceComponentName, staticP
       attributes.push(propAttr)
     })
 
-    // If we extracted style props, add style prop and save for stylesheet
+    // Build style prop value
+    let styleValue = null
+
+    // If we have StyleSheet styles, reference styles.name
     if (Object.keys(styleProps).length > 0) {
       const styleName = `${sourceComponentName.toLowerCase()}${index}`
+      styleValue = j.memberExpression(j.identifier('styles'), j.identifier(styleName))
+      elementStyles.push({ name: styleName, styles: styleProps })
+    }
+
+    // If we have inline styles, create inline object
+    if (Object.keys(inlineStyles).length > 0) {
+      const inlineProperties = Object.entries(inlineStyles).map(([key, value]) => {
+        return j.property('init', j.identifier(key), value)
+      })
+      const inlineObject = j.objectExpression(inlineProperties)
+
+      // If we also have StyleSheet styles, combine them in an array
+      if (styleValue) {
+        styleValue = j.arrayExpression([styleValue, inlineObject])
+      } else {
+        styleValue = inlineObject
+      }
+    }
+
+    // Add style prop if we have any styles
+    if (styleValue) {
       const styleAttr = j.jsxAttribute(
         j.jsxIdentifier('style'),
-        j.jsxExpressionContainer(
-          j.memberExpression(j.identifier('styles'), j.identifier(styleName)),
-        ),
+        j.jsxExpressionContainer(styleValue),
       )
       attributes.push(styleAttr)
-
-      elementStyles.push({ name: styleName, styles: styleProps })
     }
   })
 
@@ -294,34 +384,14 @@ function addStyleSheet(root, elementStyles, j) {
 }
 
 function main(fileInfo, api, options = {}) {
-  const {
-    sourceImport = 'react-native',
-    targetImport = 'aurora',
-    targetName = 'Stack',
-    mappings = DEFAULT_MAPPINGS,
-  } = options
-
-  // Backward compatibility: if sourceName is provided, convert to components array
-  let components = options.components
-  if (!components && options.sourceName) {
-    components = [
-      {
-        name: options.sourceName,
-        staticProps: options.staticProps || { direction: 'row' },
-      },
-    ]
-  }
-  if (!components) {
-    components = [{ name: 'HStack', staticProps: { direction: 'row' } }]
-  }
-
-  // Normalize components array (strings to objects)
-  components = components.map((comp) => {
-    if (typeof comp === 'string') {
-      return { name: comp, staticProps: options.staticProps || {} }
-    }
-    return comp
+  // Extract standard options with defaults
+  const { sourceImport, targetImport, targetName, tokenImport, mappings } = extractOptions(options, {
+    tokenImport: '@hb-frontend/nordlys',
+    mappings: DEFAULT_MAPPINGS,
   })
+
+  // Normalize components array (handles backward compat)
+  const components = normalizeComponents(options, { name: 'HStack', staticProps: { direction: 'row' } })
 
   const j = api.jscodeshift
   const root = j(fileInfo.source)
@@ -395,7 +465,7 @@ function main(fileInfo, api, options = {}) {
 
   // Add token helper imports
   allUsedTokenHelpers.forEach((helper) => {
-    addNamedImport(root, '@org/aurora', helper, j)
+    addNamedImport(root, tokenImport, helper, j)
   })
 
   // Add StyleSheet if we have styles

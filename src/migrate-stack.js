@@ -17,6 +17,7 @@
  * - sourceImport: The import path to look for (default: 'react-native')
  * - targetImport: The import path to use (default: 'aurora')
  * - targetName: The new component name (default: 'Stack')
+ * - tokenImport: The import path for token helpers (default: '@hb-frontend/nordlys')
  */
 
 import * as stackProps from './mappings/stack-props.js'

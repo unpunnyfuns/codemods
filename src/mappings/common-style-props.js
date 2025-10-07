@@ -5,40 +5,40 @@
 
 export const SPACING = {
   // Margin - full names
-  margin: 'margin',
-  marginTop: 'marginTop',
-  marginBottom: 'marginBottom',
-  marginLeft: 'marginLeft',
-  marginRight: 'marginRight',
+  margin: { styleName: 'margin', tokenHelper: 'space' },
+  marginTop: { styleName: 'marginTop', tokenHelper: 'space' },
+  marginBottom: { styleName: 'marginBottom', tokenHelper: 'space' },
+  marginLeft: { styleName: 'marginLeft', tokenHelper: 'space' },
+  marginRight: { styleName: 'marginRight', tokenHelper: 'space' },
 
   // Margin - shortcuts
-  m: 'margin',
-  mt: 'marginTop',
-  mb: 'marginBottom',
-  ml: 'marginLeft',
-  mr: 'marginRight',
-  mx: 'marginHorizontal',
-  my: 'marginVertical',
+  m: { styleName: 'margin', tokenHelper: 'space' },
+  mt: { styleName: 'marginTop', tokenHelper: 'space' },
+  mb: { styleName: 'marginBottom', tokenHelper: 'space' },
+  ml: { styleName: 'marginLeft', tokenHelper: 'space' },
+  mr: { styleName: 'marginRight', tokenHelper: 'space' },
+  mx: { styleName: 'marginHorizontal', tokenHelper: 'space' },
+  my: { styleName: 'marginVertical', tokenHelper: 'space' },
 
   // Margin - NativeBase specific (expand to multiple)
-  marginX: { properties: ['marginLeft', 'marginRight'] },
-  marginY: { properties: ['marginTop', 'marginBottom'] },
+  marginX: { properties: ['marginLeft', 'marginRight'], tokenHelper: 'space' },
+  marginY: { properties: ['marginTop', 'marginBottom'], tokenHelper: 'space' },
 
   // Padding - full names
-  padding: 'padding',
-  paddingTop: 'paddingTop',
-  paddingBottom: 'paddingBottom',
-  paddingLeft: 'paddingLeft',
-  paddingRight: 'paddingRight',
+  padding: { styleName: 'padding', tokenHelper: 'space' },
+  paddingTop: { styleName: 'paddingTop', tokenHelper: 'space' },
+  paddingBottom: { styleName: 'paddingBottom', tokenHelper: 'space' },
+  paddingLeft: { styleName: 'paddingLeft', tokenHelper: 'space' },
+  paddingRight: { styleName: 'paddingRight', tokenHelper: 'space' },
 
   // Padding - shortcuts
-  p: 'padding',
-  pt: 'paddingTop',
-  pb: 'paddingBottom',
-  pl: 'paddingLeft',
-  pr: 'paddingRight',
-  px: 'paddingHorizontal',
-  py: 'paddingVertical',
+  p: { styleName: 'padding', tokenHelper: 'space' },
+  pt: { styleName: 'paddingTop', tokenHelper: 'space' },
+  pb: { styleName: 'paddingBottom', tokenHelper: 'space' },
+  pl: { styleName: 'paddingLeft', tokenHelper: 'space' },
+  pr: { styleName: 'paddingRight', tokenHelper: 'space' },
+  px: { styleName: 'paddingHorizontal', tokenHelper: 'space' },
+  py: { styleName: 'paddingVertical', tokenHelper: 'space' },
 }
 
 export const SIZING = {

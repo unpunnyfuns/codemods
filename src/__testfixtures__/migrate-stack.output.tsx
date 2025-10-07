@@ -1,6 +1,6 @@
 import { SomeOtherComponent } from '@org/common/src/other'
 import { Stack } from 'aurora';
-import { radius } from '@org/aurora';
+import { radius } from '@hb-frontend/nordlys';
 import { StyleSheet } from 'react-native';
 
 export function MyComponent() {
@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
   hstack0: {
     margin: 4,
     alignItems: 'flex-start',
-    borderRadius: radius('md')
+    borderRadius: radius.md
   },
 
   hstack1: {

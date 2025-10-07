@@ -39,8 +39,11 @@ delete STYLE_PROPS.space
 
 // TRANSFORM_PROPS: Renamed on element (for props that can't go in StyleSheet)
 export const TRANSFORM_PROPS = {
-  // space prop stays on element as gap
-  space: 'gap',
+  // space prop stays on element as gap, with space token helper
+  space: {
+    propName: 'gap',
+    tokenHelper: 'space',
+  },
 }
 
 // DIRECT_PROPS: Passed through unchanged

@@ -30,8 +30,9 @@ import migrateNbComponent from './migrate-nb-component.js'
 function main(fileInfo, api, options = {}) {
   return migrateNbComponent(fileInfo, api, {
     ...options,
-    sourceImport: 'native-base',
-    targetImport: 'react-native',
+    sourceImport: options.sourceImport || 'native-base',
+    targetImport: options.targetImport || 'react-native',
+    tokenImport: options.tokenImport || '@hb-frontend/nordlys',
     components: [{ name: 'Box', targetName: 'View', staticProps: {} }],
     mappings: boxProps,
   })
