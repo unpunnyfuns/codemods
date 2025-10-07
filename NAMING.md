@@ -128,6 +128,26 @@ propsToKeep.push(iconProp)
 - `DIRECT_PROPS` - props to pass through (UPPER_CASE)
 - `DROP_PROPS` - props to remove (UPPER_CASE)
 
+## Utility Function Parameters
+
+**Consistent parameter naming in utilities:**
+
+- `j` - jscodeshift API (always last or second-to-last parameter)
+- `root` - parsed source tree
+- `path` - AST node path (for transformations)
+- `attributes` - JSX attributes array
+- `children` - JSX children array
+- `element` - JSX element node
+- `value` - AST value node
+- `imports` - import declaration collection
+- `transformedProps` - object of transformed props `{ propName: value }`
+- `tokenPath` - dot-separated token path string (NOT `path` which conflicts with AST paths)
+
+**Avoid:**
+- Generic names: `data`, `obj`, `item`, `temp`
+- Conflicting names: `path` for non-AST paths (use `tokenPath`, `modulePath`, `importPath`)
+- Ambiguous names: `props` without context (use `propsToKeep`, `transformedProps`, `styleProps`)
+
 ## Examples
 
 ### Good

@@ -16,8 +16,8 @@
  *   buildNestedMemberExpression(j, 'space', 'md')
  *   => space.md
  */
-export function buildNestedMemberExpression(j, tokenHelper, path) {
-  const parts = path.split('.')
+export function buildNestedMemberExpression(j, tokenHelper, tokenPath) {
+  const parts = tokenPath.split('.')
 
   // Start with the token helper identifier
   let expression = j.identifier(tokenHelper)

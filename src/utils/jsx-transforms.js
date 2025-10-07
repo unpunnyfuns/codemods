@@ -27,8 +27,8 @@ export function removePropsFromElement(attributes, propsToRemove) {
 /**
  * Add multiple props to element
  */
-export function addPropsToElement(attributes, propEntries, j) {
-  Object.entries(propEntries).forEach(([key, value]) => {
+export function addPropsToElement(attributes, transformedProps, j) {
+  Object.entries(transformedProps).forEach(([key, value]) => {
     const propAttr = j.jsxAttribute(j.jsxIdentifier(key), value)
     attributes.push(propAttr)
   })
