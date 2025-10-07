@@ -6,7 +6,7 @@ Shared utility functions for JSX transformations, import management, prop proces
 
 | File | Purpose |
 |------|---------|
-| `formatting.js` | Source code formatting with Prettier |
+| `formatting.js` | AST to source conversion with formatting options |
 | `imports.js` | Import statement manipulation (add, remove, redirect) |
 | `jsx-extraction.js` | Extract values from JSX elements and children |
 | `jsx-transforms.js` | JSX element transformations (name, props, styles) |
@@ -18,14 +18,14 @@ Shared utility functions for JSX transformations, import management, prop proces
 
 ### formatting.js
 
-Formats transformed source code using Prettier.
+Converts AST back to source code with consistent formatting options.
 
 **Exports:**
 ```javascript
 toFormattedSource(root) → string
 ```
 
-Wraps jscodeshift's `toSource()` with Prettier formatting for consistent output.
+Wraps jscodeshift's `toSource()` with formatting options (single quotes, 2-space indentation). Output should be formatted by your project's formatter (Biome) afterwards.
 
 ---
 
