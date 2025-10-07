@@ -7,10 +7,10 @@
  * - Token helpers (e.g., space={2} → gap: spacing(2))
  */
 
-import * as commonDirectProps from './common-direct-props.js'
-import * as commonDropProps from './common-drop-props.js'
-import * as commonStyleProps from './common-style-props.js'
-import * as commonValueMaps from './common-value-maps.js'
+import * as commonDirectProps from './common/common-direct-props.js'
+import * as commonDropProps from './common/common-drop-props.js'
+import * as commonStyleProps from './common/common-style-props.js'
+import * as commonValueMaps from './common/common-value-maps.js'
 
 // STYLE_PROPS: Extracted to StyleSheet with value mapping where needed
 export const STYLE_PROPS = {

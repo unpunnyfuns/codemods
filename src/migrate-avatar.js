@@ -18,6 +18,7 @@
  * // Warning: Avatar with letters prop cannot be migrated (not supported in Nordlys)
  */
 
+import * as avatarProps from './mappings/avatar-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 
 function main(fileInfo, api, options = {}) {
@@ -56,7 +57,10 @@ function main(fileInfo, api, options = {}) {
     const propsToKeep = []
     const propsToRemove = []
 
-    // First pass: collect values
+    // Process attributes using mappings
+    const { DIRECT_PROPS, DROP_PROPS } = avatarProps
+
+    // First pass: collect values and categorize
     attributes.forEach((attr) => {
       if (attr.type !== 'JSXAttribute') {
         propsToKeep.push(attr)
@@ -69,6 +73,7 @@ function main(fileInfo, api, options = {}) {
 
       const propName = attr.name.name
 
+      // Extract values for custom transformations
       if (propName === 'iconName') {
         iconNameValue = attr.value
         propsToRemove.push(attr)
@@ -83,22 +88,14 @@ function main(fileInfo, api, options = {}) {
         propsToRemove.push(attr)
       }
       // Drop these props
-      else if (
-        [
-          'lettersColor',
-          'bgColor',
-          'isSecondaryColor',
-          'placeholder',
-          'resizeMode',
-          'source',
-          'bg',
-          'w',
-          'h',
-        ].includes(propName)
-      ) {
+      else if (DROP_PROPS.includes(propName)) {
         propsToRemove.push(attr)
       }
-      // Keep size, testID, etc
+      // Keep direct props as-is
+      else if (DIRECT_PROPS.includes(propName)) {
+        propsToKeep.push(attr)
+      }
+      // Keep unknown props
       else {
         propsToKeep.push(attr)
       }

@@ -34,6 +34,7 @@
  * - Both icon and children are missing (icon-only not supported in migration)
  */
 
+import * as buttonProps from './mappings/button-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import { extractPropFromJSXElement, extractSimpleChild } from './utils/jsx-extraction.js'
 
@@ -111,7 +112,9 @@ function main(fileInfo, api, options = {}) {
       return
     }
 
-    // Process attributes
+    // Process attributes using mappings
+    const { TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS } = buttonProps
+
     attributes.forEach((attr) => {
       if (attr.type !== 'JSXAttribute') {
         propsToKeep.push(attr)
@@ -125,62 +128,20 @@ function main(fileInfo, api, options = {}) {
       const propName = attr.name.name
 
       // Transform prop names
-      if (propName === 'isDisabled') {
-        attr.name.name = 'disabled'
+      if (TRANSFORM_PROPS[propName]) {
+        attr.name.name = TRANSFORM_PROPS[propName]
         propsToKeep.push(attr)
       }
-      // Keep these props as-is
-      else if (['size', 'variant', 'onPress', 'testID', 'isLoading'].includes(propName)) {
+      // Keep direct props as-is
+      else if (DIRECT_PROPS.includes(propName)) {
         propsToKeep.push(attr)
       }
       // Drop these props
-      else if (
-        ['leftIcon', 'rightIcon', '_text', '_hover', '_pressed', '_disabled', '_loading'].includes(
-          propName,
-        )
-      ) {
+      else if (DROP_PROPS.includes(propName)) {
         propsToRemove.push(attr)
         if (propName === 'rightIcon') {
           warnings.push('Button rightIcon not supported in Nordlys - dropped')
         }
-      }
-      // Drop style props (margin, padding, etc)
-      else if (
-        [
-          'm',
-          'mt',
-          'mb',
-          'ml',
-          'mr',
-          'mx',
-          'my',
-          'p',
-          'pt',
-          'pb',
-          'pl',
-          'pr',
-          'px',
-          'py',
-          'margin',
-          'marginTop',
-          'marginBottom',
-          'marginLeft',
-          'marginRight',
-          'padding',
-          'paddingTop',
-          'paddingBottom',
-          'paddingLeft',
-          'paddingRight',
-          'w',
-          'h',
-          'width',
-          'height',
-          'bg',
-          'bgColor',
-          'backgroundColor',
-        ].includes(propName)
-      ) {
-        propsToRemove.push(attr)
       }
       // Keep unknown props
       else {

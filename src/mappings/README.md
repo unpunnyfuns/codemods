@@ -6,19 +6,22 @@ Defines which props to extract to StyleSheet, transform, pass through, or drop d
 
 ## Structure
 
-| File                         | Purpose                                                       |
-| ---------------------------- | ------------------------------------------------------------- |
-| **Common Modules**           |                                                               |
-| `common-style-props.js`      | Reusable style prop mappings (spacing, sizing, colors, etc.)  |
-| `common-direct-props.js`     | Props passed through unchanged (events, accessibility)        |
-| `common-drop-props.js`       | Props to remove (pseudo-props, theme overrides)               |
-| `common-value-maps.js`       | Value transformations (align, justify)                        |
-| `common-pseudo-props.js`     | NativeBase pseudo-prop definitions (\_hover, \_pressed, etc.) |
-| `common-theme-props.js`      | NativeBase theme system props (colorScheme, variant)          |
+| File                                | Purpose                                                       |
+| ----------------------------------- | ------------------------------------------------------------- |
+| **Common Modules** (`common/`)      |                                                               |
+| `common/common-style-props.js`      | Reusable style prop mappings (spacing, sizing, colors, etc.)  |
+| `common/common-direct-props.js`     | Props passed through unchanged (events, accessibility)        |
+| `common/common-drop-props.js`       | Props to remove (pseudo-props, theme overrides)               |
+| `common/common-value-maps.js`       | Value transformations (align, justify)                        |
+| `common/common-pseudo-props.js`     | NativeBase pseudo-prop definitions (\_hover, \_pressed, etc.) |
+| `common/common-theme-props.js`      | NativeBase theme system props (colorScheme, variant)          |
 | **Component Mappings**       |                                                               |
 | `box-props.js`               | Box component prop mappings                                   |
 | `stack-props.js`             | Stack (HStack/VStack) component prop mappings                 |
 | `pressable-props.js`         | Pressable component prop mappings                             |
+| `button-props.js`            | Button component prop mappings                                |
+| `switch-props.js`            | Switch component prop mappings                                |
+| `avatar-props.js`            | Avatar component prop mappings                                |
 | **Reference**                |                                                               |
 | `color-mappings.js`          | NativeBase → Nordlys color token mappings                     |
 | `nativebase-styled-props.js` | Complete NativeBase styled-system reference                   |
@@ -364,15 +367,138 @@ DROP_PROPS = commonDropProps.COMMON;
 
 - `accessibilityRole="button"` (default if not present)
 
+---
+
+### button-props.js
+
+Button component migration (NativeBase/Common → Nordlys).
+
+**Note:** Button has custom transformation logic for extracting icon from `leftIcon={<Icon name="..." />}` and converting children to `text` prop.
+
+**Configuration:**
+
+```javascript
+STYLE_PROPS = {}; // Button doesn't accept style props in Nordlys
+
+TRANSFORM_PROPS = {
+  isDisabled: "disabled",
+};
+
+DIRECT_PROPS = [
+  "size",
+  "variant",
+  "onPress",
+  "testID",
+  "isLoading",
+  "type",
+];
+
+DROP_PROPS = [
+  ...commonDropProps.COMMON,
+  "leftIcon", // Extracted to icon prop via custom logic
+  "rightIcon", // Not supported
+  "_text",
+  "_loading",
+  // All style props (margin, padding, width, height, bg, etc.)
+];
+```
+
+**Custom transformations:**
+
+- `leftIcon={<Icon name="Plus" />}` → `icon="Plus"`
+- `{children}` → `text={children}`
+- Auto-adds `type="solid"` if not present
+
+---
+
+### switch-props.js
+
+Switch component migration (NativeBase/Common → Nordlys).
+
+**Note:** Switch has custom transformation logic for wrapping children in `<Switch.Label>` and converting `label` prop to `<Switch.Description>`.
+
+**Configuration:**
+
+```javascript
+STYLE_PROPS = {}; // Switch doesn't accept style props in Nordlys
+
+TRANSFORM_PROPS = {
+  isChecked: "value",
+  onToggle: "onValueChange",
+  isDisabled: "disabled",
+};
+
+DIRECT_PROPS = ["testID", "accessibilityLabel", "accessibilityHint"];
+
+DROP_PROPS = [
+  "label", // Extracted to Switch.Description via custom logic
+  "switchPosition",
+  "hStackProps",
+  "childrenProps",
+  "labelProps",
+  "LeftElement",
+  // Pseudo props
+];
+```
+
+**Custom transformations:**
+
+- `label="Label"` → `<Switch.Description>Label</Switch.Description>`
+- `{children}` → `<Switch.Label>{children}</Switch.Label>`
+
+---
+
+### avatar-props.js
+
+Avatar component migration (NativeBase/Common → Nordlys).
+
+**Note:** Avatar has custom transformation logic for converting icon/image props to object expressions.
+
+**Configuration:**
+
+```javascript
+STYLE_PROPS = {}; // Avatar doesn't accept style props in Nordlys
+
+TRANSFORM_PROPS = {}; // No prop renames
+
+DIRECT_PROPS = ["size", "testID", "accessibilityLabel"];
+
+DROP_PROPS = [
+  // Avatar-specific props transformed via custom logic
+  "iconName", // → icon={{ name, fill }}
+  "imageUri", // → image={{ source: { uri } }}
+  "imageSource", // → image={{ source }}
+  "letters", // Not supported in Nordlys
+  // Color/style props
+  "lettersColor",
+  "bgColor",
+  "bg",
+  // Image props
+  "placeholder",
+  "resizeMode",
+  "source",
+  // Size props
+  "w",
+  "h",
+];
+```
+
+**Custom transformations:**
+
+- `iconName="user"` → `icon={{ name: "user", fill: "blue" }}`
+- `imageUri="url"` → `image={{ source: { uri: "url" } }}`
+- `imageSource={source}` → `image={{ source }}`
+- `letters="AB"` → Warning (not supported)
+
 ## Creating New Component Mappings
 
 1. **Import common modules:**
 
 ```javascript
-import * as commonStyleProps from "./common-style-props.js";
-import * as commonDirectProps from "./common-direct-props.js";
-import * as commonDropProps from "./common-drop-props.js";
-import * as commonValueMaps from "./common-value-maps.js";
+import * as commonStyleProps from "./common/common-style-props.js";
+import * as commonDirectProps from "./common/common-direct-props.js";
+import * as commonDropProps from "./common/common-drop-props.js";
+import * as commonValueMaps from "./common/common-value-maps.js";
 ```
 
 2. **Define STYLE_PROPS:**
