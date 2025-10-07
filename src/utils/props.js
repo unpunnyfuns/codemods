@@ -14,6 +14,7 @@ export function shouldExtractToStyleSheet(value, isTokenHelper = false) {
 
   // Literals can be extracted
   if (
+    value.type === 'Literal' ||
     value.type === 'StringLiteral' ||
     value.type === 'NumericLiteral' ||
     value.type === 'BooleanLiteral'
@@ -35,11 +36,16 @@ export function shouldExtractToStyleSheet(value, isTokenHelper = false) {
  * Process a prop value with token helper transformation
  */
 export function processTokenHelper(value, tokenHelper, j, usedTokenHelpers) {
-  if (!tokenHelper || value.type !== 'StringLiteral') {
+  if (!tokenHelper || (value.type !== 'StringLiteral' && value.type !== 'Literal')) {
     return { value, isTokenHelper: false }
   }
 
   let tokenPath = value.value
+
+  // Ensure tokenPath is a string
+  if (typeof tokenPath !== 'string') {
+    return { value, isTokenHelper: false }
+  }
 
   // Apply color remapping if this is a color token
   if (tokenHelper === 'color') {
@@ -59,7 +65,7 @@ export function applyValueMapping(value, valueMap, j) {
   if (!valueMap) return value
 
   // For string literals
-  if (value.type === 'StringLiteral') {
+  if (value.type === 'StringLiteral' || value.type === 'Literal') {
     const mappedValue = valueMap[value.value]
     if (mappedValue !== undefined) {
       return typeof mappedValue === 'number'
@@ -125,7 +131,7 @@ export function categorizeProps(attributes, mappings, j) {
       let value = null
       if (attr.value?.type === 'JSXExpressionContainer') {
         value = attr.value.expression
-      } else if (attr.value?.type === 'StringLiteral') {
+      } else if (attr.value?.type === 'StringLiteral' || attr.value?.type === 'Literal') {
         value = attr.value
       }
 
@@ -134,7 +140,7 @@ export function categorizeProps(attributes, mappings, j) {
         let isTokenHelperCall = false
 
         // Apply tokenHelper transformation for string literals
-        if (tokenHelper && value.type === 'StringLiteral') {
+        if (tokenHelper && (value.type === 'StringLiteral' || value.type === 'Literal')) {
           const result = processTokenHelper(value, tokenHelper, j, usedTokenHelpers)
           processedValue = result.value
           isTokenHelperCall = result.isTokenHelper
