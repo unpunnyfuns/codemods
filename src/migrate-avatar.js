@@ -18,7 +18,6 @@
  * // Warning: Avatar with letters prop cannot be migrated (not supported in Nordlys)
  */
 
-import { toFormattedSource } from './utils/formatting.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 
 function main(fileInfo, api, options = {}) {
@@ -172,7 +171,11 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Avatar', j)
   addNamedImport(root, targetImport, 'Avatar', j)
 
-  return toFormattedSource(root)
+  return root.toSource({
+    quote: 'single',
+    tabWidth: 2,
+    useTabs: false,
+  })
 }
 
 export default main

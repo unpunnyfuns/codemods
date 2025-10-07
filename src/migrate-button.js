@@ -34,7 +34,6 @@
  * - Both icon and children are missing (icon-only not supported in migration)
  */
 
-import { toFormattedSource } from './utils/formatting.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import { extractPropFromJSXElement, extractSimpleChild } from './utils/jsx-extraction.js'
 
@@ -230,7 +229,11 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Button', j)
   addNamedImport(root, targetImport, 'Button', j)
 
-  return toFormattedSource(root)
+  return root.toSource({
+    quote: 'single',
+    tabWidth: 2,
+    useTabs: false,
+  })
 }
 
 export default main

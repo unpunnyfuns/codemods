@@ -21,7 +21,6 @@
  * node.source = '@org/common/src/components'
  */
 
-import { toFormattedSource } from './utils/formatting.js'
 import { insertImports, matchesImportPath } from './utils/imports.js'
 
 // Path constants
@@ -161,7 +160,11 @@ function main(fileInfo, api) {
   insertImports(root, newImports, j)
 
   // Dump to disk
-  return toFormattedSource(root)
+  return root.toSource({
+    quote: 'single',
+    tabWidth: 2,
+    useTabs: false,
+  })
   // Run lint:fix afterwards to solve import orders and whatnot
 }
 

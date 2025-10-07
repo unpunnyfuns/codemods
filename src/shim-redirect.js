@@ -2,7 +2,6 @@
  * Routes imports to the native-base shim
  */
 
-import { toFormattedSource } from './utils/formatting.js'
 import { matchesImportPath, redirectImport } from './utils/imports.js'
 
 // Path constants
@@ -29,7 +28,11 @@ function main(fileInfo, api) {
   imports.replaceWith((path) => redirectImport(path.node, TARGET_PATH, j))
 
   // Return formatted source
-  return toFormattedSource(root)
+  return root.toSource({
+    quote: 'single',
+    tabWidth: 2,
+    useTabs: false,
+  })
 }
 
 export default main

@@ -6,7 +6,6 @@ Shared utility functions for JSX transformations, import management, prop proces
 
 | File | Purpose |
 |------|---------|
-| `formatting.js` | AST to source conversion with formatting options |
 | `imports.js` | Import statement manipulation (add, remove, redirect) |
 | `jsx-extraction.js` | Extract values from JSX elements and children |
 | `jsx-transforms.js` | JSX element transformations (name, props, styles) |
@@ -15,21 +14,6 @@ Shared utility functions for JSX transformations, import management, prop proces
 | `token-helpers.js` | Design token helper transformations |
 
 ## Module Details
-
-### formatting.js
-
-Converts AST back to source code.
-
-**Exports:**
-```javascript
-toFormattedSource(root) → string
-```
-
-Wraps jscodeshift's `toSource()` with basic formatting options (single quotes, 2-space indentation).
-
-**Note:** Output is unformatted - run your project's formatter after running codemods.
-
----
 
 ### imports.js
 
@@ -237,7 +221,6 @@ buildNestedMemberExpression(j, 'color', 'white.900')
 ```javascript
 import { addNamedImport, removeNamedImport } from './utils/imports.js'
 import { updateElementName } from './utils/jsx-transforms.js'
-import { toFormattedSource } from './utils/formatting.js'
 
 // Find and update elements
 buttonElements.forEach(path => {
@@ -248,7 +231,7 @@ buttonElements.forEach(path => {
 removeNamedImport(imports, 'Button', j)
 addNamedImport(root, 'react-native', 'Pressable', j)
 
-return toFormattedSource(root)
+return root.toSource({ quote: 'single', tabWidth: 2, useTabs: false })
 ```
 
 ### Prop-based migration with StyleSheet

@@ -25,7 +25,6 @@
  */
 
 import { getNordlysColorPath } from './mappings/color-mappings.js'
-import { toFormattedSource } from './utils/formatting.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 
 // Props that stay on Typography element
@@ -306,7 +305,11 @@ function main(fileInfo, api, options = {}) {
     }
   }
 
-  return toFormattedSource(root)
+  return root.toSource({
+    quote: 'single',
+    tabWidth: 2,
+    useTabs: false,
+  })
 }
 
 export default main

@@ -20,7 +20,6 @@
  * </Switch>
  */
 
-import { toFormattedSource } from './utils/formatting.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 
 function main(fileInfo, api, options = {}) {
@@ -141,7 +140,11 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Switch', j)
   addNamedImport(root, targetImport, 'Switch', j)
 
-  return toFormattedSource(root)
+  return root.toSource({
+    quote: 'single',
+    tabWidth: 2,
+    useTabs: false,
+  })
 }
 
 export default main

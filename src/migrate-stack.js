@@ -9,7 +9,6 @@
  */
 
 import * as stackProps from './mappings/stack-props.js'
-import { toFormattedSource } from './utils/formatting.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import {
   addPropsToElement,
@@ -99,7 +98,11 @@ function main(fileInfo, api, options = {}) {
   // Add StyleSheet
   addOrExtendStyleSheet(root, elementStyles, j)
 
-  return toFormattedSource(root)
+  return root.toSource({
+    quote: 'single',
+    tabWidth: 2,
+    useTabs: false,
+  })
 }
 
 export default main
