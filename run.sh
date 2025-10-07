@@ -55,8 +55,4 @@ else
 fi
 
 echo ""
-echo "Formatting with Biome..."
-npx biome format --write "$FILE_PATTERN"
-
-echo ""
-echo "Done!"
+echo "Done! Remember to format the files with your project's formatter."

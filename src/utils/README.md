@@ -18,14 +18,16 @@ Shared utility functions for JSX transformations, import management, prop proces
 
 ### formatting.js
 
-Converts AST back to source code with consistent formatting options.
+Converts AST back to source code.
 
 **Exports:**
 ```javascript
 toFormattedSource(root) → string
 ```
 
-Wraps jscodeshift's `toSource()` with formatting options (single quotes, 2-space indentation). Output should be formatted by your project's formatter (Biome) afterwards.
+Wraps jscodeshift's `toSource()` with basic formatting options (single quotes, 2-space indentation).
+
+**Note:** Output is unformatted - run your project's formatter after running codemods.
 
 ---
 
