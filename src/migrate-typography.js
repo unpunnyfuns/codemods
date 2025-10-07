@@ -1,24 +1,24 @@
 /**
  * Migrate NativeBase Typography to Nordlys Typography
- * 
+ *
  * Key differences:
  * - Nordlys Typography doesn't accept style props (margin, padding, etc.)
  * - Style props need to be wrapped in a View with StyleSheet
  * - fontWeight/fontSize/lineHeight props are dropped (managed internally)
- * - Color uses ColorPath (color token helper)
- * 
+ * - Color expects ColorPath string (Typography resolves internally)
+ *
  * Before:
  * <Typography type="heading" size="xl" mb="lg" fontWeight="700">
  *   {text}
  * </Typography>
- * 
+ *
  * After:
  * <View style={styles.typography0}>
  *   <Typography type="heading" size="xl">
  *     {text}
  *   </Typography>
  * </View>
- * 
+ *
  * const styles = StyleSheet.create({
  *   typography0: { marginBottom: space.lg }
  * })
@@ -26,7 +26,6 @@
 
 import { toFormattedSource } from './utils/formatting.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
-import { buildNestedMemberExpression } from './utils/token-helpers.js'
 import { getNordlysColorPath } from './mappings/color-mappings.js'
 
 // Props that stay on Typography element
@@ -148,12 +147,10 @@ function main(fileInfo, api, options = {}) {
       
       // Check if it's a Typography-specific prop
       if (TYPOGRAPHY_PROPS.includes(propName)) {
-        // Handle color with token helper
+        // Handle color - remap path but keep as string literal (Typography resolves internally)
         if (propName === 'color' && attr.value?.type === 'StringLiteral') {
           const colorPath = getNordlysColorPath(attr.value.value)
-          const colorExpr = buildNestedMemberExpression(j, 'color', colorPath)
-          attr.value = j.jsxExpressionContainer(colorExpr)
-          usedTokenHelpers.add('color')
+          attr.value.value = colorPath
         }
         propsToKeep.push(attr)
         return
