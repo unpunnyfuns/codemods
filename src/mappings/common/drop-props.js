@@ -8,8 +8,8 @@
  * - Component-agnostic NativeBase props (shadow, etc.)
  */
 
-import * as pseudoProps from './common-pseudo-props.js'
-import * as themeProps from './common-theme-props.js'
+import * as pseudoProps from './pseudo-props.js'
+import * as themeProps from './theme-props.js'
 
 export const PLATFORM_OVERRIDES = ['_web', '_ios', '_android']
 

@@ -2,9 +2,9 @@
  * Prop mappings for Box → View migration
  */
 
-import * as commonDirectProps from './common/common-direct-props.js'
-import * as commonDropProps from './common/common-drop-props.js'
-import * as commonStyleProps from './common/common-style-props.js'
+import * as commonDirectProps from './common/direct-props.js'
+import * as commonDropProps from './common/drop-props.js'
+import * as commonStyleProps from './common/style-props.js'
 
 // STYLE_PROPS: Extracted to StyleSheet with optional value mapping
 export const STYLE_PROPS = {

@@ -5,7 +5,7 @@
  * Note: Custom transformation logic handles leftIcon extraction and children→text conversion
  */
 
-import * as commonDropProps from './common/common-drop-props.js'
+import * as commonDropProps from './common/drop-props.js'
 
 // STYLE_PROPS: None - Button doesn't accept style props in Nordlys
 export const STYLE_PROPS = {}

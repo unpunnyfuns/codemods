@@ -6,15 +6,15 @@ Defines which props to extract to StyleSheet, transform, pass through, or drop d
 
 ## Structure
 
-| File                            | Purpose                                                       |
-| ------------------------------- | ------------------------------------------------------------- |
-| **Common Modules** (`common/`)  |                                                               |
-| `common/common-style-props.js`  | Reusable style prop mappings (spacing, sizing, colors, etc.)  |
-| `common/common-direct-props.js` | Props passed through unchanged (events, accessibility)        |
-| `common/common-drop-props.js`   | Props to remove (pseudo-props, theme overrides)               |
-| `common/common-value-maps.js`   | Value transformations (align, justify)                        |
-| `common/common-pseudo-props.js` | NativeBase pseudo-prop definitions (\_hover, \_pressed, etc.) |
-| `common/common-theme-props.js`  | NativeBase theme system props (colorScheme, variant)          |
+| File                       | Purpose                                                       |
+| -------------------------- | ------------------------------------------------------------- |
+| **Common Modules** (`common/`) |                                                       |
+| `common/style-props.js`    | Reusable style prop mappings (spacing, sizing, colors, etc.)  |
+| `common/direct-props.js`   | Props passed through unchanged (events, accessibility)        |
+| `common/drop-props.js`     | Props to remove (pseudo-props, theme overrides)               |
+| `common/value-maps.js`     | Value transformations (align, justify)                        |
+| `common/pseudo-props.js`   | NativeBase pseudo-prop definitions (\_hover, \_pressed, etc.) |
+| `common/theme-props.js`    | NativeBase theme system props (colorScheme, variant)          |
 | **Component Mappings**          |                                                               |
 | `box-props.js`                  | Box component prop mappings                                   |
 | `stack-props.js`                | Stack (HStack/VStack) component prop mappings                 |
@@ -50,7 +50,7 @@ export const DROP_PROPS = [
 
 ## Common Modules
 
-### common-style-props.js
+### common/style-props.js
 
 Reusable style prop mappings organized by category.
 
@@ -119,7 +119,7 @@ BORDER = {
 
 ---
 
-### common-direct-props.js
+### common/direct-props.js
 
 Standard React Native props that pass through unchanged.
 
@@ -134,14 +134,14 @@ COMMON; // Combination of EVENT_HANDLERS + ACCESSIBILITY
 **Usage:**
 
 ```javascript
-import * as commonDirectProps from "./common-direct-props.js";
+import * as commonDirectProps from "./direct-props.js";
 
 export const DIRECT_PROPS = commonDirectProps.COMMON;
 ```
 
 ---
 
-### common-drop-props.js
+### common/drop-props.js
 
 NativeBase-specific props to remove during migration.
 
@@ -156,12 +156,12 @@ COMMON; // All drop props combined
 
 **Includes all pseudo-props and theme props:**
 
-- Imported from `common-pseudo-props.js` (ALL_PSEUDO_PROPS)
-- Imported from `common-theme-props.js` (ALL_THEME_PROPS)
+- Imported from `pseudo-props.js` (ALL_PSEUDO_PROPS)
+- Imported from `theme-props.js` (ALL_THEME_PROPS)
 
 ---
 
-### common-value-maps.js
+### common/value-maps.js
 
 Value transformations for string literals.
 
@@ -175,7 +175,7 @@ JUSTIFY_VALUES; // start → flex-start, between → space-between, around, even
 **Usage in TRANSFORM_PROPS:**
 
 ```javascript
-import * as commonValueMaps from "./common-value-maps.js";
+import * as commonValueMaps from "./value-maps.js";
 
 export const TRANSFORM_PROPS = {
   align: {
@@ -197,7 +197,7 @@ export const TRANSFORM_PROPS = {
 
 ---
 
-### common-pseudo-props.js
+### common/pseudo-props.js
 
 Complete list of NativeBase pseudo-props for interaction states, variants, and nested components.
 
@@ -214,7 +214,7 @@ All pseudo-props are dropped during migration - Aurora/Nordlys use different pat
 
 ---
 
-### common-theme-props.js
+### common/theme-props.js
 
 NativeBase theme system props.
 
@@ -488,10 +488,10 @@ DROP_PROPS = [
 1. **Import common modules:**
 
 ```javascript
-import * as commonStyleProps from "./common/common-style-props.js";
-import * as commonDirectProps from "./common/common-direct-props.js";
-import * as commonDropProps from "./common/common-drop-props.js";
-import * as commonValueMaps from "./common/common-value-maps.js";
+import * as commonStyleProps from "./common/style-props.js";
+import * as commonDirectProps from "./common/direct-props.js";
+import * as commonDropProps from "./common/drop-props.js";
+import * as commonValueMaps from "./common/value-maps.js";
 ```
 
 2. **Define STYLE_PROPS:**
