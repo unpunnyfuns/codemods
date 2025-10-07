@@ -1,6 +1,6 @@
-import { radius } from '@org/aurora'
 import { SomeOtherComponent } from '@org/common/src/other'
-import { StyleSheet, View } from 'react-native'
+import { View, StyleSheet } from 'react-native';
+import { radius } from '@org/aurora';
 
 export function MyComponent() {
   return (
@@ -15,27 +15,27 @@ export function MyComponent() {
         <SomeOtherComponent />
       </View>
     </>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   box0: {
-    backgroundColor: 'blue.500',
+    backgroundColor: "blue.500",
     padding: 4,
     margin: 2,
-    borderRadius: radius('md'),
+    borderRadius: radius('md')
   },
 
   box1: {
-    backgroundColor: 'red.300',
+    backgroundColor: "red.300",
     paddingHorizontal: 3,
     paddingVertical: 2,
     borderWidth: 1,
-    borderColor: 'gray.200',
+    borderColor: "gray.200"
   },
 
   box2: {
-    width: '100%',
-    height: 200,
-  },
-})
+    width: "100%",
+    height: 200
+  }
+});

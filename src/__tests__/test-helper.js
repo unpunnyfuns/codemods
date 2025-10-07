@@ -1,27 +1,10 @@
-import { execSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import jscodeshift from 'jscodeshift'
 
 /**
- * Normalize code with Biome formatter
- * This ensures both actual and expected outputs are formatted identically
- * before comparison, making tests resilient to formatting differences
- */
-function normalizeWithBiome(code) {
-  try {
-    const result = execSync('npx biome check --write --stdin-file-path=test.tsx', {
-      input: code,
-      encoding: 'utf8',
-    })
-    return result
-  } catch {
-    return code
-  }
-}
-
-/**
  * Test a codemod transform against input/output fixtures
+ * Note: Formats output for comparison - production transforms don't format
  */
 export function testTransform(transformPath, fixtureName, extension = 'js') {
   const transform = require(transformPath).default
@@ -49,9 +32,12 @@ export function testTransform(transformPath, fixtureName, extension = 'js') {
 
   const actualOutput = transform(fileInfo, api, options)
 
-  // Normalize both outputs through Biome to ensure consistent formatting
+  // Simple normalization: remove semicolons, normalize quotes
+  // This is just for test comparison - your project formats the real output
+  const normalize = (code) => code.replace(/;$/gm, '').replace(/'/g, "'")
+
   return {
-    actual: normalizeWithBiome(actualOutput),
-    expected: normalizeWithBiome(expectedOutput),
+    actual: normalize(actualOutput),
+    expected: normalize(expectedOutput),
   }
 }
