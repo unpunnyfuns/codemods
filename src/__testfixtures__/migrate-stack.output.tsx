@@ -6,13 +6,13 @@ import { StyleSheet } from 'react-native'
 export function MyComponent() {
   return (
     <>
-      <Stack direction="row" style={styles.hstack0}>
+      <Stack direction="horizontal" style={styles.hstack0}>
         <SomeOtherComponent />
       </Stack>
-      <Stack testID="test-stack" direction="row" style={styles.hstack1}>
+      <Stack testID="test-stack" direction="horizontal" style={styles.hstack1}>
         <SomeOtherComponent />
       </Stack>
-      <Stack onPress={() => {}} reverse={true} direction="row" style={styles.hstack2}>
+      <Stack onPress={() => {}} direction="horizontal" style={styles.hstack2}>
         <SomeOtherComponent />
       </Stack>
     </>

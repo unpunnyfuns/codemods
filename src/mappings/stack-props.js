@@ -35,9 +35,7 @@ export const STYLE_PROPS = {
 }
 
 // TRANSFORM_PROPS: Renamed on element (for props that can't go in StyleSheet)
-export const TRANSFORM_PROPS = {
-  reversed: 'reverse', // React Native specific prop, stays on element
-}
+export const TRANSFORM_PROPS = {}
 
 // DIRECT_PROPS: Passed through unchanged
 export const DIRECT_PROPS = commonDirectProps.COMMON
@@ -47,6 +45,7 @@ export const DROP_PROPS = [
   ...commonDropProps.COMMON,
   // Stack-specific
   'divider',
+  'reversed', // Not supported in Aurora Stack
   '_text',
   '_stack',
 ]

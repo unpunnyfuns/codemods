@@ -7,35 +7,35 @@ export function ComprehensiveExample() {
   return (
     <>
       {/* Test multi-property expansion with tokens */}
-      <Stack direction="column" style={styles.vstack0}>
+      <Stack direction="vertical" style={styles.vstack0}>
         <SomeOtherComponent />
       </Stack>
       {/* Test marginX/marginY expansion */}
-      <Stack direction="row" style={styles.hstack0}>
+      <Stack direction="horizontal" style={styles.hstack0}>
         <SomeOtherComponent />
       </Stack>
       {/* Test flexbox props */}
-      <Stack direction="column" style={styles.vstack1}>
+      <Stack direction="vertical" style={styles.vstack1}>
         <SomeOtherComponent />
       </Stack>
       {/* Test position props */}
-      <Stack direction="row" style={styles.hstack1}>
+      <Stack direction="horizontal" style={styles.hstack1}>
         <SomeOtherComponent />
       </Stack>
       {/* Test full prop names */}
-      <Stack direction="column" style={styles.vstack2}>
+      <Stack direction="vertical" style={styles.vstack2}>
         <SomeOtherComponent />
       </Stack>
       {/* Test mixed shortcuts and value mappings */}
-      <Stack direction="row" style={styles.hstack2}>
+      <Stack direction="horizontal" style={styles.hstack2}>
         <SomeOtherComponent />
       </Stack>
       {/* Test edge case: boxSize instead of size */}
-      <Stack direction="column" style={styles.vstack3}>
+      <Stack direction="vertical" style={styles.vstack3}>
         <SomeOtherComponent />
       </Stack>
       {/* Test all border radius corners */}
-      <Stack direction="row" style={styles.hstack3}>
+      <Stack direction="horizontal" style={styles.hstack3}>
         <SomeOtherComponent />
       </Stack>
     </>
