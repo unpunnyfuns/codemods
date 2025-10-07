@@ -1,5 +1,6 @@
-import { Switch } from '@hb-frontend/app/src/components/nordlys/Switch'
 import { Typography } from '@hb-frontend/common/src/components'
+
+import { Switch } from '@hb-frontend/app/src/components/nordlys/Switch'
 
 export function MyComponent() {
   return (
@@ -13,7 +14,8 @@ export function MyComponent() {
         <Switch.Description>Additional info</Switch.Description>
       </Switch>
       <Switch value={false} onValueChange={() => {}} disabled>
-        <Switch.Label>Simple switch</Switch.Label>
+        <Switch.Label>Simple switch
+                </Switch.Label>
       </Switch>
     </>
   )

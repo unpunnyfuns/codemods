@@ -44,7 +44,7 @@ function main(fileInfo, api, options = {}) {
     const children = path.node.children || []
 
     // Extract props to transform
-    let labelProp = null
+    let labelValue = null
     const propsToKeep = []
     const propsToRemove = []
 
@@ -73,7 +73,7 @@ function main(fileInfo, api, options = {}) {
       }
       // Extract label for later
       else if (propName === 'label') {
-        labelProp = attr.value
+        labelValue = attr.value
         propsToRemove.push(attr)
       }
       // Drop these props
@@ -113,12 +113,12 @@ function main(fileInfo, api, options = {}) {
 
     const newChildren = [j.jsxText('\n  '), labelElement]
 
-    // Add <Switch.Description> if label prop exists
-    if (labelProp) {
-      const descriptionValue =
-        labelProp.type === 'JSXExpressionContainer'
-          ? [j.jsxExpressionContainer(labelProp.expression)]
-          : [j.jsxText(labelProp.value)]
+    // Add <Switch.Description> if label value exists
+    if (labelValue) {
+      const descriptionChildren =
+        labelValue.type === 'JSXExpressionContainer'
+          ? [j.jsxExpressionContainer(labelValue.expression)]
+          : [j.jsxText(labelValue.value)]
 
       const descriptionElement = j.jsxElement(
         j.jsxOpeningElement(
@@ -128,7 +128,7 @@ function main(fileInfo, api, options = {}) {
         j.jsxClosingElement(
           j.jsxMemberExpression(j.jsxIdentifier('Switch'), j.jsxIdentifier('Description')),
         ),
-        descriptionValue,
+        descriptionChildren,
       )
       newChildren.push(j.jsxText('\n  '), descriptionElement)
     }
