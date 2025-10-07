@@ -1,5 +1,5 @@
-import { HStack, VStack } from 'react-native'
 import { SomeOtherComponent } from '@org/common/src/other'
+import { HStack, VStack } from 'react-native'
 
 export function ComprehensiveExample() {
   return (

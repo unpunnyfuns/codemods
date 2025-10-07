@@ -18,7 +18,7 @@ function resolveImportPath(fromFile, importPath) {
   // Resolve relative imports
   if (importPath.startsWith('.')) {
     const dir = require('path').dirname(fromFile)
-    let resolved = require('path').resolve(dir, importPath)
+    const resolved = require('path').resolve(dir, importPath)
 
     // Try with various extensions
     const extensions = ['', '.ts', '.tsx', '.d.ts']
@@ -58,18 +58,20 @@ function extractPropsInfo(filePath, targetComponentName = null, resolveImports =
   // Extract imports
   root.find(j.ImportDeclaration).forEach((path) => {
     const source = path.value.source.value
-    const specifiers = path.value.specifiers.map((spec) => {
-      if (spec.type === 'ImportSpecifier') {
-        return { imported: spec.imported.name, local: spec.local.name, type: 'named' }
-      }
-      if (spec.type === 'ImportDefaultSpecifier') {
-        return { imported: 'default', local: spec.local.name, type: 'default' }
-      }
-      if (spec.type === 'ImportNamespaceSpecifier') {
-        return { imported: '*', local: spec.local.name, type: 'namespace' }
-      }
-      return null
-    }).filter(Boolean)
+    const specifiers = path.value.specifiers
+      .map((spec) => {
+        if (spec.type === 'ImportSpecifier') {
+          return { imported: spec.imported.name, local: spec.local.name, type: 'named' }
+        }
+        if (spec.type === 'ImportDefaultSpecifier') {
+          return { imported: 'default', local: spec.local.name, type: 'default' }
+        }
+        if (spec.type === 'ImportNamespaceSpecifier') {
+          return { imported: '*', local: spec.local.name, type: 'namespace' }
+        }
+        return null
+      })
+      .filter(Boolean)
 
     results.imports.push({ source, specifiers })
   })
@@ -79,25 +81,28 @@ function extractPropsInfo(filePath, targetComponentName = null, resolveImports =
     const name = path.value.id.name
     const interfaceInfo = {
       name,
-      extends: path.value.extends?.map((e) => {
-        const extName = e.expression.name
-        const typeParams = e.typeParameters?.params.map(p => j(p).toSource())
-        return typeParams ? `${extName}<${typeParams.join(', ')}>` : extName
-      }) || [],
+      extends:
+        path.value.extends?.map((e) => {
+          const extName = e.expression.name
+          const typeParams = e.typeParameters?.params.map((p) => j(p).toSource())
+          return typeParams ? `${extName}<${typeParams.join(', ')}>` : extName
+        }) || [],
       properties: [],
     }
 
     path.value.body.body.forEach((prop) => {
       if (prop.type === 'TSPropertySignature') {
         const propName = prop.key?.name || j(prop.key).toSource()
-        const propType = prop.typeAnnotation ? j(prop.typeAnnotation.typeAnnotation).toSource() : 'any'
+        const propType = prop.typeAnnotation
+          ? j(prop.typeAnnotation.typeAnnotation).toSource()
+          : 'any'
 
         // Extract enum/literal values if it's a union
         let enumValues = null
         if (prop.typeAnnotation?.typeAnnotation.type === 'TSUnionType') {
           enumValues = prop.typeAnnotation.typeAnnotation.types
-            .filter(t => t.type === 'TSLiteralType')
-            .map(t => {
+            .filter((t) => t.type === 'TSLiteralType')
+            .map((t) => {
               if (t.literal.type === 'StringLiteral') return `'${t.literal.value}'`
               if (t.literal.type === 'NumericLiteral') return t.literal.value
               if (t.literal.type === 'BooleanLiteral') return t.literal.value
@@ -130,8 +135,8 @@ function extractPropsInfo(filePath, targetComponentName = null, resolveImports =
     // If it's a union of literals, extract them
     if (path.value.typeAnnotation.type === 'TSUnionType') {
       typeInfo.enumValues = path.value.typeAnnotation.types
-        .filter(t => t.type === 'TSLiteralType')
-        .map(t => {
+        .filter((t) => t.type === 'TSLiteralType')
+        .map((t) => {
           if (t.literal.type === 'StringLiteral') return `'${t.literal.value}'`
           if (t.literal.type === 'NumericLiteral') return t.literal.value
           return j(t).toSource()
@@ -160,7 +165,9 @@ function extractPropsInfo(filePath, targetComponentName = null, resolveImports =
           const importedData = extractPropsInfo(resolvedPath, null, false)
 
           if (debug) {
-            console.error(`  Found ${importedData.interfaces.length} interfaces, ${importedData.typeAliases.length} type aliases`)
+            console.error(
+              `  Found ${importedData.interfaces.length} interfaces, ${importedData.typeAliases.length} type aliases`,
+            )
           }
 
           for (const spec of imp.specifiers) {
@@ -171,8 +178,8 @@ function extractPropsInfo(filePath, targetComponentName = null, resolveImports =
             }
 
             // Find the type/interface in the imported file
-            const foundInterface = importedData.interfaces.find(i => i.name === typeName)
-            const foundType = importedData.typeAliases.find(t => t.name === typeName)
+            const foundInterface = importedData.interfaces.find((i) => i.name === typeName)
+            const foundType = importedData.typeAliases.find((t) => t.name === typeName)
 
             if (foundInterface || foundType) {
               if (debug) {
@@ -187,7 +194,9 @@ function extractPropsInfo(filePath, targetComponentName = null, resolveImports =
               })
             } else if (debug) {
               console.error(`    ✗ Not found`)
-              console.error(`    Available: ${[...importedData.interfaces.map(i => i.name), ...importedData.typeAliases.map(t => t.name)].join(', ')}`)
+              console.error(
+                `    Available: ${[...importedData.interfaces.map((i) => i.name), ...importedData.typeAliases.map((t) => t.name)].join(', ')}`,
+              )
             }
           }
         } catch (err) {
@@ -221,8 +230,9 @@ function extractPropsInfo(filePath, targetComponentName = null, resolveImports =
     ]
 
     for (const propsName of propsNames) {
-      const found = results.interfaces.find(i => i.name === propsName) ||
-                    results.typeAliases.find(t => t.name === propsName)
+      const found =
+        results.interfaces.find((i) => i.name === propsName) ||
+        results.typeAliases.find((t) => t.name === propsName)
       if (found) {
         results.componentProps = found
         break
@@ -243,12 +253,14 @@ function formatOutput(results) {
   if (results.imports?.length) {
     console.log('Imports:')
     console.log('-'.repeat(80))
-    results.imports.forEach(imp => {
-      const specs = imp.specifiers.map(s => {
-        if (s.type === 'default') return s.local
-        if (s.type === 'namespace') return `* as ${s.local}`
-        return s.imported === s.local ? s.imported : `${s.imported} as ${s.local}`
-      }).join(', ')
+    results.imports.forEach((imp) => {
+      const specs = imp.specifiers
+        .map((s) => {
+          if (s.type === 'default') return s.local
+          if (s.type === 'namespace') return `* as ${s.local}`
+          return s.imported === s.local ? s.imported : `${s.imported} as ${s.local}`
+        })
+        .join(', ')
       console.log(`  from '${imp.source}': ${specs}`)
     })
     console.log()
@@ -258,7 +270,7 @@ function formatOutput(results) {
   if (results.resolvedImports?.length) {
     console.log('Resolved Imported Types:')
     console.log('-'.repeat(80))
-    results.resolvedImports.forEach(imp => {
+    results.resolvedImports.forEach((imp) => {
       if (imp.external) {
         console.log(`  ${imp.name} (from '${imp.source}' - external)`)
       } else if (imp.definition) {
@@ -268,7 +280,7 @@ function formatOutput(results) {
           if (imp.definition.extends?.length) {
             console.log(`    extends: ${imp.definition.extends.join(', ')}`)
           }
-          imp.definition.properties.forEach(prop => {
+          imp.definition.properties.forEach((prop) => {
             const opt = prop.optional ? '?' : ''
             console.log(`      ${prop.name}${opt}: ${prop.type}`)
           })
@@ -291,7 +303,7 @@ function formatOutput(results) {
     console.log('Props:')
     console.log('-'.repeat(80))
 
-    results.componentProps.properties?.forEach(prop => {
+    results.componentProps.properties?.forEach((prop) => {
       const optional = prop.optional ? '?' : ''
       const enumInfo = prop.enumValues ? ` [${prop.enumValues.join(' | ')}]` : ''
       console.log(`  ${prop.name}${optional}: ${prop.type}${enumInfo}`)
@@ -305,7 +317,7 @@ function formatOutput(results) {
   // Show related types
   console.log('Related Types:')
   console.log('-'.repeat(80))
-  results.typeAliases.forEach(type => {
+  results.typeAliases.forEach((type) => {
     console.log(`  type ${type.name} = ${type.type}`)
     if (type.enumValues?.length) {
       console.log(`    Values: ${type.enumValues.join(' | ')}`)
@@ -321,14 +333,14 @@ function formatOutput(results) {
     console.log()
     console.log('All Interfaces:')
     console.log('-'.repeat(80))
-    results.interfaces.forEach(iface => {
+    results.interfaces.forEach((iface) => {
       if (results.componentProps && iface.name === results.componentProps.name) return
 
       console.log(`  interface ${iface.name}`)
       if (iface.extends?.length) {
         console.log(`    extends ${iface.extends.join(', ')}`)
       }
-      console.log(`    Properties: ${iface.properties.map(p => p.name).join(', ')}`)
+      console.log(`    Properties: ${iface.properties.map((p) => p.name).join(', ')}`)
       console.log()
     })
   }

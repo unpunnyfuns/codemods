@@ -7,11 +7,17 @@
  * const styles = StyleSheet.create({ box0: { backgroundColor: color.blue['500'], padding: 4, margin: 2, borderRadius: radius.md } })
  */
 
+import * as boxProps from './mappings/box-props.js'
 import { toFormattedSource } from './utils/formatting.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
-import { categorizeProps, addOrExtendStyleSheet } from './utils/props.js'
-import { updateElementName, removePropsFromElement, addPropsToElement, buildStyleValue, addStyleProp } from './utils/jsx-transforms.js'
-import * as boxProps from './mappings/box-props.js'
+import {
+  addPropsToElement,
+  addStyleProp,
+  buildStyleValue,
+  removePropsFromElement,
+  updateElementName,
+} from './utils/jsx-transforms.js'
+import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -37,10 +43,15 @@ function main(fileInfo, api, options = {}) {
     const attributes = path.node.openingElement.attributes || []
 
     // Categorize props
-    const { styleProps, inlineStyles, transformedProps, propsToRemove, usedTokenHelpers: newHelpers } =
-      categorizeProps(attributes, boxProps, j)
+    const {
+      styleProps,
+      inlineStyles,
+      transformedProps,
+      propsToRemove,
+      usedTokenHelpers: newHelpers,
+    } = categorizeProps(attributes, boxProps, j)
 
-    newHelpers.forEach(h => usedTokenHelpers.add(h))
+    newHelpers.forEach((h) => usedTokenHelpers.add(h))
 
     // Transform element
     removePropsFromElement(attributes, propsToRemove)
@@ -54,7 +65,7 @@ function main(fileInfo, api, options = {}) {
   // Update imports
   removeNamedImport(imports, 'Box', j)
   addNamedImport(root, targetImport, 'View', j)
-  usedTokenHelpers.forEach(h => addNamedImport(root, tokenImport, h, j))
+  usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
 
   // Add StyleSheet
   addOrExtendStyleSheet(root, elementStyles, j)

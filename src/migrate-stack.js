@@ -8,11 +8,17 @@
  * <Stack direction="vertical" gap={space[4]}>{children}</Stack>
  */
 
+import * as stackProps from './mappings/stack-props.js'
 import { toFormattedSource } from './utils/formatting.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
-import { categorizeProps, addOrExtendStyleSheet } from './utils/props.js'
-import { updateElementName, removePropsFromElement, addPropsToElement, buildStyleValue, addStyleProp } from './utils/jsx-transforms.js'
-import * as stackProps from './mappings/stack-props.js'
+import {
+  addPropsToElement,
+  addStyleProp,
+  buildStyleValue,
+  removePropsFromElement,
+  updateElementName,
+} from './utils/jsx-transforms.js'
+import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
 
 const STACK_COMPONENTS = [
   { name: 'HStack', direction: 'horizontal' },
@@ -40,7 +46,9 @@ function main(fileInfo, api, options = {}) {
   STACK_COMPONENTS.forEach(({ name: componentName, direction }) => {
     if (!hasNamedImport(imports, componentName)) return
 
-    const stackElements = root.find(j.JSXElement, { openingElement: { name: { name: componentName } } })
+    const stackElements = root.find(j.JSXElement, {
+      openingElement: { name: { name: componentName } },
+    })
     if (stackElements.length === 0) return
 
     // Transform each element
@@ -48,10 +56,15 @@ function main(fileInfo, api, options = {}) {
       const attributes = path.node.openingElement.attributes || []
 
       // Categorize props
-      const { styleProps, inlineStyles, transformedProps, propsToRemove, usedTokenHelpers: newHelpers } =
-        categorizeProps(attributes, stackProps, j)
+      const {
+        styleProps,
+        inlineStyles,
+        transformedProps,
+        propsToRemove,
+        usedTokenHelpers: newHelpers,
+      } = categorizeProps(attributes, stackProps, j)
 
-      newHelpers.forEach(h => usedTokenHelpers.add(h))
+      newHelpers.forEach((h) => usedTokenHelpers.add(h))
 
       // Transform element
       removePropsFromElement(attributes, propsToRemove)
@@ -63,7 +76,13 @@ function main(fileInfo, api, options = {}) {
 
       addPropsToElement(attributes, transformedProps, j)
 
-      const styleValue = buildStyleValue(styleProps, inlineStyles, `${componentName.toLowerCase()}${index}`, elementStyles, j)
+      const styleValue = buildStyleValue(
+        styleProps,
+        inlineStyles,
+        `${componentName.toLowerCase()}${index}`,
+        elementStyles,
+        j,
+      )
       addStyleProp(attributes, styleValue, j)
     })
 
@@ -75,7 +94,7 @@ function main(fileInfo, api, options = {}) {
 
   // Update imports
   addNamedImport(root, targetImport, targetName, j)
-  usedTokenHelpers.forEach(h => addNamedImport(root, tokenImport, h, j))
+  usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
 
   // Add StyleSheet
   addOrExtendStyleSheet(root, elementStyles, j)

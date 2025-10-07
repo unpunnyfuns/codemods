@@ -64,10 +64,10 @@ export const SIZING = {
 }
 
 export const COLOR = {
-  bg: 'backgroundColor',
-  bgColor: 'backgroundColor',
-  background: 'backgroundColor',
-  backgroundColor: 'backgroundColor',
+  bg: { styleName: 'backgroundColor', tokenHelper: 'color' },
+  bgColor: { styleName: 'backgroundColor', tokenHelper: 'color' },
+  background: { styleName: 'backgroundColor', tokenHelper: 'color' },
+  backgroundColor: { styleName: 'backgroundColor', tokenHelper: 'color' },
 }
 
 export const BORDER = {

@@ -1,5 +1,5 @@
-import { Stack } from 'aurora';
+import { Stack } from 'aurora'
 
 export function Something(children) {
-  return <Stack direction='horizontal'>{children}</Stack>;
+  return <Stack direction="horizontal">{children}</Stack>
 }

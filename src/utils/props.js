@@ -2,9 +2,9 @@
  * Shared utilities for prop categorization and transformation
  */
 
-import { buildNestedMemberExpression } from './token-helpers.js'
 import { getNordlysColorPath } from '../mappings/color-mappings.js'
 import { addNamedImport } from './imports.js'
+import { buildNestedMemberExpression } from './token-helpers.js'
 
 /**
  * Check if a value can be extracted to StyleSheet (literal or token helper reference)
@@ -198,7 +198,11 @@ export function categorizeProps(attributes, mappings, j) {
         }
       }
       // Wrap other expression types back in JSXExpressionContainer
-      else if (value && value.type !== 'StringLiteral' && attr.value?.type === 'JSXExpressionContainer') {
+      else if (
+        value &&
+        value.type !== 'StringLiteral' &&
+        attr.value?.type === 'JSXExpressionContainer'
+      ) {
         value = j.jsxExpressionContainer(value)
       }
 

@@ -24,19 +24,12 @@
  * })
  */
 
+import { getNordlysColorPath } from './mappings/color-mappings.js'
 import { toFormattedSource } from './utils/formatting.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
-import { getNordlysColorPath } from './mappings/color-mappings.js'
 
 // Props that stay on Typography element
-const TYPOGRAPHY_PROPS = [
-  'type',
-  'size',
-  'color',
-  'align',
-  'numberOfLines',
-  'textDecorationLine',
-]
+const TYPOGRAPHY_PROPS = ['type', 'size', 'color', 'align', 'numberOfLines', 'textDecorationLine']
 
 // React Native Text props that pass through
 const TEXT_PROPS = [
@@ -76,7 +69,7 @@ const STYLE_PROPS = {
   pr: { styleName: 'paddingRight', tokenHelper: 'space' },
   px: { styleName: 'paddingHorizontal', tokenHelper: 'space' },
   py: { styleName: 'paddingVertical', tokenHelper: 'space' },
-  
+
   // Sizing
   width: 'width',
   height: 'height',
@@ -84,7 +77,7 @@ const STYLE_PROPS = {
   maxWidth: 'maxWidth',
   w: 'width',
   h: 'height',
-  
+
   // Flex
   flex: 'flex',
   flexGrow: 'flexGrow',
@@ -97,42 +90,42 @@ const FONT_PROPS = ['fontWeight', 'fontSize', 'lineHeight', 'fontFamily']
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
   const root = j(fileInfo.source)
-  
+
   const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
   const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Typography'
   const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
-  
+
   // Find Typography imports
   const imports = root.find(j.ImportDeclaration, {
-    source: { value: sourceImport }
+    source: { value: sourceImport },
   })
-  
+
   if (!hasNamedImport(imports, 'Typography')) {
     return fileInfo.source
   }
-  
+
   // Find all Typography JSX elements
   const typographyElements = root.find(j.JSXElement, {
     openingElement: {
-      name: { name: 'Typography' }
-    }
+      name: { name: 'Typography' },
+    },
   })
-  
+
   if (typographyElements.length === 0) {
     return fileInfo.source
   }
-  
+
   const elementStyles = []
   const usedTokenHelpers = new Set()
   const warnings = []
-  
+
   // Transform each Typography element
   typographyElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
     const styleProps = {}
     const propsToKeep = []
     const propsToRemove = []
-    
+
     attributes.forEach((attr) => {
       if (attr.type !== 'JSXAttribute') {
         propsToKeep.push(attr)
@@ -142,9 +135,9 @@ function main(fileInfo, api, options = {}) {
         propsToKeep.push(attr)
         return
       }
-      
+
       const propName = attr.name.name
-      
+
       // Check if it's a Typography-specific prop
       if (TYPOGRAPHY_PROPS.includes(propName)) {
         // Handle color - remap path but keep as string literal (Typography resolves internally)
@@ -155,18 +148,18 @@ function main(fileInfo, api, options = {}) {
         propsToKeep.push(attr)
         return
       }
-      
+
       // Check if it's a Text prop (pass through)
       if (TEXT_PROPS.includes(propName)) {
         propsToKeep.push(attr)
         return
       }
-      
+
       // Check if it's a style prop (extract to View wrapper)
       if (STYLE_PROPS[propName]) {
         const config = STYLE_PROPS[propName]
         let styleName, tokenHelper
-        
+
         if (typeof config === 'string') {
           styleName = config
           tokenHelper = null
@@ -174,40 +167,42 @@ function main(fileInfo, api, options = {}) {
           styleName = config.styleName
           tokenHelper = config.tokenHelper
         }
-        
+
         let value = null
         if (attr.value?.type === 'JSXExpressionContainer') {
           value = attr.value.expression
         } else if (attr.value?.type === 'StringLiteral') {
           value = attr.value
         }
-        
+
         if (value && (value.type === 'StringLiteral' || value.type === 'NumericLiteral')) {
           let processedValue = value
-          
+
           // Apply token helper for string literals
           if (tokenHelper && value.type === 'StringLiteral') {
             processedValue = buildNestedMemberExpression(j, tokenHelper, value.value)
             usedTokenHelpers.add(tokenHelper)
           }
-          
+
           styleProps[styleName] = processedValue
           propsToRemove.push(propName)
         }
         return
       }
-      
+
       // Check if it's a font prop (drop with warning)
       if (FONT_PROPS.includes(propName)) {
-        warnings.push(`Typography: Dropped ${propName} prop (managed internally by Nordlys Typography)`)
+        warnings.push(
+          `Typography: Dropped ${propName} prop (managed internally by Nordlys Typography)`,
+        )
         propsToRemove.push(propName)
         return
       }
-      
+
       // Unknown prop - keep it
       propsToKeep.push(attr)
     })
-    
+
     // Update attributes (remove style props) BEFORE wrapping
     path.node.openingElement.attributes = propsToKeep
 
@@ -221,7 +216,7 @@ function main(fileInfo, api, options = {}) {
         path.node.openingElement,
         path.node.closingElement,
         path.node.children,
-        path.node.selfClosing
+        path.node.selfClosing,
       )
 
       // Create View wrapper with cloned Typography as child
@@ -230,40 +225,40 @@ function main(fileInfo, api, options = {}) {
           j.jsxAttribute(
             j.jsxIdentifier('style'),
             j.jsxExpressionContainer(
-              j.memberExpression(j.identifier('styles'), j.identifier(styleName))
-            )
-          )
+              j.memberExpression(j.identifier('styles'), j.identifier(styleName)),
+            ),
+          ),
         ]),
         j.jsxClosingElement(j.jsxIdentifier('View')),
-        [typographyElement]
+        [typographyElement],
       )
 
       // Replace Typography with wrapped version
       j(path).replaceWith(viewElement)
     }
   })
-  
+
   // Print warnings
   if (warnings.length > 0) {
     console.warn('⚠️  Typography migration warnings:')
-    warnings.forEach(w => console.warn(`   ${w}`))
+    warnings.forEach((w) => console.warn(`   ${w}`))
   }
-  
+
   // Update imports
   removeNamedImport(imports, 'Typography', j)
   addNamedImport(root, targetImport, 'Typography', j)
-  
+
   // Add View and StyleSheet imports if we have styles
   if (elementStyles.length > 0) {
     addNamedImport(root, 'react-native', 'View', j)
     addNamedImport(root, 'react-native', 'StyleSheet', j)
   }
-  
+
   // Add token imports
   usedTokenHelpers.forEach((helper) => {
     addNamedImport(root, tokenImport, helper, j)
   })
-  
+
   // Add StyleSheet.create() if we have styles
   if (elementStyles.length > 0) {
     const styleProperties = elementStyles.map(({ name, styles }) => {
@@ -272,7 +267,7 @@ function main(fileInfo, api, options = {}) {
       })
       return j.property('init', j.identifier(name), j.objectExpression(props))
     })
-    
+
     // Check if StyleSheet.create already exists
     const existingStyleSheet = root.find(j.VariableDeclarator, {
       id: { name: 'styles' },
@@ -285,7 +280,7 @@ function main(fileInfo, api, options = {}) {
         },
       },
     })
-    
+
     if (existingStyleSheet.length > 0) {
       // Extend existing StyleSheet
       existingStyleSheet.forEach((path) => {
@@ -299,19 +294,18 @@ function main(fileInfo, api, options = {}) {
       const styleSheetCall = j.variableDeclaration('const', [
         j.variableDeclarator(
           j.identifier('styles'),
-          j.callExpression(
-            j.memberExpression(j.identifier('StyleSheet'), j.identifier('create')),
-            [j.objectExpression(styleProperties)]
-          )
+          j.callExpression(j.memberExpression(j.identifier('StyleSheet'), j.identifier('create')), [
+            j.objectExpression(styleProperties),
+          ]),
         ),
       ])
-      
+
       root.find(j.Program).forEach((path) => {
         path.node.body.push(styleSheetCall)
       })
     }
   }
-  
+
   return toFormattedSource(root)
 }
 
