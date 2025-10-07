@@ -1,31 +1,28 @@
 /**
- * Common NativeBase props to drop
- * These have no equivalent in React Native or target components
+ * Common NativeBase props to drop during migration
+ *
+ * Combines:
+ * - Pseudo-props for interaction/state/nested styling
+ * - Theme system props (colorScheme, variant, size)
+ * - Platform/theme overrides
+ * - Component-agnostic NativeBase props (shadow, etc.)
  */
 
-export const PSEUDO_PROPS = [
-  '_hover',
-  '_pressed',
-  '_focus',
-  '_disabled',
-  '_invalid',
-  '_checked',
-  '_readOnly',
-]
+import * as pseudoProps from './common-pseudo-props.js'
+import * as themeProps from './common-theme-props.js'
 
-export const PLATFORM_OVERRIDES = [
-  '_web',
-  '_ios',
-  '_android',
-]
+export const PLATFORM_OVERRIDES = ['_web', '_ios', '_android']
 
-export const THEME_OVERRIDES = [
-  '_light',
-  '_dark',
+export const THEME_OVERRIDES = ['_light', '_dark']
+
+export const COMPONENT_SPECIFIC = [
+  'shadow', // NativeBase shadow system - use style-based shadows in Aurora
 ]
 
 export const COMMON = [
-  ...PSEUDO_PROPS,
+  ...pseudoProps.ALL_PSEUDO_PROPS,
+  ...themeProps.ALL_THEME_PROPS,
   ...PLATFORM_OVERRIDES,
   ...THEME_OVERRIDES,
+  ...COMPONENT_SPECIFIC,
 ]

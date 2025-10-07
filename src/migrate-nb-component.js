@@ -54,6 +54,7 @@ function extractProps(attributes, mappings, j) {
   const styleProps = {}
   const transformedProps = {}
   const propsToRemove = []
+  const usedTokenHelpers = new Set()
 
   attributes.forEach((attr) => {
     if (attr.type !== 'JSXAttribute') return
@@ -65,15 +66,21 @@ function extractProps(attributes, mappings, j) {
     if (STYLE_PROPS[propName]) {
       const config = STYLE_PROPS[propName]
       let styleName
+      let properties
       let valueMap
+      let tokenHelper
 
-      // Support both string (backward compat) and object with valueMap
+      // Support both string (backward compat) and object with styleName/properties/valueMap/tokenHelper
       if (typeof config === 'string') {
         styleName = config
+        properties = null
         valueMap = null
+        tokenHelper = null
       } else {
         styleName = config.styleName
+        properties = config.properties
         valueMap = config.valueMap
+        tokenHelper = config.tokenHelper
       }
 
       let value = null
@@ -84,31 +91,47 @@ function extractProps(attributes, mappings, j) {
       }
 
       if (value) {
+        // Apply tokenHelper transformation for string literals
+        if (tokenHelper && value.type === 'StringLiteral') {
+          // Transform to: tokenHelper('value')
+          value = j.callExpression(j.identifier(tokenHelper), [j.stringLiteral(value.value)])
+          usedTokenHelpers.add(tokenHelper)
+        }
         // Apply value mapping if configured
-        if (valueMap) {
+        else if (valueMap) {
           // For string literals
           if (value.type === 'StringLiteral') {
             const mappedValue = valueMap[value.value]
             if (mappedValue !== undefined) {
               // Determine if mapped value should be numeric or string
-              value = typeof mappedValue === 'number'
-                ? j.numericLiteral(mappedValue)
-                : j.stringLiteral(mappedValue)
+              value =
+                typeof mappedValue === 'number'
+                  ? j.numericLiteral(mappedValue)
+                  : j.stringLiteral(mappedValue)
             }
           }
           // For numeric literals
           else if (value.type === 'NumericLiteral') {
             const mappedValue = valueMap[value.value]
             if (mappedValue !== undefined) {
-              value = typeof mappedValue === 'number'
-                ? j.numericLiteral(mappedValue)
-                : j.stringLiteral(mappedValue)
+              value =
+                typeof mappedValue === 'number'
+                  ? j.numericLiteral(mappedValue)
+                  : j.stringLiteral(mappedValue)
             }
           }
           // If no mapping found or not a literal, keep original value
         }
 
-        styleProps[styleName] = value
+        // Handle multi-property expansion or single property
+        if (properties) {
+          // Expand to multiple properties with same value
+          for (const prop of properties) {
+            styleProps[prop] = value
+          }
+        } else {
+          styleProps[styleName] = value
+        }
         propsToRemove.push(attr)
       }
     }
@@ -148,18 +171,28 @@ function extractProps(attributes, mappings, j) {
     // DIRECT_PROPS stay on the element as-is
   })
 
-  return { styleProps, transformedProps, propsToRemove }
+  return { styleProps, transformedProps, propsToRemove, usedTokenHelpers }
 }
 
 // Transform JSX elements to use target component with prop mappings
-function transformElements(jsxElements, targetName, staticProps, mappings, j) {
+function transformElements(jsxElements, targetName, sourceComponentName, staticProps, mappings, j) {
   const elementStyles = []
+  const allUsedTokenHelpers = new Set()
 
   jsxElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
 
     // Extract and categorize props
-    const { styleProps, transformedProps, propsToRemove } = extractProps(attributes, mappings, j)
+    const { styleProps, transformedProps, propsToRemove, usedTokenHelpers } = extractProps(
+      attributes,
+      mappings,
+      j,
+    )
+
+    // Track token helpers used across all elements
+    for (const helper of usedTokenHelpers) {
+      allUsedTokenHelpers.add(helper)
+    }
 
     // Remove the mapped props from the element
     propsToRemove.forEach((attr) => {
@@ -189,7 +222,7 @@ function transformElements(jsxElements, targetName, staticProps, mappings, j) {
 
     // If we extracted style props, add style prop and save for stylesheet
     if (Object.keys(styleProps).length > 0) {
-      const styleName = `${targetName.toLowerCase()}${index}`
+      const styleName = `${sourceComponentName.toLowerCase()}${index}`
       const styleAttr = j.jsxAttribute(
         j.jsxIdentifier('style'),
         j.jsxExpressionContainer(
@@ -202,7 +235,7 @@ function transformElements(jsxElements, targetName, staticProps, mappings, j) {
     }
   })
 
-  return elementStyles
+  return { elementStyles, usedTokenHelpers: allUsedTokenHelpers }
 }
 
 // Create StyleSheet.create() at the end of the file
@@ -283,10 +316,15 @@ function main(fileInfo, api, options = {}) {
 
   let transformed = false
   const allElementStyles = []
+  const usedTargetNames = new Set()
+  const allUsedTokenHelpers = new Set()
 
   // Process each component
   components.forEach((component) => {
-    const { name: componentName, staticProps } = component
+    const { name: componentName, staticProps, targetName: compTargetName } = component
+
+    // Use per-component targetName if provided, otherwise use global
+    const effectiveTargetName = compTargetName || targetName
 
     // Check if this component is imported
     if (!hasNamedImport(imports, componentName)) {
@@ -303,9 +341,20 @@ function main(fileInfo, api, options = {}) {
     })
 
     if (jsxElements.length) {
-      const elementStyles = transformElements(jsxElements, targetName, staticProps, mappings, j)
+      const { elementStyles, usedTokenHelpers } = transformElements(
+        jsxElements,
+        effectiveTargetName,
+        componentName,
+        staticProps,
+        mappings,
+        j,
+      )
       allElementStyles.push(...elementStyles)
+      for (const helper of usedTokenHelpers) {
+        allUsedTokenHelpers.add(helper)
+      }
       removeNamedImport(imports, componentName, j)
+      usedTargetNames.add(effectiveTargetName)
       transformed = true
     }
   })
@@ -315,8 +364,15 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  // Add target import
-  addNamedImport(root, targetImport, targetName, j)
+  // Add imports for all used target components
+  usedTargetNames.forEach((name) => {
+    addNamedImport(root, targetImport, name, j)
+  })
+
+  // Add token helper imports
+  allUsedTokenHelpers.forEach((helper) => {
+    addNamedImport(root, '@org/aurora', helper, j)
+  })
 
   // Add StyleSheet if we have styles
   addStyleSheet(root, allElementStyles, j)

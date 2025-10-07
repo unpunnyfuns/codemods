@@ -19,8 +19,8 @@
  * - targetName: The new component name (default: 'Stack')
  */
 
-import migrateNbComponent from './migrate-nb-component.js'
 import * as stackProps from './mappings/stack-props.js'
+import migrateNbComponent from './migrate-nb-component.js'
 
 function main(fileInfo, api, options = {}) {
   return migrateNbComponent(fileInfo, api, {

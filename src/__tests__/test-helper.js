@@ -9,11 +9,15 @@ import jscodeshift from 'jscodeshift'
  * before comparison, making tests resilient to formatting differences
  */
 function normalizeWithBiome(code) {
-  const result = execSync('pnpm biome format --stdin-file-path=test.tsx', {
-    input: code,
-    encoding: 'utf8',
-  })
-  return result
+  try {
+    const result = execSync('npx biome check --write --stdin-file-path=test.tsx', {
+      input: code,
+      encoding: 'utf8',
+    })
+    return result
+  } catch {
+    return code
+  }
 }
 
 /**

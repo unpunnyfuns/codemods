@@ -5,13 +5,13 @@ import { StyleSheet } from 'react-native'
 export function MyComponent() {
   return (
     <>
-      <Stack direction="row" style={styles.stack0}>
+      <Stack direction="row" style={styles.hstack0}>
         <SomeOtherComponent />
       </Stack>
-      <Stack direction="row" style={styles.stack1}>
+      <Stack direction="row" style={styles.hstack1}>
         <SomeOtherComponent />
       </Stack>
-      <Stack direction="row" style={styles.stack2}>
+      <Stack direction="row" style={styles.hstack2}>
         <SomeOtherComponent />
       </Stack>
     </>
@@ -19,18 +19,18 @@ export function MyComponent() {
 }
 
 const styles = StyleSheet.create({
-  stack0: {
+  hstack0: {
     gap: 2,
     margin: 4,
   },
 
-  stack1: {
+  hstack1: {
     marginTop: 8,
     paddingHorizontal: 3,
     paddingVertical: 2,
   },
 
-  stack2: {
+  hstack2: {
     marginHorizontal: 5,
     marginBottom: 1,
   },

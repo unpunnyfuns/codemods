@@ -1,5 +1,4 @@
-import { Box, Button } from '@org/common/src/components/native-base'
-import { Typography } from '@org/common/src/components/native-base'
+import { Box, Button, Typography } from '@org/common/src/components/native-base'
 import { SomeOtherComponent } from '@org/common/src/other'
 
 export function MyComponent() {

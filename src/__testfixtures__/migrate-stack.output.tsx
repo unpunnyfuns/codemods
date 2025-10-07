@@ -1,3 +1,4 @@
+import { radius } from '@org/aurora'
 import { SomeOtherComponent } from '@org/common/src/other'
 import { Stack } from 'aurora'
 import { StyleSheet } from 'react-native'
@@ -5,18 +6,13 @@ import { StyleSheet } from 'react-native'
 export function MyComponent() {
   return (
     <>
-      <Stack rounded="md" alignItems="flex-start" direction="row" style={styles.stack0}>
+      <Stack direction="row" style={styles.hstack0}>
         <SomeOtherComponent />
       </Stack>
-      <Stack
-        testID="test-stack"
-        justifyContent="space-between"
-        direction="row"
-        style={styles.stack1}
-      >
+      <Stack testID="test-stack" direction="row" style={styles.hstack1}>
         <SomeOtherComponent />
       </Stack>
-      <Stack onPress={() => {}} reverse={true} direction="row" style={styles.stack2}>
+      <Stack onPress={() => {}} reverse={true} direction="row" style={styles.hstack2}>
         <SomeOtherComponent />
       </Stack>
     </>
@@ -24,18 +20,21 @@ export function MyComponent() {
 }
 
 const styles = StyleSheet.create({
-  stack0: {
+  hstack0: {
     gap: 2,
     margin: 4,
+    alignItems: 'flex-start',
+    borderRadius: radius('md'),
   },
 
-  stack1: {
+  hstack1: {
     marginTop: 8,
     paddingHorizontal: 3,
     paddingVertical: 2,
+    justifyContent: 'space-between',
   },
 
-  stack2: {
+  hstack2: {
     marginHorizontal: 5,
     marginBottom: 1,
   },

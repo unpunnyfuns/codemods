@@ -1,0 +1,22 @@
+/**
+ * NativeBase theme system props to DROP during migration
+ *
+ * These props are specific to NativeBase's theming system and don't directly
+ * map to Aurora's component API. Users need to manually migrate these to
+ * Aurora's equivalent props/patterns.
+ */
+
+/**
+ * Theme props found across multiple components
+ * These control the visual variant/style of components
+ */
+export const THEME_PROPS = [
+  'colorScheme', // NativeBase color theme key (e.g., 'primary', 'secondary', 'blue')
+  'variant', // Component variant (e.g., 'solid', 'outline', 'ghost', 'link')
+  'size', // Component size token (e.g., 'xs', 'sm', 'md', 'lg', 'xl')
+]
+
+/**
+ * ALL theme props to drop
+ */
+export const ALL_THEME_PROPS = THEME_PROPS

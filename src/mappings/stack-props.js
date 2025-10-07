@@ -1,59 +1,42 @@
 /**
  * Prop mappings for Stack component (HStack/VStack) migration
  *
- * Note: Currently only handles prop name mapping. For value transformation
- * (e.g., align="start" → alignItems="flex-start"), enhance migrate-nb-component
- * to support value mappings in TRANSFORM_PROPS.
+ * Supports:
+ * - Prop name mapping (align → alignItems)
+ * - Value transformation (align="start" → alignItems="flex-start")
+ * - Token helpers (e.g., space={2} → gap: spacing(2))
  */
 
-import * as commonStyleProps from './common-style-props.js'
 import * as commonDirectProps from './common-direct-props.js'
 import * as commonDropProps from './common-drop-props.js'
+import * as commonStyleProps from './common-style-props.js'
+import * as commonValueMaps from './common-value-maps.js'
 
-// STYLE_PROPS: Extracted to StyleSheet with optional value mapping
+// STYLE_PROPS: Extracted to StyleSheet with value mapping where needed
 export const STYLE_PROPS = {
   ...commonStyleProps.SPACING,
+  ...commonStyleProps.SIZING,
+  ...commonStyleProps.COLOR,
+  ...commonStyleProps.BORDER,
+  ...commonStyleProps.LAYOUT,
+  ...commonStyleProps.FLEXBOX,
+  ...commonStyleProps.POSITION,
+  ...commonStyleProps.EXTRA,
 
-  // Space with optional value mapping for token scales
-  // Uncomment and customize when Aurora tokens are available
-  // space: {
-  //   styleName: 'gap',
-  //   valueMap: {
-  //     1: 4,   // NativeBase space={1} → Aurora gap: 4
-  //     2: 8,   // NativeBase space={2} → Aurora gap: 8
-  //     3: 12,
-  //     4: 16,
-  //   }
-  // },
-
-  // Using simple mapping for now (no value transformation)
-  space: 'gap',
-}
-
-// TRANSFORM_PROPS: Renamed on element with optional value mapping
-export const TRANSFORM_PROPS = {
+  // Stack-specific props with value mapping
   align: {
-    propName: 'alignItems',
-    valueMap: {
-      start: 'flex-start',
-      end: 'flex-end',
-      center: 'center',
-      stretch: 'stretch',
-      baseline: 'baseline',
-    },
+    styleName: 'alignItems',
+    valueMap: commonValueMaps.ALIGN_VALUES,
   },
   justify: {
-    propName: 'justifyContent',
-    valueMap: {
-      start: 'flex-start',
-      end: 'flex-end',
-      center: 'center',
-      between: 'space-between',
-      around: 'space-around',
-      evenly: 'space-evenly',
-    },
+    styleName: 'justifyContent',
+    valueMap: commonValueMaps.JUSTIFY_VALUES,
   },
-  reversed: 'reverse',
+}
+
+// TRANSFORM_PROPS: Renamed on element (for props that can't go in StyleSheet)
+export const TRANSFORM_PROPS = {
+  reversed: 'reverse', // React Native specific prop, stays on element
 }
 
 // DIRECT_PROPS: Passed through unchanged
