@@ -6,25 +6,25 @@ Defines which props to extract to StyleSheet, transform, pass through, or drop d
 
 ## Structure
 
-| File                                | Purpose                                                       |
-| ----------------------------------- | ------------------------------------------------------------- |
-| **Common Modules** (`common/`)      |                                                               |
-| `common/common-style-props.js`      | Reusable style prop mappings (spacing, sizing, colors, etc.)  |
-| `common/common-direct-props.js`     | Props passed through unchanged (events, accessibility)        |
-| `common/common-drop-props.js`       | Props to remove (pseudo-props, theme overrides)               |
-| `common/common-value-maps.js`       | Value transformations (align, justify)                        |
-| `common/common-pseudo-props.js`     | NativeBase pseudo-prop definitions (\_hover, \_pressed, etc.) |
-| `common/common-theme-props.js`      | NativeBase theme system props (colorScheme, variant)          |
-| **Component Mappings**       |                                                               |
-| `box-props.js`               | Box component prop mappings                                   |
-| `stack-props.js`             | Stack (HStack/VStack) component prop mappings                 |
-| `pressable-props.js`         | Pressable component prop mappings                             |
-| `button-props.js`            | Button component prop mappings                                |
-| `switch-props.js`            | Switch component prop mappings                                |
-| `avatar-props.js`            | Avatar component prop mappings                                |
-| **Reference**                |                                                               |
-| `color-mappings.js`          | NativeBase → Nordlys color token mappings                     |
-| `nativebase-styled-props.js` | Complete NativeBase styled-system reference                   |
+| File                            | Purpose                                                       |
+| ------------------------------- | ------------------------------------------------------------- |
+| **Common Modules** (`common/`)  |                                                               |
+| `common/common-style-props.js`  | Reusable style prop mappings (spacing, sizing, colors, etc.)  |
+| `common/common-direct-props.js` | Props passed through unchanged (events, accessibility)        |
+| `common/common-drop-props.js`   | Props to remove (pseudo-props, theme overrides)               |
+| `common/common-value-maps.js`   | Value transformations (align, justify)                        |
+| `common/common-pseudo-props.js` | NativeBase pseudo-prop definitions (\_hover, \_pressed, etc.) |
+| `common/common-theme-props.js`  | NativeBase theme system props (colorScheme, variant)          |
+| **Component Mappings**          |                                                               |
+| `box-props.js`                  | Box component prop mappings                                   |
+| `stack-props.js`                | Stack (HStack/VStack) component prop mappings                 |
+| `pressable-props.js`            | Pressable component prop mappings                             |
+| `button-props.js`               | Button component prop mappings                                |
+| `switch-props.js`               | Switch component prop mappings                                |
+| `avatar-props.js`               | Avatar component prop mappings                                |
+| **Reference**                   |                                                               |
+| `color-mappings.js`             | NativeBase → Nordlys color token mappings                     |
+| `nativebase-styled-props.js`    | Complete NativeBase styled-system reference                   |
 
 ## Mapping Format
 
@@ -384,14 +384,7 @@ TRANSFORM_PROPS = {
   isDisabled: "disabled",
 };
 
-DIRECT_PROPS = [
-  "size",
-  "variant",
-  "onPress",
-  "testID",
-  "isLoading",
-  "type",
-];
+DIRECT_PROPS = ["size", "variant", "onPress", "testID", "isLoading", "type"];
 
 DROP_PROPS = [
   ...commonDropProps.COMMON,
