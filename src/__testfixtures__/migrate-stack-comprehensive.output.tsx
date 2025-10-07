@@ -8,11 +8,11 @@ export function ComprehensiveExample() {
   return (
     <>
       {/* Test multi-property expansion with tokens */}
-      <Stack direction='vertical' style={styles.vstack0}>
+      <Stack gap="md" direction='vertical' style={styles.vstack0}>
         <SomeOtherComponent />
       </Stack>
       {/* Test marginX/marginY expansion */}
-      <Stack direction='horizontal' style={styles.hstack0}>
+      <Stack gap="sm" direction='horizontal' style={styles.hstack0}>
         <SomeOtherComponent />
       </Stack>
       {/* Test flexbox props */}
@@ -48,8 +48,7 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     marginRight: 4,
     marginTop: 2,
-    marginBottom: 2,
-    gap: "sm"
+    marginBottom: 2
   },
 
   hstack1: {
@@ -83,8 +82,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: radius('md'),
     borderBottomRightRadius: radius('md'),
     width: "full",
-    height: "full",
-    gap: "md"
+    height: "full"
   },
 
   vstack1: {

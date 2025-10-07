@@ -47,7 +47,12 @@ echo "Running: $JSCODESHIFT -t $TRANSFORM_PATH $FILE_PATTERN $@"
 echo ""
 
 # Run jscodeshift with all remaining arguments passed through
-"$JSCODESHIFT" -t "$TRANSFORM_PATH" "$FILE_PATTERN" "$@"
+# For TypeScript files, add --parser=tsx if not already specified
+if [[ "$FILE_PATTERN" == *.tsx ]] && [[ ! "$@" =~ --parser ]]; then
+  "$JSCODESHIFT" -t "$TRANSFORM_PATH" "$FILE_PATTERN" --parser=tsx "$@"
+else
+  "$JSCODESHIFT" -t "$TRANSFORM_PATH" "$FILE_PATTERN" "$@"
+fi
 
 echo ""
 echo "Formatting with Biome..."

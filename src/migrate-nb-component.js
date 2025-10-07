@@ -238,32 +238,56 @@ function transformElements(jsxElements, targetName, sourceComponentName, staticP
   return { elementStyles, usedTokenHelpers: allUsedTokenHelpers }
 }
 
-// Create StyleSheet.create() at the end of the file
+// Create or extend StyleSheet.create() at the end of the file
 function addStyleSheet(root, elementStyles, j) {
   if (elementStyles.length === 0) return
 
-  // Build the styles object
-  const styleProperties = elementStyles.map(({ name, styles }) => {
+  // Build the new style properties
+  const newStyleProperties = elementStyles.map(({ name, styles }) => {
     const properties = Object.entries(styles).map(([key, value]) => {
       return j.property('init', j.identifier(key), value)
     })
     return j.property('init', j.identifier(name), j.objectExpression(properties))
   })
 
-  // Create: const styles = StyleSheet.create({ ... })
-  const styleSheetCall = j.variableDeclaration('const', [
-    j.variableDeclarator(
-      j.identifier('styles'),
-      j.callExpression(j.memberExpression(j.identifier('StyleSheet'), j.identifier('create')), [
-        j.objectExpression(styleProperties),
-      ]),
-    ),
-  ])
-
-  // Add to the end of the file
-  root.find(j.Program).forEach((path) => {
-    path.node.body.push(styleSheetCall)
+  // Check if there's already a StyleSheet.create() call assigned to 'styles'
+  const existingStyleSheet = root.find(j.VariableDeclarator, {
+    id: { name: 'styles' },
+    init: {
+      type: 'CallExpression',
+      callee: {
+        type: 'MemberExpression',
+        object: { name: 'StyleSheet' },
+        property: { name: 'create' },
+      },
+    },
   })
+
+  if (existingStyleSheet.length > 0) {
+    // Extend existing StyleSheet.create()
+    existingStyleSheet.forEach((path) => {
+      const createCallArgs = path.node.init.arguments
+      if (createCallArgs.length > 0 && createCallArgs[0].type === 'ObjectExpression') {
+        // Add new properties to existing object
+        createCallArgs[0].properties.push(...newStyleProperties)
+      }
+    })
+  } else {
+    // Create new StyleSheet.create()
+    const styleSheetCall = j.variableDeclaration('const', [
+      j.variableDeclarator(
+        j.identifier('styles'),
+        j.callExpression(j.memberExpression(j.identifier('StyleSheet'), j.identifier('create')), [
+          j.objectExpression(newStyleProperties),
+        ]),
+      ),
+    ])
+
+    // Add to the end of the file
+    root.find(j.Program).forEach((path) => {
+      path.node.body.push(styleSheetCall)
+    })
+  }
 
   // Add StyleSheet import from react-native
   addNamedImport(root, 'react-native', 'StyleSheet', j)

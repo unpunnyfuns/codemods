@@ -6,7 +6,7 @@ import { StyleSheet } from 'react-native';
 export function MyComponent() {
   return (
     <>
-      <Stack direction='horizontal' style={styles.hstack0}>
+      <Stack gap={2} direction='horizontal' style={styles.hstack0}>
         <SomeOtherComponent />
       </Stack>
       <Stack testID="test-stack" direction='horizontal' style={styles.hstack1}>
@@ -21,7 +21,6 @@ export function MyComponent() {
 
 const styles = StyleSheet.create({
   hstack0: {
-    gap: 2,
     margin: 4,
     alignItems: 'flex-start',
     borderRadius: radius('md')
