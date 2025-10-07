@@ -1,0 +1,147 @@
+/**
+ * Migrate NativeBase/Common Switch → Nordlys Switch
+ *
+ * Key differences:
+ * - isChecked → value
+ * - onToggle → onValueChange
+ * - isDisabled → disabled
+ * - children wrapped in <Switch.Label>
+ * - label prop becomes <Switch.Description>
+ *
+ * Before:
+ * <Switch label="Label" isChecked={bool} onToggle={fn}>
+ *   Description text
+ * </Switch>
+ *
+ * After:
+ * <Switch value={bool} onValueChange={fn}>
+ *   <Switch.Label>Description text</Switch.Label>
+ *   <Switch.Description>Label</Switch.Description>
+ * </Switch>
+ */
+
+import { toFormattedSource } from './utils/formatting.js'
+import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
+
+function main(fileInfo, api, options = {}) {
+  const j = api.jscodeshift
+  const root = j(fileInfo.source)
+
+  const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
+  const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Switch'
+
+  // Find imports
+  const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
+  if (!imports.length || !hasNamedImport(imports, 'Switch')) return fileInfo.source
+
+  // Find all Switch elements
+  const switchElements = root.find(j.JSXElement, { openingElement: { name: { name: 'Switch' } } })
+  if (switchElements.length === 0) return fileInfo.source
+
+  // Transform each Switch element
+  switchElements.forEach((path) => {
+    const attributes = path.node.openingElement.attributes || []
+    const children = path.node.children || []
+
+    // Extract props to transform
+    let labelProp = null
+    const propsToKeep = []
+    const propsToRemove = []
+
+    attributes.forEach((attr) => {
+      if (attr.type !== 'JSXAttribute') {
+        propsToKeep.push(attr)
+        return
+      }
+      if (!attr.name || attr.name.type !== 'JSXIdentifier') {
+        propsToKeep.push(attr)
+        return
+      }
+
+      const propName = attr.name.name
+
+      // Transform prop names
+      if (propName === 'isChecked') {
+        attr.name.name = 'value'
+        propsToKeep.push(attr)
+      } else if (propName === 'onToggle') {
+        attr.name.name = 'onValueChange'
+        propsToKeep.push(attr)
+      } else if (propName === 'isDisabled') {
+        attr.name.name = 'disabled'
+        propsToKeep.push(attr)
+      }
+      // Extract label for later
+      else if (propName === 'label') {
+        labelProp = attr.value
+        propsToRemove.push(attr)
+      }
+      // Drop these props
+      else if (
+        ['switchPosition', 'hStackProps', 'childrenProps', 'labelProps', 'LeftElement'].includes(
+          propName,
+        )
+      ) {
+        propsToRemove.push(attr)
+      }
+      // Keep everything else
+      else {
+        propsToKeep.push(attr)
+      }
+    })
+
+    // Remove dropped props
+    propsToRemove.forEach((attr) => {
+      const index = attributes.indexOf(attr)
+      if (index > -1) attributes.splice(index, 1)
+    })
+
+    // Update attributes
+    path.node.openingElement.attributes = propsToKeep
+
+    // Transform children: wrap in <Switch.Label>
+    const labelElement = j.jsxElement(
+      j.jsxOpeningElement(
+        j.jsxMemberExpression(j.jsxIdentifier('Switch'), j.jsxIdentifier('Label')),
+        [],
+      ),
+      j.jsxClosingElement(
+        j.jsxMemberExpression(j.jsxIdentifier('Switch'), j.jsxIdentifier('Label')),
+      ),
+      children,
+    )
+
+    const newChildren = [j.jsxText('\n  '), labelElement]
+
+    // Add <Switch.Description> if label prop exists
+    if (labelProp) {
+      const descriptionValue =
+        labelProp.type === 'JSXExpressionContainer'
+          ? [j.jsxExpressionContainer(labelProp.expression)]
+          : [j.jsxText(labelProp.value)]
+
+      const descriptionElement = j.jsxElement(
+        j.jsxOpeningElement(
+          j.jsxMemberExpression(j.jsxIdentifier('Switch'), j.jsxIdentifier('Description')),
+          [],
+        ),
+        j.jsxClosingElement(
+          j.jsxMemberExpression(j.jsxIdentifier('Switch'), j.jsxIdentifier('Description')),
+        ),
+        descriptionValue,
+      )
+      newChildren.push(j.jsxText('\n  '), descriptionElement)
+    }
+
+    newChildren.push(j.jsxText('\n'))
+    path.node.children = newChildren
+  })
+
+  // Update imports
+  removeNamedImport(imports, 'Switch', j)
+  addNamedImport(root, targetImport, 'Switch', j)
+
+  return toFormattedSource(root)
+}
+
+export default main
