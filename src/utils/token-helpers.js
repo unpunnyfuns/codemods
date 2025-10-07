@@ -24,11 +24,11 @@ export function buildNestedMemberExpression(j, tokenHelper, path) {
 
   // Build nested member expressions for each part
   for (const part of parts) {
-    // Check if part is numeric (needs bracket notation)
-    const isNumeric = /^\d/.test(part)
+    // Check if part requires bracket notation (starts with digit, dash, or contains special chars)
+    const needsBracketNotation = /^[\d-]/.test(part) || !/^[a-zA-Z_$][\w$]*$/.test(part)
 
-    if (isNumeric) {
-      // Use computed member expression: obj['123']
+    if (needsBracketNotation) {
+      // Use computed member expression: obj['-1'] or obj['900']
       expression = j.memberExpression(expression, j.stringLiteral(part), true)
     } else {
       // Use dot notation: obj.prop
