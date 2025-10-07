@@ -9,7 +9,6 @@
  * const styles = StyleSheet.create({ pressable0: { backgroundColor: color.blue['500'], padding: 4 } })
  */
 
-import * as pressableProps from "./mappings/pressable-props.js";
 import {
   addNamedImport,
   hasNamedImport,
@@ -23,6 +22,42 @@ import {
   updateElementName,
 } from "./utils/jsx-transforms.js";
 import { addOrExtendStyleSheet, categorizeProps } from "./utils/props.js";
+import * as commonDirectProps from './mappings/direct-props.js'
+import * as commonDropProps from './mappings/drop-props.js'
+import * as commonStyleProps from './mappings/style-props.js'
+
+// Pressable prop mappings
+const STYLE_PROPS = {
+  ...commonStyleProps.SPACING,
+  ...commonStyleProps.SIZING,
+  ...commonStyleProps.COLOR,
+  ...commonStyleProps.BORDER,
+  ...commonStyleProps.LAYOUT,
+  ...commonStyleProps.FLEXBOX,
+  ...commonStyleProps.POSITION,
+  ...commonStyleProps.EXTRA,
+}
+
+const TRANSFORM_PROPS = {}
+
+const DIRECT_PROPS = [
+  ...commonDirectProps.COMMON,
+  'onPress',
+  'onPressIn',
+  'onPressOut',
+  'onLongPress',
+  'disabled',
+  'hitSlop',
+  'pressRetentionOffset',
+  'android_disableSound',
+  'android_ripple',
+  'unstable_pressDelay',
+]
+
+const DROP_PROPS = [
+  ...commonDropProps.COMMON,
+  'isDisabled',
+]
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift;
@@ -48,6 +83,8 @@ function main(fileInfo, api, options = {}) {
 
   const elementStyles = [];
   const usedTokenHelpers = new Set();
+
+  const pressableProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
 
   // Transform each Pressable element
   pressableElements.forEach((path, index) => {

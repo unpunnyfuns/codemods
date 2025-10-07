@@ -18,8 +18,39 @@
  * // Warning: Avatar with letters prop cannot be migrated (not supported in Nordlys)
  */
 
-import * as avatarProps from './mappings/avatar-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
+
+// Avatar prop mappings
+const STYLE_PROPS = {}
+
+const TRANSFORM_PROPS = {}
+
+const DIRECT_PROPS = [
+  'size',
+  'testID',
+  'accessibilityLabel',
+]
+
+const DROP_PROPS = [
+  'iconName',
+  'imageUri',
+  'imageSource',
+  'letters',
+  'lettersColor',
+  'bgColor',
+  'bg',
+  'isSecondaryColor',
+  'placeholder',
+  'resizeMode',
+  'source',
+  'w',
+  'h',
+  'width',
+  'height',
+  '_hover',
+  '_pressed',
+  '_focus',
+]
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -58,8 +89,6 @@ function main(fileInfo, api, options = {}) {
     const propsToRemove = []
 
     // Process attributes using mappings
-    const { DIRECT_PROPS, DROP_PROPS } = avatarProps
-
     // First pass: collect values and categorize
     attributes.forEach((attr) => {
       if (attr.type !== 'JSXAttribute') {

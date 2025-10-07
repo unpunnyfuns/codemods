@@ -8,7 +8,6 @@
  * <Stack direction="vertical" gap={space[4]}>{children}</Stack>
  */
 
-import * as stackProps from './mappings/stack-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import {
   addPropsToElement,
@@ -18,6 +17,49 @@ import {
   updateElementName,
 } from './utils/jsx-transforms.js'
 import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
+import * as commonDirectProps from './mappings/direct-props.js'
+import * as commonDropProps from './mappings/drop-props.js'
+import * as commonStyleProps from './mappings/style-props.js'
+import * as commonValueMaps from './mappings/value-maps.js'
+
+// Stack prop mappings
+const STYLE_PROPS = {
+  ...commonStyleProps.SPACING,
+  ...commonStyleProps.SIZING,
+  ...commonStyleProps.COLOR,
+  ...commonStyleProps.BORDER,
+  ...commonStyleProps.LAYOUT,
+  ...commonStyleProps.FLEXBOX,
+  ...commonStyleProps.POSITION,
+  ...commonStyleProps.EXTRA,
+
+  // Stack-specific props with value mapping
+  align: {
+    styleName: 'alignItems',
+    valueMap: commonValueMaps.ALIGN_VALUES,
+  },
+  justify: {
+    styleName: 'justifyContent',
+    valueMap: commonValueMaps.JUSTIFY_VALUES,
+  },
+}
+
+// Remove space from STYLE_PROPS since it should stay on element
+delete STYLE_PROPS.space
+
+const TRANSFORM_PROPS = {
+  space: 'gap',
+}
+
+const DIRECT_PROPS = commonDirectProps.COMMON
+
+const DROP_PROPS = [
+  ...commonDropProps.COMMON,
+  'divider',
+  'reversed',
+  '_text',
+  '_stack',
+]
 
 const STACK_COMPONENTS = [
   { name: 'HStack', direction: 'horizontal' },
@@ -40,6 +82,8 @@ function main(fileInfo, api, options = {}) {
   let transformed = false
   const elementStyles = []
   const usedTokenHelpers = new Set()
+
+  const stackProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
 
   // Process each stack component type
   STACK_COMPONENTS.forEach(({ name: componentName, direction }) => {

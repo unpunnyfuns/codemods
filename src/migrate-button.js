@@ -34,9 +34,39 @@
  * - Both icon and children are missing (icon-only not supported in migration)
  */
 
-import * as buttonProps from './mappings/button-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import { extractPropFromJSXElement, extractSimpleChild } from './utils/jsx-extraction.js'
+import * as commonDropProps from './mappings/drop-props.js'
+
+// Button prop mappings
+const STYLE_PROPS = {}
+
+const TRANSFORM_PROPS = {
+  isDisabled: 'disabled',
+}
+
+const DIRECT_PROPS = [
+  'size',
+  'variant',
+  'onPress',
+  'testID',
+  'isLoading',
+  'type',
+]
+
+const DROP_PROPS = [
+  ...commonDropProps.COMMON,
+  'leftIcon',
+  'rightIcon',
+  '_text',
+  '_loading',
+  'm', 'mt', 'mb', 'ml', 'mr', 'mx', 'my',
+  'p', 'pt', 'pb', 'pl', 'pr', 'px', 'py',
+  'w', 'h', 'width', 'height',
+  'bg', 'bgColor', 'backgroundColor',
+  'borderRadius', 'rounded',
+  'borderWidth', 'borderColor',
+]
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -113,8 +143,6 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Process attributes using mappings
-    const { TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS } = buttonProps
-
     attributes.forEach((attr) => {
       if (attr.type !== 'JSXAttribute') {
         propsToKeep.push(attr)

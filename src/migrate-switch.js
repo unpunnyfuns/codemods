@@ -20,8 +20,38 @@
  * </Switch>
  */
 
-import * as switchProps from './mappings/switch-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
+
+// Switch prop mappings
+const STYLE_PROPS = {}
+
+const TRANSFORM_PROPS = {
+  isChecked: 'value',
+  onToggle: 'onValueChange',
+  isDisabled: 'disabled',
+}
+
+const DIRECT_PROPS = [
+  'testID',
+  'accessibilityLabel',
+  'accessibilityHint',
+]
+
+const DROP_PROPS = [
+  'label',
+  'switchPosition',
+  'hStackProps',
+  'childrenProps',
+  'labelProps',
+  'LeftElement',
+  '_hover',
+  '_pressed',
+  '_disabled',
+  '_focus',
+  '_invalid',
+  '_checked',
+  '_indeterminate',
+]
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -49,8 +79,6 @@ function main(fileInfo, api, options = {}) {
     const propsToRemove = []
 
     // Process attributes using mappings
-    const { TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS } = switchProps
-
     attributes.forEach((attr) => {
       if (attr.type !== 'JSXAttribute') {
         propsToKeep.push(attr)

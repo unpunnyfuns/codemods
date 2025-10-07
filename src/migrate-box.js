@@ -7,7 +7,6 @@
  * const styles = StyleSheet.create({ box0: { backgroundColor: color.blue['500'], padding: 4, margin: 2, borderRadius: radius.md } })
  */
 
-import * as boxProps from './mappings/box-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import {
   addPropsToElement,
@@ -17,6 +16,42 @@ import {
   updateElementName,
 } from './utils/jsx-transforms.js'
 import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
+import * as commonDirectProps from './mappings/direct-props.js'
+import * as commonDropProps from './mappings/drop-props.js'
+import * as commonStyleProps from './mappings/style-props.js'
+
+// Box → View prop mappings
+const STYLE_PROPS = {
+  ...commonStyleProps.SPACING,
+  ...commonStyleProps.SIZING,
+  ...commonStyleProps.LAYOUT,
+  ...commonStyleProps.BORDER,
+
+  // Color/Background props with color token helper
+  bgColor: { styleName: 'backgroundColor', tokenHelper: 'color' },
+  bg: { styleName: 'backgroundColor', tokenHelper: 'color' },
+  backgroundColor: { styleName: 'backgroundColor', tokenHelper: 'color' },
+
+  // Border colors
+  borderColor: { styleName: 'borderColor', tokenHelper: 'color' },
+  borderTopColor: { styleName: 'borderTopColor', tokenHelper: 'color' },
+  borderBottomColor: { styleName: 'borderBottomColor', tokenHelper: 'color' },
+  borderLeftColor: { styleName: 'borderLeftColor', tokenHelper: 'color' },
+  borderRightColor: { styleName: 'borderRightColor', tokenHelper: 'color' },
+}
+
+const TRANSFORM_PROPS = {}
+
+const DIRECT_PROPS = [
+  ...commonDirectProps.COMMON,
+  'safeAreaBottom',
+]
+
+const DROP_PROPS = [
+  ...commonDropProps.COMMON,
+  'disableTopRounding',
+  'disableBottomRounding',
+]
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -36,6 +71,8 @@ function main(fileInfo, api, options = {}) {
 
   const elementStyles = []
   const usedTokenHelpers = new Set()
+
+  const boxProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
 
   // Transform each Box element
   boxElements.forEach((path, index) => {
