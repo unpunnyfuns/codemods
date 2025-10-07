@@ -1,6 +1,5 @@
-import { Typography } from '@hb-frontend/common/src/components'
-
 import { Switch } from '@hb-frontend/app/src/components/nordlys/Switch'
+import { Typography } from '@hb-frontend/common/src/components'
 
 export function MyComponent() {
   return (
