@@ -18,20 +18,11 @@ export function MyComponent() {
         {t('addNew')}
       </Button>
 
-      <Button
-        variant="primary"
-        size="lg"
-        onPress={() => {}}
-        isDisabled
-      >
+      <Button variant="primary" size="lg" onPress={() => {}} isDisabled>
         Simple text
       </Button>
 
-      <Button
-        variant="secondary"
-        size="md"
-        onPress={() => {}}
-      >
+      <Button variant="secondary" size="md" onPress={() => {}}>
         {text}
       </Button>
     </>

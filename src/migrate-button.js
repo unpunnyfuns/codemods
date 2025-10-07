@@ -36,71 +36,7 @@
 
 import { toFormattedSource } from './utils/formatting.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
-
-function extractIconName(iconElement, j) {
-  if (!iconElement || iconElement.type !== 'JSXElement') return null
-
-  const openingElement = iconElement.openingElement
-  if (!openingElement || !openingElement.name || openingElement.name.name !== 'Icon') return null
-
-  const nameAttr = openingElement.attributes.find(
-    attr => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'name'
-  )
-
-  if (!nameAttr) return null
-
-  // Handle both string literals (Literal in JSX) and expression containers
-  if (nameAttr.value.type === 'Literal' || nameAttr.value.type === 'StringLiteral') {
-    return nameAttr.value.value
-  } else if (nameAttr.value.type === 'JSXExpressionContainer') {
-    return nameAttr.value.expression
-  }
-
-  return null
-}
-
-function extractTextFromChildren(children, j) {
-  // Filter out whitespace-only text nodes
-  const significantChildren = children.filter(child => {
-    if (child.type === 'JSXText') {
-      return child.value.trim().length > 0
-    }
-    return true
-  })
-
-  if (significantChildren.length === 0) return null
-  if (significantChildren.length > 1) return { complex: true }
-
-  const child = significantChildren[0]
-
-  // Simple string literal
-  if (child.type === 'JSXText') {
-    return j.stringLiteral(child.value.trim())
-  }
-
-  // Expression container with simple expression
-  if (child.type === 'JSXExpressionContainer') {
-    const expr = child.expression
-
-    // Identifier, call expression, member expression are all fine
-    if (expr.type === 'Identifier' ||
-        expr.type === 'CallExpression' ||
-        expr.type === 'MemberExpression' ||
-        expr.type === 'StringLiteral') {
-      return expr
-    }
-
-    // Complex expressions
-    return { complex: true }
-  }
-
-  // JSX elements are complex
-  if (child.type === 'JSXElement') {
-    return { complex: true }
-  }
-
-  return null
-}
+import { extractPropFromJSXElement, extractSimpleChild } from './utils/jsx-extraction.js'
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -119,9 +55,9 @@ function main(fileInfo, api, options = {}) {
     openingElement: {
       name: {
         type: 'JSXIdentifier',
-        name: 'Button'
-      }
-    }
+        name: 'Button',
+      },
+    },
   })
 
   if (buttonElements.length === 0) return fileInfo.source
@@ -142,20 +78,26 @@ function main(fileInfo, api, options = {}) {
 
     // Extract leftIcon
     const leftIconAttr = attributes.find(
-      attr => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'leftIcon'
+      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'leftIcon',
     )
 
-    if (leftIconAttr && leftIconAttr.value && leftIconAttr.value.type === 'JSXExpressionContainer') {
-      const iconName = extractIconName(leftIconAttr.value.expression, j)
+    if (
+      leftIconAttr &&
+      leftIconAttr.value &&
+      leftIconAttr.value.type === 'JSXExpressionContainer'
+    ) {
+      const iconName = extractPropFromJSXElement(leftIconAttr.value.expression, 'Icon', 'name', j)
       if (iconName) {
         iconValue = typeof iconName === 'string' ? j.stringLiteral(iconName) : iconName
       }
     }
 
     // Extract text from children
-    const extractedText = extractTextFromChildren(children, j)
-    if (extractedText && extractedText.complex) {
-      warnings.push('Button with complex children cannot be automatically migrated - requires manual conversion')
+    const { value: extractedText, isComplex } = extractSimpleChild(children, j)
+    if (isComplex) {
+      warnings.push(
+        'Button with complex children cannot be automatically migrated - requires manual conversion',
+      )
       skipped++
       return
     }
@@ -163,7 +105,9 @@ function main(fileInfo, api, options = {}) {
 
     // Check if we have neither icon nor text (icon-only buttons)
     if (!iconValue && !textValue) {
-      warnings.push('Button without text or icon cannot be migrated (icon-only requires manual setup)')
+      warnings.push(
+        'Button without text or icon cannot be migrated (icon-only requires manual setup)',
+      )
       skipped++
       return
     }
@@ -191,17 +135,52 @@ function main(fileInfo, api, options = {}) {
         propsToKeep.push(attr)
       }
       // Drop these props
-      else if (['leftIcon', 'rightIcon', '_text', '_hover', '_pressed', '_disabled', '_loading'].includes(propName)) {
+      else if (
+        ['leftIcon', 'rightIcon', '_text', '_hover', '_pressed', '_disabled', '_loading'].includes(
+          propName,
+        )
+      ) {
         propsToRemove.push(attr)
         if (propName === 'rightIcon') {
           warnings.push('Button rightIcon not supported in Nordlys - dropped')
         }
       }
       // Drop style props (margin, padding, etc)
-      else if (['m', 'mt', 'mb', 'ml', 'mr', 'mx', 'my', 'p', 'pt', 'pb', 'pl', 'pr', 'px', 'py',
-                 'margin', 'marginTop', 'marginBottom', 'marginLeft', 'marginRight',
-                 'padding', 'paddingTop', 'paddingBottom', 'paddingLeft', 'paddingRight',
-                 'w', 'h', 'width', 'height', 'bg', 'bgColor', 'backgroundColor'].includes(propName)) {
+      else if (
+        [
+          'm',
+          'mt',
+          'mb',
+          'ml',
+          'mr',
+          'mx',
+          'my',
+          'p',
+          'pt',
+          'pb',
+          'pl',
+          'pr',
+          'px',
+          'py',
+          'margin',
+          'marginTop',
+          'marginBottom',
+          'marginLeft',
+          'marginRight',
+          'padding',
+          'paddingTop',
+          'paddingBottom',
+          'paddingLeft',
+          'paddingRight',
+          'w',
+          'h',
+          'width',
+          'height',
+          'bg',
+          'bgColor',
+          'backgroundColor',
+        ].includes(propName)
+      ) {
         propsToRemove.push(attr)
       }
       // Keep unknown props
@@ -212,31 +191,22 @@ function main(fileInfo, api, options = {}) {
 
     // Add icon prop if extracted
     if (iconValue) {
-      const iconProp = j.jsxAttribute(
-        j.jsxIdentifier('icon'),
-        j.jsxExpressionContainer(iconValue)
-      )
+      const iconProp = j.jsxAttribute(j.jsxIdentifier('icon'), j.jsxExpressionContainer(iconValue))
       propsToKeep.push(iconProp)
     }
 
     // Add text prop if extracted
     if (textValue) {
-      const textProp = j.jsxAttribute(
-        j.jsxIdentifier('text'),
-        j.jsxExpressionContainer(textValue)
-      )
+      const textProp = j.jsxAttribute(j.jsxIdentifier('text'), j.jsxExpressionContainer(textValue))
       propsToKeep.push(textProp)
     }
 
     // Add required type prop if not present
     const hasType = propsToKeep.some(
-      attr => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'type'
+      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'type',
     )
     if (!hasType) {
-      const typeProp = j.jsxAttribute(
-        j.jsxIdentifier('type'),
-        j.stringLiteral(defaultType)
-      )
+      const typeProp = j.jsxAttribute(j.jsxIdentifier('type'), j.stringLiteral(defaultType))
       propsToKeep.push(typeProp)
     }
 
@@ -253,7 +223,7 @@ function main(fileInfo, api, options = {}) {
   if (warnings.length > 0) {
     console.warn(`⚠️  Button migration: ${migrated} migrated, ${skipped} skipped`)
     const uniqueWarnings = [...new Set(warnings)]
-    uniqueWarnings.forEach(w => console.warn(`   ${w}`))
+    uniqueWarnings.forEach((w) => console.warn(`   ${w}`))
   }
 
   // Update imports
