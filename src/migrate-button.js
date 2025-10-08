@@ -74,6 +74,7 @@ function main(fileInfo, api, options = {}) {
 
   const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
   const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Button'
+  const targetName = options.targetName || 'Button'
   const defaultType = options.defaultType || 'solid'
 
   // Find imports
@@ -216,7 +217,7 @@ function main(fileInfo, api, options = {}) {
 
   // Update imports
   removeNamedImport(imports, 'Button', j)
-  addNamedImport(root, targetImport, 'Button', j)
+  addNamedImport(root, targetImport, targetName, j)
 
   return root.toSource({
     quote: 'single',

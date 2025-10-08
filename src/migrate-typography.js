@@ -93,6 +93,7 @@ function main(fileInfo, api, options = {}) {
 
   const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
   const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Typography'
+  const targetName = options.targetName || 'Typography'
   const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
 
   // Find Typography imports
@@ -246,7 +247,7 @@ function main(fileInfo, api, options = {}) {
 
   // Update imports
   removeNamedImport(imports, 'Typography', j)
-  addNamedImport(root, targetImport, 'Typography', j)
+  addNamedImport(root, targetImport, targetName, j)
 
   // Add View and StyleSheet imports if we have styles
   if (elementStyles.length > 0) {

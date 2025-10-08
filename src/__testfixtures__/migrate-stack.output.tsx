@@ -1,5 +1,5 @@
 import { SomeOtherComponent } from '@org/common/src/other'
-import { Stack } from 'aurora';
+import { Stack } from '@hb-frontend/app/src/components/nordlys/';
 import { radius } from '@hb-frontend/nordlys';
 import { StyleSheet } from 'react-native';
 

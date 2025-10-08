@@ -58,6 +58,7 @@ function main(fileInfo, api, options = {}) {
 
   const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
   const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Avatar'
+  const targetName = options.targetName || 'Avatar'
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
@@ -195,7 +196,7 @@ function main(fileInfo, api, options = {}) {
 
   // Update imports
   removeNamedImport(imports, 'Avatar', j)
-  addNamedImport(root, targetImport, 'Avatar', j)
+  addNamedImport(root, targetImport, targetName, j)
 
   return root.toSource({
     quote: 'single',

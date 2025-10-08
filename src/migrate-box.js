@@ -59,6 +59,7 @@ function main(fileInfo, api, options = {}) {
 
   const sourceImport = options.sourceImport || 'native-base'
   const targetImport = options.targetImport || 'react-native'
+  const targetName = options.targetName || 'View'
   const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
 
   // Find imports
@@ -91,7 +92,7 @@ function main(fileInfo, api, options = {}) {
 
     // Transform element
     removePropsFromElement(attributes, propsToRemove)
-    updateElementName(path, 'View')
+    updateElementName(path, targetName)
     addPropsToElement(attributes, transformedProps, j)
 
     const styleValue = buildStyleValue(styleProps, inlineStyles, `box${index}`, elementStyles, j)
@@ -100,7 +101,7 @@ function main(fileInfo, api, options = {}) {
 
   // Update imports
   removeNamedImport(imports, 'Box', j)
-  addNamedImport(root, targetImport, 'View', j)
+  addNamedImport(root, targetImport, targetName, j)
   usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
 
   // Add StyleSheet

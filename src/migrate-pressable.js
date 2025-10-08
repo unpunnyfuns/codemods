@@ -66,6 +66,7 @@ function main(fileInfo, api, options = {}) {
   const sourceImport =
     options.sourceImport || "@hb-frontend/common/src/components";
   const targetImport = options.targetImport || "react-native";
+  const targetName = options.targetName || "Pressable";
   const tokenImport = options.tokenImport || "@hb-frontend/nordlys";
 
   // Find imports
@@ -134,7 +135,7 @@ function main(fileInfo, api, options = {}) {
 
   // Update imports
   removeNamedImport(imports, "Pressable", j);
-  addNamedImport(root, targetImport, "Pressable", j);
+  addNamedImport(root, targetImport, targetName, j);
   usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j));
 
   // Add StyleSheet

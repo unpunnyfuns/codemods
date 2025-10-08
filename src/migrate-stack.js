@@ -71,7 +71,7 @@ function main(fileInfo, api, options = {}) {
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport || 'react-native'
-  const targetImport = options.targetImport || 'aurora'
+  const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/'
   const targetName = options.targetName || 'Stack'
   const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
 

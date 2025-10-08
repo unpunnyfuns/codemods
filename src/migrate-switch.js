@@ -59,6 +59,7 @@ function main(fileInfo, api, options = {}) {
 
   const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
   const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Switch'
+  const targetName = options.targetName || 'Switch'
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
@@ -164,7 +165,7 @@ function main(fileInfo, api, options = {}) {
 
   // Update imports
   removeNamedImport(imports, 'Switch', j)
-  addNamedImport(root, targetImport, 'Switch', j)
+  addNamedImport(root, targetImport, targetName, j)
 
   return root.toSource({
     quote: 'single',
