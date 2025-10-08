@@ -34,39 +34,35 @@
  * - Both icon and children are missing (icon-only not supported in migration)
  */
 
+import * as commonDropProps from './mappings/drop-props.js'
+import * as commonStyleProps from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import { extractPropFromJSXElement, extractSimpleChild } from './utils/jsx-extraction.js'
-import * as commonDropProps from './mappings/drop-props.js'
+import { createViewWrapper } from './utils/jsx-transforms.js'
+import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
 
 // Button prop mappings
-const STYLE_PROPS = {}
+const STYLE_PROPS = {
+  ...commonStyleProps.SPACING,
+  ...commonStyleProps.SIZING,
+  ...commonStyleProps.COLOR,
+  ...commonStyleProps.BORDER,
+  ...commonStyleProps.LAYOUT,
+  ...commonStyleProps.FLEXBOX,
+  ...commonStyleProps.POSITION,
+  ...commonStyleProps.EXTRA,
+}
+
+// Remove size from STYLE_PROPS - it's a semantic Button prop, not a style prop
+delete STYLE_PROPS.size
 
 const TRANSFORM_PROPS = {
   isDisabled: 'disabled',
 }
 
-const DIRECT_PROPS = [
-  'size',
-  'variant',
-  'onPress',
-  'testID',
-  'isLoading',
-  'type',
-]
+const DIRECT_PROPS = ['size', 'variant', 'onPress', 'testID', 'isLoading', 'type']
 
-const DROP_PROPS = [
-  ...commonDropProps.COMMON,
-  'leftIcon',
-  'rightIcon',
-  '_text',
-  '_loading',
-  'm', 'mt', 'mb', 'ml', 'mr', 'mx', 'my',
-  'p', 'pt', 'pb', 'pl', 'pr', 'px', 'py',
-  'w', 'h', 'width', 'height',
-  'bg', 'bgColor', 'backgroundColor',
-  'borderRadius', 'rounded',
-  'borderWidth', 'borderColor',
-]
+const DROP_PROPS = [...commonDropProps.COMMON, 'leftIcon', 'rightIcon', '_text', '_loading']
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -75,7 +71,9 @@ function main(fileInfo, api, options = {}) {
   const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
   const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Button'
   const targetName = options.targetName || 'Button'
+  const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
   const defaultType = options.defaultType || 'solid'
+  const wrap = options.wrap !== false // Default: true (wrap in View when style props exist)
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
@@ -96,27 +94,24 @@ function main(fileInfo, api, options = {}) {
   const warnings = []
   let migrated = 0
   let skipped = 0
+  const elementStyles = []
+  const usedTokenHelpers = new Set()
+  const buttonProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
 
   // Transform each Button element
-  buttonElements.forEach((path) => {
+  buttonElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
     const children = path.node.children || []
 
     let iconValue = null
     let textValue = null
-    const propsToKeep = []
-    const propsToRemove = []
 
     // Extract leftIcon
     const leftIconAttr = attributes.find(
       (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'leftIcon',
     )
 
-    if (
-      leftIconAttr &&
-      leftIconAttr.value &&
-      leftIconAttr.value.type === 'JSXExpressionContainer'
-    ) {
+    if (leftIconAttr?.value && leftIconAttr.value.type === 'JSXExpressionContainer') {
       const iconName = extractPropFromJSXElement(leftIconAttr.value.expression, 'Icon', 'name', j)
       if (iconName) {
         iconValue = typeof iconName === 'string' ? j.stringLiteral(iconName) : iconName
@@ -143,67 +138,91 @@ function main(fileInfo, api, options = {}) {
       return
     }
 
-    // Process attributes using mappings
-    attributes.forEach((attr) => {
-      if (attr.type !== 'JSXAttribute') {
-        propsToKeep.push(attr)
-        return
-      }
-      if (!attr.name || attr.name.type !== 'JSXIdentifier') {
-        propsToKeep.push(attr)
-        return
-      }
+    // Categorize props (handles style/transform/direct/drop)
+    const {
+      styleProps,
+      inlineStyles,
+      transformedProps,
+      propsToRemove,
+      usedTokenHelpers: newHelpers,
+    } = categorizeProps(attributes, buttonProps, j)
 
+    newHelpers.forEach((h) => usedTokenHelpers.add(h))
+
+    // Check for rightIcon warning
+    if (
+      attributes.some((attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'rightIcon')
+    ) {
+      warnings.push('Button rightIcon not supported in Nordlys - dropped')
+    }
+
+    // Build Button props - start with direct props that pass through
+    const buttonAttributes = attributes.filter((attr) => {
+      if (attr.type !== 'JSXAttribute' || !attr.name) return false
       const propName = attr.name.name
+      // Keep direct props that weren't removed
+      return DIRECT_PROPS.includes(propName) && !propsToRemove.includes(propName)
+    })
 
-      // Transform prop names
-      if (TRANSFORM_PROPS[propName]) {
-        attr.name.name = TRANSFORM_PROPS[propName]
-        propsToKeep.push(attr)
-      }
-      // Keep direct props as-is
-      else if (DIRECT_PROPS.includes(propName)) {
-        propsToKeep.push(attr)
-      }
-      // Drop these props
-      else if (DROP_PROPS.includes(propName)) {
-        propsToRemove.push(attr)
-        if (propName === 'rightIcon') {
-          warnings.push('Button rightIcon not supported in Nordlys - dropped')
-        }
-      }
-      // Keep unknown props
-      else {
-        propsToKeep.push(attr)
-      }
+    // Add transformed props
+    Object.entries(transformedProps).forEach(([name, value]) => {
+      buttonAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
     })
 
     // Add icon prop if extracted
     if (iconValue) {
-      const iconProp = j.jsxAttribute(j.jsxIdentifier('icon'), j.jsxExpressionContainer(iconValue))
-      propsToKeep.push(iconProp)
+      buttonAttributes.push(
+        j.jsxAttribute(j.jsxIdentifier('icon'), j.jsxExpressionContainer(iconValue)),
+      )
     }
 
     // Add text prop if extracted
     if (textValue) {
-      const textProp = j.jsxAttribute(j.jsxIdentifier('text'), j.jsxExpressionContainer(textValue))
-      propsToKeep.push(textProp)
+      buttonAttributes.push(
+        j.jsxAttribute(j.jsxIdentifier('text'), j.jsxExpressionContainer(textValue)),
+      )
     }
 
     // Add required type prop if not present
-    const hasType = propsToKeep.some(
+    const hasType = buttonAttributes.some(
       (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'type',
     )
     if (!hasType) {
-      const typeProp = j.jsxAttribute(j.jsxIdentifier('type'), j.stringLiteral(defaultType))
-      propsToKeep.push(typeProp)
+      buttonAttributes.push(j.jsxAttribute(j.jsxIdentifier('type'), j.stringLiteral(defaultType)))
     }
 
-    // Update element
-    path.node.openingElement.attributes = propsToKeep
-    path.node.children = [] // Remove children (now in text prop)
-    path.node.openingElement.selfClosing = true
-    path.node.closingElement = null
+    // Create Button element
+    const buttonElement = j.jsxElement(
+      j.jsxOpeningElement(j.jsxIdentifier(targetName), buttonAttributes, true),
+      null,
+      [],
+    )
+
+    // Check if we need to wrap in View
+    const hasStyleProps = Object.keys(styleProps).length > 0 || inlineStyles.length > 0
+
+    if (wrap && hasStyleProps) {
+      const styleName = `button${index}`
+
+      // Build style object
+      const styleObj = {}
+      for (const key of Object.keys(styleProps)) {
+        styleObj[key] = styleProps[key]
+      }
+
+      elementStyles.push({ name: styleName, styles: styleObj })
+
+      // TODO: handle inline styles
+      if (inlineStyles.length > 0) {
+        // Not yet supported
+      }
+
+      const viewElement = createViewWrapper(buttonElement, styleName, j)
+      path.replace(viewElement)
+    } else {
+      // No wrapping needed or disabled
+      path.replace(buttonElement)
+    }
 
     migrated++
   })
@@ -218,6 +237,18 @@ function main(fileInfo, api, options = {}) {
   // Update imports
   removeNamedImport(imports, 'Button', j)
   addNamedImport(root, targetImport, targetName, j)
+
+  // Add View and StyleSheet imports if we have wrapped elements
+  if (wrap && elementStyles.length > 0) {
+    addNamedImport(root, 'react-native', 'View', j)
+    addNamedImport(root, 'react-native', 'StyleSheet', j)
+    usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
+  }
+
+  // Add StyleSheet
+  if (wrap && elementStyles.length > 0) {
+    addOrExtendStyleSheet(root, elementStyles, j)
+  }
 
   return root.toSource({
     quote: 'single',

@@ -18,18 +18,29 @@
  * // Warning: Avatar with letters prop cannot be migrated (not supported in Nordlys)
  */
 
+import * as commonStyleProps from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
+import { createViewWrapper } from './utils/jsx-transforms.js'
+import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
 
 // Avatar prop mappings
-const STYLE_PROPS = {}
+const STYLE_PROPS = {
+  ...commonStyleProps.SPACING,
+  ...commonStyleProps.SIZING,
+  ...commonStyleProps.COLOR,
+  ...commonStyleProps.BORDER,
+  ...commonStyleProps.LAYOUT,
+  ...commonStyleProps.FLEXBOX,
+  ...commonStyleProps.POSITION,
+  ...commonStyleProps.EXTRA,
+}
+
+// Remove size from STYLE_PROPS - it's a semantic Avatar prop, not a style prop
+delete STYLE_PROPS.size
 
 const TRANSFORM_PROPS = {}
 
-const DIRECT_PROPS = [
-  'size',
-  'testID',
-  'accessibilityLabel',
-]
+const DIRECT_PROPS = ['size', 'testID', 'accessibilityLabel']
 
 const DROP_PROPS = [
   'iconName',
@@ -37,16 +48,10 @@ const DROP_PROPS = [
   'imageSource',
   'letters',
   'lettersColor',
-  'bgColor',
-  'bg',
   'isSecondaryColor',
   'placeholder',
   'resizeMode',
   'source',
-  'w',
-  'h',
-  'width',
-  'height',
   '_hover',
   '_pressed',
   '_focus',
@@ -59,6 +64,8 @@ function main(fileInfo, api, options = {}) {
   const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
   const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Avatar'
   const targetName = options.targetName || 'Avatar'
+  const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
+  const wrap = options.wrap !== false // Default: true (wrap in View when style props exist)
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
@@ -77,61 +84,71 @@ function main(fileInfo, api, options = {}) {
   if (avatarElements.length === 0) return fileInfo.source
 
   const warnings = []
+  const elementStyles = []
+  const usedTokenHelpers = new Set()
+  const avatarProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
 
   // Transform each Avatar element
-  avatarElements.forEach((path) => {
+  avatarElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
 
+    // Extract custom Avatar props
     let iconNameValue = null
     let imageUriValue = null
     let imageSourceValue = null
     let lettersValue = null
-    const propsToKeep = []
-    const propsToRemove = []
 
-    // Process attributes using mappings
-    // First pass: collect values and categorize
-    attributes.forEach((attr) => {
-      if (attr.type !== 'JSXAttribute') {
-        propsToKeep.push(attr)
-        return
-      }
-      if (!attr.name || attr.name.type !== 'JSXIdentifier') {
-        propsToKeep.push(attr)
-        return
-      }
+    const iconNameAttr = attributes.find(
+      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'iconName',
+    )
+    if (iconNameAttr) iconNameValue = iconNameAttr.value
 
+    const imageUriAttr = attributes.find(
+      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'imageUri',
+    )
+    if (imageUriAttr) imageUriValue = imageUriAttr.value
+
+    const imageSourceAttr = attributes.find(
+      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'imageSource',
+    )
+    if (imageSourceAttr) imageSourceValue = imageSourceAttr.value
+
+    const lettersAttr = attributes.find(
+      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'letters',
+    )
+    if (lettersAttr) lettersValue = lettersAttr.value
+
+    // Warn and skip if letters prop is used (not supported)
+    if (lettersValue) {
+      warnings.push('Avatar with letters prop cannot be migrated (not supported in Nordlys Avatar)')
+      return
+    }
+
+    // Categorize props using standard mappings
+    const {
+      styleProps,
+      inlineStyles,
+      transformedProps,
+      propsToRemove,
+      usedTokenHelpers: newHelpers,
+    } = categorizeProps(attributes, avatarProps, j)
+
+    newHelpers.forEach((h) => usedTokenHelpers.add(h))
+
+    // Build Avatar props - start with direct props that pass through
+    const avatarAttributes = attributes.filter((attr) => {
+      if (attr.type !== 'JSXAttribute' || !attr.name) return false
       const propName = attr.name.name
-
-      // Extract values for custom transformations
-      if (propName === 'iconName') {
-        iconNameValue = attr.value
-        propsToRemove.push(attr)
-      } else if (propName === 'imageUri') {
-        imageUriValue = attr.value
-        propsToRemove.push(attr)
-      } else if (propName === 'imageSource') {
-        imageSourceValue = attr.value
-        propsToRemove.push(attr)
-      } else if (propName === 'letters') {
-        lettersValue = attr.value
-        propsToRemove.push(attr)
-      }
-      // Drop these props
-      else if (DROP_PROPS.includes(propName)) {
-        propsToRemove.push(attr)
-      }
-      // Keep direct props as-is
-      else if (DIRECT_PROPS.includes(propName)) {
-        propsToKeep.push(attr)
-      }
-      // Keep unknown props
-      else {
-        propsToKeep.push(attr)
-      }
+      // Keep direct props that weren't removed
+      return DIRECT_PROPS.includes(propName) && !propsToRemove.includes(propName)
     })
 
-    // Second pass: add transformed props
+    // Add transformed props
+    Object.entries(transformedProps).forEach(([name, value]) => {
+      avatarAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
+    })
+
+    // Add custom transformed props
     if (iconNameValue) {
       // iconName → icon={{ name: "...", fill: "blue" }}
       const nameValue =
@@ -143,7 +160,7 @@ function main(fileInfo, api, options = {}) {
       ])
 
       const iconProp = j.jsxAttribute(j.jsxIdentifier('icon'), j.jsxExpressionContainer(iconObject))
-      propsToKeep.push(iconProp)
+      avatarAttributes.push(iconProp)
     } else if (imageUriValue) {
       // imageUri → image={{ source: { uri: "..." } }}
       const uriValue =
@@ -161,7 +178,7 @@ function main(fileInfo, api, options = {}) {
         j.jsxIdentifier('image'),
         j.jsxExpressionContainer(imageObject),
       )
-      propsToKeep.push(imageProp)
+      avatarAttributes.push(imageProp)
     } else if (imageSourceValue) {
       // imageSource → image={{ source }}
       const sourceValue =
@@ -177,15 +194,42 @@ function main(fileInfo, api, options = {}) {
         j.jsxIdentifier('image'),
         j.jsxExpressionContainer(imageObject),
       )
-      propsToKeep.push(imageProp)
-    } else if (lettersValue) {
-      // letters not supported - warn and skip element transformation
-      warnings.push('Avatar with letters prop cannot be migrated (not supported in Nordlys Avatar)')
-      return
+      avatarAttributes.push(imageProp)
     }
 
-    // Update attributes
-    path.node.openingElement.attributes = propsToKeep
+    // Update element attributes
+    path.node.openingElement.attributes = avatarAttributes
+
+    // Check if we need to wrap in View
+    const hasStyleProps = Object.keys(styleProps).length > 0 || inlineStyles.length > 0
+
+    if (wrap && hasStyleProps) {
+      const styleName = `avatar${index}`
+
+      // Build style object
+      const styleObj = {}
+      for (const key of Object.keys(styleProps)) {
+        styleObj[key] = styleProps[key]
+      }
+
+      elementStyles.push({ name: styleName, styles: styleObj })
+
+      // TODO: handle inline styles
+      if (inlineStyles.length > 0) {
+        // Not yet supported
+      }
+
+      // Clone the Avatar element
+      const avatarElement = j.jsxElement(
+        path.node.openingElement,
+        path.node.closingElement,
+        path.node.children,
+        path.node.selfClosing,
+      )
+
+      const viewElement = createViewWrapper(avatarElement, styleName, j)
+      j(path).replaceWith(viewElement)
+    }
   })
 
   // Print warnings
@@ -197,6 +241,18 @@ function main(fileInfo, api, options = {}) {
   // Update imports
   removeNamedImport(imports, 'Avatar', j)
   addNamedImport(root, targetImport, targetName, j)
+
+  // Add View and StyleSheet imports if we have wrapped elements
+  if (wrap && elementStyles.length > 0) {
+    addNamedImport(root, 'react-native', 'View', j)
+    addNamedImport(root, 'react-native', 'StyleSheet', j)
+    usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
+  }
+
+  // Add StyleSheet
+  if (wrap && elementStyles.length > 0) {
+    addOrExtendStyleSheet(root, elementStyles, j)
+  }
 
   return root.toSource({
     quote: 'single',

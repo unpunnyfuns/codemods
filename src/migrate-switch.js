@@ -20,10 +20,22 @@
  * </Switch>
  */
 
+import * as commonStyleProps from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
+import { createViewWrapper } from './utils/jsx-transforms.js'
+import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
 
 // Switch prop mappings
-const STYLE_PROPS = {}
+const STYLE_PROPS = {
+  ...commonStyleProps.SPACING,
+  ...commonStyleProps.SIZING,
+  ...commonStyleProps.COLOR,
+  ...commonStyleProps.BORDER,
+  ...commonStyleProps.LAYOUT,
+  ...commonStyleProps.FLEXBOX,
+  ...commonStyleProps.POSITION,
+  ...commonStyleProps.EXTRA,
+}
 
 const TRANSFORM_PROPS = {
   isChecked: 'value',
@@ -31,11 +43,7 @@ const TRANSFORM_PROPS = {
   isDisabled: 'disabled',
 }
 
-const DIRECT_PROPS = [
-  'testID',
-  'accessibilityLabel',
-  'accessibilityHint',
-]
+const DIRECT_PROPS = ['testID', 'accessibilityLabel', 'accessibilityHint']
 
 const DROP_PROPS = [
   'label',
@@ -60,6 +68,8 @@ function main(fileInfo, api, options = {}) {
   const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
   const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Switch'
   const targetName = options.targetName || 'Switch'
+  const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
+  const wrap = options.wrap !== false // Default: true (wrap in View when style props exist)
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
@@ -69,61 +79,50 @@ function main(fileInfo, api, options = {}) {
   const switchElements = root.find(j.JSXElement, { openingElement: { name: { name: 'Switch' } } })
   if (switchElements.length === 0) return fileInfo.source
 
+  const elementStyles = []
+  const usedTokenHelpers = new Set()
+  const switchProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
+
   // Transform each Switch element
-  switchElements.forEach((path) => {
+  switchElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
     const children = path.node.children || []
 
-    // Extract props to transform
+    // Extract label prop (custom transformation)
     let labelValue = null
-    const propsToKeep = []
-    const propsToRemove = []
+    const labelAttr = attributes.find(
+      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'label',
+    )
+    if (labelAttr) {
+      labelValue = labelAttr.value
+    }
 
-    // Process attributes using mappings
-    attributes.forEach((attr) => {
-      if (attr.type !== 'JSXAttribute') {
-        propsToKeep.push(attr)
-        return
-      }
-      if (!attr.name || attr.name.type !== 'JSXIdentifier') {
-        propsToKeep.push(attr)
-        return
-      }
+    // Categorize props using standard mappings
+    const {
+      styleProps,
+      inlineStyles,
+      transformedProps,
+      propsToRemove,
+      usedTokenHelpers: newHelpers,
+    } = categorizeProps(attributes, switchProps, j)
 
+    newHelpers.forEach((h) => usedTokenHelpers.add(h))
+
+    // Build Switch props - start with direct props that pass through
+    const switchAttributes = attributes.filter((attr) => {
+      if (attr.type !== 'JSXAttribute' || !attr.name) return false
       const propName = attr.name.name
-
-      // Transform prop names
-      if (TRANSFORM_PROPS[propName]) {
-        attr.name.name = TRANSFORM_PROPS[propName]
-        propsToKeep.push(attr)
-      }
-      // Extract label for later (custom transformation)
-      else if (propName === 'label') {
-        labelValue = attr.value
-        propsToRemove.push(attr)
-      }
-      // Drop these props
-      else if (DROP_PROPS.includes(propName)) {
-        propsToRemove.push(attr)
-      }
-      // Keep direct props as-is
-      else if (DIRECT_PROPS.includes(propName)) {
-        propsToKeep.push(attr)
-      }
-      // Keep unknown props
-      else {
-        propsToKeep.push(attr)
-      }
+      // Keep direct props that weren't removed
+      return DIRECT_PROPS.includes(propName) && !propsToRemove.includes(propName)
     })
 
-    // Remove dropped props
-    propsToRemove.forEach((attr) => {
-      const index = attributes.indexOf(attr)
-      if (index > -1) attributes.splice(index, 1)
+    // Add transformed props
+    Object.entries(transformedProps).forEach(([name, value]) => {
+      switchAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
     })
 
-    // Update attributes
-    path.node.openingElement.attributes = propsToKeep
+    // Update element attributes
+    path.node.openingElement.attributes = switchAttributes
 
     // Transform children: wrap in <Switch.Label>
     const labelElement = j.jsxElement(
@@ -161,11 +160,54 @@ function main(fileInfo, api, options = {}) {
 
     newChildren.push(j.jsxText('\n'))
     path.node.children = newChildren
+
+    // Check if we need to wrap in View
+    const hasStyleProps = Object.keys(styleProps).length > 0 || inlineStyles.length > 0
+
+    if (wrap && hasStyleProps) {
+      const styleName = `switch${index}`
+
+      // Build style object
+      const styleObj = {}
+      for (const key of Object.keys(styleProps)) {
+        styleObj[key] = styleProps[key]
+      }
+
+      elementStyles.push({ name: styleName, styles: styleObj })
+
+      // TODO: handle inline styles
+      if (inlineStyles.length > 0) {
+        // Not yet supported
+      }
+
+      // Clone the Switch element
+      const switchElement = j.jsxElement(
+        path.node.openingElement,
+        path.node.closingElement,
+        path.node.children,
+        path.node.selfClosing,
+      )
+
+      const viewElement = createViewWrapper(switchElement, styleName, j)
+      j(path).replaceWith(viewElement)
+    }
   })
 
   // Update imports
   removeNamedImport(imports, 'Switch', j)
   addNamedImport(root, targetImport, targetName, j)
+
+  // Add View and StyleSheet imports if we have wrapped elements
+  if (wrap && elementStyles.length > 0) {
+    addNamedImport(root, 'react-native', 'View', j)
+    addNamedImport(root, 'react-native', 'StyleSheet', j)
+    usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
+  }
+
+  // Add StyleSheet
+  if (wrap && elementStyles.length > 0) {
+    addOrExtendStyleSheet(root, elementStyles, j)
+  }
 
   return root.toSource({
     quote: 'single',

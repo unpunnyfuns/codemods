@@ -26,6 +26,7 @@
 
 import { getNordlysColorPath } from './mappings/color-mappings.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
+import { createViewWrapper } from './utils/jsx-transforms.js'
 import { buildNestedMemberExpression } from './utils/token-helpers.js'
 
 // Props that stay on Typography element
@@ -95,6 +96,7 @@ function main(fileInfo, api, options = {}) {
   const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Typography'
   const targetName = options.targetName || 'Typography'
   const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
+  const wrap = options.wrap !== false // Default: true (wrap in View when style props exist)
 
   // Find Typography imports
   const imports = root.find(j.ImportDeclaration, {
@@ -208,7 +210,9 @@ function main(fileInfo, api, options = {}) {
     path.node.openingElement.attributes = propsToKeep
 
     // If we have style props, wrap in View
-    if (Object.keys(styleProps).length > 0) {
+    const hasStyleProps = Object.keys(styleProps).length > 0
+
+    if (wrap && hasStyleProps) {
       const styleName = `typography${index}`
       elementStyles.push({ name: styleName, styles: styleProps })
 
@@ -220,19 +224,8 @@ function main(fileInfo, api, options = {}) {
         path.node.selfClosing,
       )
 
-      // Create View wrapper with cloned Typography as child
-      const viewElement = j.jsxElement(
-        j.jsxOpeningElement(j.jsxIdentifier('View'), [
-          j.jsxAttribute(
-            j.jsxIdentifier('style'),
-            j.jsxExpressionContainer(
-              j.memberExpression(j.identifier('styles'), j.identifier(styleName)),
-            ),
-          ),
-        ]),
-        j.jsxClosingElement(j.jsxIdentifier('View')),
-        [typographyElement],
-      )
+      // Create View wrapper
+      const viewElement = createViewWrapper(typographyElement, styleName, j)
 
       // Replace Typography with wrapped version
       j(path).replaceWith(viewElement)
@@ -249,8 +242,8 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Typography', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  // Add View and StyleSheet imports if we have styles
-  if (elementStyles.length > 0) {
+  // Add View and StyleSheet imports if we have styles and wrap is enabled
+  if (wrap && elementStyles.length > 0) {
     addNamedImport(root, 'react-native', 'View', j)
     addNamedImport(root, 'react-native', 'StyleSheet', j)
   }
@@ -260,8 +253,8 @@ function main(fileInfo, api, options = {}) {
     addNamedImport(root, tokenImport, helper, j)
   })
 
-  // Add StyleSheet.create() if we have styles
-  if (elementStyles.length > 0) {
+  // Add StyleSheet.create() if we have styles and wrap is enabled
+  if (wrap && elementStyles.length > 0) {
     const styleProperties = elementStyles.map(({ name, styles }) => {
       const props = Object.entries(styles).map(([key, value]) => {
         return j.property('init', j.identifier(key), value)

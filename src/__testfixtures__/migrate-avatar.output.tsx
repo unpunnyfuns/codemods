@@ -1,14 +1,18 @@
-import { Avatar } from '@hb-frontend/app/src/components/nordlys/Avatar';
+import { Avatar } from '@hb-frontend/app/src/components/nordlys/Avatar'
+import { View, StyleSheet } from 'react-native'
+import { color } from '@hb-frontend/nordlys'
 
 export function MyComponent() {
   return (
     <>
-      <Avatar
-        size="md"
-        icon={{
-          name: "user",
-          fill: 'blue'
-        }} />
+      <View style={styles.avatar0}>
+        <Avatar
+          size="md"
+          icon={{
+            name: "user",
+            fill: 'blue'
+          }} />
+      </View>
       <Avatar
         size="lg"
         image={{
@@ -23,5 +27,11 @@ export function MyComponent() {
         }} />
       <Avatar letters="AB" lettersColor="white" size="md" />
     </>
-  );
+  )
 }
+
+const styles = StyleSheet.create({
+  avatar0: {
+    backgroundColor: color.blue
+  }
+})

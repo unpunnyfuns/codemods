@@ -2,6 +2,8 @@ import { Icon } from '@hb-frontend/common/src/components'
 import { useTranslation } from 'react-i18next'
 
 import { Button } from '@hb-frontend/app/src/components/nordlys/Button'
+import { View, StyleSheet } from 'react-native'
+import { space } from '@hb-frontend/nordlys'
 
 export function MyComponent() {
   const { t } = useTranslation()
@@ -9,14 +11,16 @@ export function MyComponent() {
 
   return (
     <>
-      <Button
-        testID="button1"
-        variant="secondary"
-        size="md"
-        onPress={() => {}}
-        icon={'PlusOutlined'}
-        text={t('addNew')}
-        type='solid' />
+      <View style={styles.button0}>
+        <Button
+          testID="button1"
+          variant="secondary"
+          size="md"
+          onPress={() => {}}
+          icon={'PlusOutlined'}
+          text={t('addNew')}
+          type='solid' />
+      </View>
       <Button
         variant="primary"
         size="lg"
@@ -28,3 +32,9 @@ export function MyComponent() {
     </>
   )
 }
+
+const styles = StyleSheet.create({
+  button0: {
+    marginTop: space.xl
+  }
+})
