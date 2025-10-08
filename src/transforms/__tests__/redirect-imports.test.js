@@ -1,6 +1,6 @@
 import jscodeshift from 'jscodeshift'
 import { describe, expect, it } from 'vitest'
-import transform from '../../transforms/redirect-imports.js'
+import transform from '../redirect-imports.js'
 
 function runTransform(source, options = {}) {
   const fileInfo = { path: 'test.js', source }
