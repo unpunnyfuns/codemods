@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`split-atoms > splits barrel imports into individual atom imports 1`] = `
+exports[`nb/split-atoms > splits barrel imports into individual atom imports 1`] = `
 "import { SomeOtherComponent } from '@org/common/src/other'
 
 import { Box } from '@org/common/src/components/atoms/Box';

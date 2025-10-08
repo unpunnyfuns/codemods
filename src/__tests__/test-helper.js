@@ -7,16 +7,21 @@ import jscodeshift from 'jscodeshift'
  * Normalization: parse → reformat with consistent options
  * This ensures formatting differences don't cause test failures
  *
- * @param {string} transformPath - Path to transform relative to src/ (e.g., 'migrations/box' or 'transforms/split-atoms')
- * @param {string} fixturePath - Path to fixture relative to __testfixtures__/ (e.g., 'migrations/box' or 'transforms/split-atoms')
+ * @param {string} transformPath - Path to transform relative to src/ (e.g., 'nb/box' or 'transforms/redirect-imports')
+ * @param {string} fixturePath - Path to fixture (e.g., 'nb/box')
  * @param {string} extension - File extension for fixture (default: 'js')
  */
 export function testTransform(transformPath, fixturePath, extension = 'js') {
   const transform = require(resolve(__dirname, `../${transformPath}.js`)).default
   const j = jscodeshift.withParser('tsx')
 
-  const fixturesPath = resolve(__dirname, '../__testfixtures__')
-  const inputPath = resolve(fixturesPath, `${fixturePath}.input.${extension}`)
+  // Extract folder from fixturePath (e.g., 'nb/box' → 'nb')
+  const parts = fixturePath.split('/')
+  const folder = parts[0]
+  const filename = parts.slice(1).join('/')
+
+  const fixturesPath = resolve(__dirname, `../${folder}/__testfixtures__`)
+  const inputPath = resolve(fixturesPath, `${filename}.input.${extension}`)
 
   const input = readFileSync(inputPath, 'utf8')
 

@@ -7,9 +7,9 @@
  * const styles = StyleSheet.create({ box0: { backgroundColor: color.blue['500'], padding: 4, margin: 2, borderRadius: radius.md } })
  */
 
-import { directProps } from '../mappings/direct-props.js'
-import { dropProps } from '../mappings/drop-props.js'
-import { border, layout, sizing, spacing } from '../mappings/style-props.js'
+import { directProps } from './mappings/direct-props.js'
+import { dropProps } from './mappings/drop-props.js'
+import { border, layout, sizing, spacing } from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import {
   addPropsToElement,

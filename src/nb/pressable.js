@@ -9,8 +9,8 @@
  * const styles = StyleSheet.create({ pressable0: { backgroundColor: color.blue['500'], padding: 4 } })
  */
 
-import { directProps } from '../mappings/direct-props.js'
-import { dropProps } from '../mappings/drop-props.js'
+import { directProps } from './mappings/direct-props.js'
+import { dropProps } from './mappings/drop-props.js'
 import {
   border,
   color,
@@ -20,7 +20,7 @@ import {
   position,
   sizing,
   spacing,
-} from '../mappings/style-props.js'
+} from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import {
   addPropsToElement,

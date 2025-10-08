@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`migrations/stack-comprehensive > handles all edge cases: multi-property expansion, tokens, flexbox, position 1`] = `
+exports[`nb/stack-comprehensive > handles all edge cases: multi-property expansion, tokens, flexbox, position 1`] = `
 "import { SomeOtherComponent } from '@org/common/src/other'
 import { Stack } from '@hb-frontend/app/src/components/nordlys/';
 import { color, radius } from '@hb-frontend/nordlys';

@@ -29,7 +29,7 @@ import {
   position,
   sizing,
   spacing,
-} from '../mappings/style-props.js'
+} from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'
 import { addOrExtendStyleSheet, categorizeProps } from '../helpers/props.js'

@@ -8,8 +8,8 @@
  * <Stack direction="vertical" gap={space[4]}>{children}</Stack>
  */
 
-import { directProps } from '../mappings/direct-props.js'
-import { dropProps } from '../mappings/drop-props.js'
+import { directProps } from './mappings/direct-props.js'
+import { dropProps } from './mappings/drop-props.js'
 import {
   border,
   color,
@@ -19,8 +19,8 @@ import {
   position,
   sizing,
   spacing,
-} from '../mappings/style-props.js'
-import { alignValues, justifyValues } from '../mappings/value-maps.js'
+} from './mappings/style-props.js'
+import { alignValues, justifyValues } from './mappings/value-maps.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import {
   addPropsToElement,

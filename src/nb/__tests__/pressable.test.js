@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { testTransform } from '../test-helper.js'
+import { testTransform } from '../../__tests__/test-helper.js'
 
-describe('migrations/pressable', () => {
+describe('nb/pressable', () => {
   it('migrates Pressable to React Native with StyleSheet and default accessibilityRole', () => {
-    const output = testTransform('migrations/pressable', 'migrations/pressable', 'js')
+    const output = testTransform('nb/pressable', 'nb/pressable', 'js')
     expect(output).toMatchSnapshot()
   })
 })

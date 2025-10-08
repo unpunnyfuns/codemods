@@ -34,7 +34,7 @@
  * - Both icon and children are missing (icon-only not supported in migration)
  */
 
-import { dropProps } from '../mappings/drop-props.js'
+import { dropProps } from './mappings/drop-props.js'
 import {
   border,
   color,
@@ -44,7 +44,7 @@ import {
   position,
   sizing,
   spacing,
-} from '../mappings/style-props.js'
+} from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { extractPropFromJSXElement, extractSimpleChild } from '../helpers/jsx-extraction.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'

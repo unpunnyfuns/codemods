@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`migrations/avatar > migrates Avatar to Nordlys with icon/image object transformations 1`] = `
+exports[`nb/avatar > migrates Avatar to Nordlys with icon/image object transformations 1`] = `
 "import { Avatar } from '@hb-frontend/app/src/components/nordlys/Avatar';
 import { View, StyleSheet } from 'react-native';
 import { color } from '@hb-frontend/nordlys';

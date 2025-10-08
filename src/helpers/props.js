@@ -2,7 +2,7 @@
  * Shared utilities for prop categorization and transformation
  */
 
-import { getNordlysColorPath } from '../mappings/color-mappings.js'
+import { getNordlysColorPath } from '../nb/mappings/color-mappings.js'
 import { addNamedImport } from './imports.js'
 import { buildNestedMemberExpression } from './token-helpers.js'
 

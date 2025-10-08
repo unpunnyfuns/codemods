@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`migrations/button > migrates Button with leftIcon and children to nordlys Button 1`] = `
+exports[`nb/button > migrates Button with leftIcon and children to nordlys Button 1`] = `
 "import { Icon } from '@hb-frontend/common/src/components';
 import { useTranslation } from 'react-i18next'
 

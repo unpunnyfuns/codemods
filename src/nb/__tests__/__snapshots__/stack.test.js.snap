@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`migrations/stack > migrates HStack to Stack with full prop mapping 1`] = `
+exports[`nb/stack > migrates HStack to Stack with full prop mapping 1`] = `
 "import { SomeOtherComponent } from '@org/common/src/other'
 import { Stack } from '@hb-frontend/app/src/components/nordlys/';
 import { radius } from '@hb-frontend/nordlys';

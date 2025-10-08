@@ -1,6 +1,6 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`migrations/switch > migrates Switch to Nordlys with children wrapping and prop transformations 1`] = `
+exports[`nb/switch > migrates Switch to Nordlys with children wrapping and prop transformations 1`] = `
 "import { Typography } from '@hb-frontend/common/src/components';
 
 import { Switch } from '@hb-frontend/app/src/components/nordlys/Switch';
