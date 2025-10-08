@@ -1,7 +1,3 @@
 node_modules
 package-lock.json
-
-# Other projects in workspace
-nl-tokens/
-nb-theme/
 .DS_Store
