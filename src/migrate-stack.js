@@ -8,6 +8,10 @@
  * <Stack direction="vertical" gap={space[4]}>{children}</Stack>
  */
 
+import * as commonDirectProps from './mappings/direct-props.js'
+import * as commonDropProps from './mappings/drop-props.js'
+import * as commonStyleProps from './mappings/style-props.js'
+import * as commonValueMaps from './mappings/value-maps.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import {
   addPropsToElement,
@@ -17,10 +21,6 @@ import {
   updateElementName,
 } from './utils/jsx-transforms.js'
 import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
-import * as commonDirectProps from './mappings/direct-props.js'
-import * as commonDropProps from './mappings/drop-props.js'
-import * as commonStyleProps from './mappings/style-props.js'
-import * as commonValueMaps from './mappings/value-maps.js'
 
 // Stack prop mappings
 const STYLE_PROPS = {
@@ -53,13 +53,7 @@ const TRANSFORM_PROPS = {
 
 const DIRECT_PROPS = commonDirectProps.COMMON
 
-const DROP_PROPS = [
-  ...commonDropProps.COMMON,
-  'divider',
-  'reversed',
-  '_text',
-  '_stack',
-]
+const DROP_PROPS = [...commonDropProps.COMMON, 'divider', 'reversed', '_text', '_stack']
 
 const STACK_COMPONENTS = [
   { name: 'HStack', direction: 'horizontal' },

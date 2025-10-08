@@ -112,7 +112,7 @@ function main(fileInfo, api, options = {}) {
     )
 
     if (leftIconAttr?.value && leftIconAttr.value.type === 'JSXExpressionContainer') {
-      const iconName = extractPropFromJSXElement(leftIconAttr.value.expression, 'Icon', 'name', j)
+      const iconName = extractPropFromJSXElement(leftIconAttr.value.expression, 'Icon', 'name')
       if (iconName) {
         iconValue = typeof iconName === 'string' ? j.stringLiteral(iconName) : iconName
       }

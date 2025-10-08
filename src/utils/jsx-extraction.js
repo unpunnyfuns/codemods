@@ -5,17 +5,16 @@
 /**
  * Extract a prop value from a nested JSX element
  *
- * Example: extractPropFromJSXElement(iconElement, 'Icon', 'name', j)
+ * Example: extractPropFromJSXElement(iconElement, 'Icon', 'name')
  * From: leftIcon={<Icon name="Plus" color="red" />}
  * Returns: "Plus" (string) or AST expression node
  *
  * @param {object} element - The JSX element to extract from
  * @param {string} expectedElementName - Expected element name (e.g., 'Icon')
  * @param {string} propName - Prop name to extract (e.g., 'name')
- * @param {object} j - jscodeshift API
  * @returns {string|object|null} - String literal value, AST expression, or null if not found
  */
-export function extractPropFromJSXElement(element, expectedElementName, propName, j) {
+export function extractPropFromJSXElement(element, expectedElementName, propName) {
   if (!element || element.type !== 'JSXElement') return null
 
   const openingElement = element.openingElement

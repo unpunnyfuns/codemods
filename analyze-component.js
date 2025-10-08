@@ -3,8 +3,7 @@
  * Usage: node analyze-component.js <component-name> <file-path>
  */
 
-const fs = require('fs')
-const path = require('path')
+const fs = require('node:fs')
 const jscodeshift = require('jscodeshift')
 
 function analyzeComponent(filePath, componentName) {

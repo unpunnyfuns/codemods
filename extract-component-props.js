@@ -11,14 +11,14 @@
  * - Comments/JSDoc
  */
 
-const fs = require('fs')
+const fs = require('node:fs')
 const jscodeshift = require('jscodeshift')
 
 function resolveImportPath(fromFile, importPath) {
   // Resolve relative imports
   if (importPath.startsWith('.')) {
-    const dir = require('path').dirname(fromFile)
-    const resolved = require('path').resolve(dir, importPath)
+    const dir = require('node:path').dirname(fromFile)
+    const resolved = require('node:path').resolve(dir, importPath)
 
     // Try with various extensions
     const extensions = ['', '.ts', '.tsx', '.d.ts']
@@ -31,7 +31,7 @@ function resolveImportPath(fromFile, importPath) {
 
     // Try as directory with index
     for (const ext of ['.ts', '.tsx', '.d.ts']) {
-      const tryPath = require('path').join(resolved, `index${ext}`)
+      const tryPath = require('node:path').join(resolved, `index${ext}`)
       if (fs.existsSync(tryPath)) {
         return tryPath
       }
