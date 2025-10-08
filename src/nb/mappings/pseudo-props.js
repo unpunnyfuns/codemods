@@ -6,7 +6,7 @@
  * 2. Component state styling (_disabled, _invalid, _readOnly, _loading)
  * 3. Nested component styling (_text, _icon, _stack, _input, _spinner)
  *
- * Aurora doesn't support this pattern - users need to handle state-based styling differently.
+ * Nordlys doesn't support this pattern - users need to handle state-based styling differently.
  */
 
 /**

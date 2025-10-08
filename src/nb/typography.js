@@ -5,6 +5,28 @@ import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/im
 import { createViewWrapper } from '../helpers/jsx-transforms.js'
 import { buildNestedMemberExpression } from '../helpers/token-helpers.js'
 import { getNordlysColorPath } from './mappings/color-mappings.js'
+import {
+  border,
+  color,
+  extra,
+  flexbox,
+  layout,
+  position,
+  sizing,
+  spacing,
+} from './mappings/style-props.js'
+
+// Style props that get extracted to View wrapper
+const STYLE_PROPS = {
+  ...spacing,
+  ...sizing,
+  ...color,
+  ...border,
+  ...layout,
+  ...flexbox,
+  ...position,
+  ...extra,
+}
 
 // Props that stay on Typography element
 const TYPOGRAPHY_PROPS = ['type', 'size', 'color', 'align', 'numberOfLines', 'textDecorationLine']

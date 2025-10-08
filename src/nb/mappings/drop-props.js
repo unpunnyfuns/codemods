@@ -16,7 +16,7 @@ export const platformOverrides = ['_web', '_ios', '_android']
 export const themeOverrides = ['_light', '_dark']
 
 export const componentSpecific = [
-  'shadow', // NativeBase shadow system - use style-based shadows in Aurora
+  'shadow', // NativeBase shadow system - use style-based shadows in Nordlys
 ]
 
 export const dropProps = [

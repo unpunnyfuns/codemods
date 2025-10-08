@@ -2,8 +2,8 @@
  * NativeBase theme system props to DROP during migration
  *
  * These props are specific to NativeBase's theming system and don't directly
- * map to Aurora's component API. Users need to manually migrate these to
- * Aurora's equivalent props/patterns.
+ * map to Nordlys's component API. Users need to manually migrate these to
+ * Nordlys's equivalent props/patterns.
  */
 
 /**

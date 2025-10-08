@@ -1,4 +1,4 @@
-// Migrate NativeBase HStack/VStack → Aurora Stack with direction
+// Migrate NativeBase HStack/VStack → Stack with direction
 // See stack.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'

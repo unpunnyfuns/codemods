@@ -1,6 +1,6 @@
-# NativeBase vs Aurora Token Comparison
+# NativeBase vs Nordlys Token Comparison
 
-This document compares the NativeBase theme tokens with Aurora (nl-tokens) to understand value mappings for codemods.
+This document compares the NativeBase theme tokens with Nordlys (nl-tokens) to understand value mappings for codemods.
 
 ## Spacing Scale
 
@@ -20,7 +20,7 @@ space: {
 }
 ```
 
-### Aurora (nl-tokens)
+### Nordlys (nl-tokens)
 ```typescript
 space: {
   zero: 0,         // dimension[0]
@@ -59,8 +59,8 @@ dimension: {
 
 **Mapping:**
 - ✅ 2xs, xs, sm, md, lg, xl, 2xl, 3xl → **IDENTICAL MAPPING** (no transformation needed for semantic names)
-- ⚠️ NativeBase '14' (56px) → No direct Aurora equivalent (dimension[14] = 40px, would need dimension[15]=44 or custom)
-- ⚠️ NativeBase '18' (72px) → No direct Aurora equivalent
+- ⚠️ NativeBase '14' (56px) → No direct Nordlys equivalent (dimension[14] = 40px, would need dimension[15]=44 or custom)
+- ⚠️ NativeBase '18' (72px) → No direct Nordlys equivalent
 
 ## Border Radius
 
@@ -73,7 +73,7 @@ radii: {
 }
 ```
 
-### Aurora
+### Nordlys
 ```typescript
 radius: {
   sm: 4,   // space.xs
@@ -86,7 +86,7 @@ radius: {
 
 **Mapping:**
 - ✅ sm, md, lg → **IDENTICAL VALUES** (no transformation needed)
-- ℹ️ Aurora has additional xl (24) and 2xl (32) that NativeBase doesn't use
+- ℹ️ Nordlys has additional xl (24) and 2xl (32) that NativeBase doesn't use
 
 ## Colors
 
@@ -108,7 +108,7 @@ blue: {
 }
 ```
 
-### Aurora Structure
+### Nordlys Structure
 - **Core colors**: HB/HN prefixed scales 1-10 (e.g., `core.blue.HB6`, `core.neutral.HN5`)
 - **Extended colors**: HG/HR/HY prefixed scales 1-10 (e.g., `extended.green.HG6`)
 - Uses hex values directly
@@ -128,8 +128,8 @@ core: {
 ```
 
 **Mapping Challenge:**
-- ⚠️ **REQUIRES MANUAL MAPPING**: NativeBase numeric scales (0-900) don't directly correspond to Aurora scales (1-10)
-- ⚠️ Need to determine which NativeBase colors map to which Aurora tokens
+- ⚠️ **REQUIRES MANUAL MAPPING**: NativeBase numeric scales (0-900) don't directly correspond to Nordlys scales (1-10)
+- ⚠️ Need to determine which NativeBase colors map to which Nordlys tokens
 - Example potential mapping (needs verification):
   - `blue.600` → `core.blue.HB5` or `HB6`?
   - `blue.0` → `core.blue.HB10`?
@@ -141,7 +141,7 @@ Based on these tokens, here are the props that will need value transformations:
 
 ### 1. Spacing Props (IDENTICAL - no transformation needed)
 ```javascript
-// NativeBase → Aurora (same values)
+// NativeBase → Nordlys (same values)
 space="2xs"  → gap: 2
 space="xs"   → gap: 4
 space="sm"   → gap: 8
@@ -169,9 +169,9 @@ bg="primary.500"   → backgroundColor: ??? (need semantic mapping)
 color="gray.300"   → color: core.neutral.HN?
 ```
 
-## Aurora Token Architecture
+## Nordlys Token Architecture
 
-Aurora uses a sophisticated 3-tier token system:
+Nordlys uses a sophisticated 3-tier token system:
 
 **1. Reference Tokens** (raw values):
 ```typescript
@@ -206,9 +206,9 @@ getColorFromPath('interactive.primary') // returns '#005FA5'
    - Both semantic and numeric used in codebase - pass through unchanged
 
 2. ⏳ **Colors - Defer for Later**:
-   - Map NativeBase semantic colors → Aurora system tokens
+   - Map NativeBase semantic colors → Nordlys system tokens
    - Example: `themeColors.button.solid.primary.default` → `color.interactive.primary`
-   - Use Aurora's 3-tier system (reference → system → component)
+   - Use Nordlys's 3-tier system (reference → system → component)
    - Can use `getColorFromPath()` helper at runtime
 
 ## Files to Update

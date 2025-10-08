@@ -1,6 +1,6 @@
 # Stack Migration
 
-Migrates NativeBase `HStack`/`VStack` to Aurora `Stack` with `direction` prop.
+Migrates NativeBase `HStack`/`VStack` to `Stack` with `direction` prop.
 
 ## Usage
 

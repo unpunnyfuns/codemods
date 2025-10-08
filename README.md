@@ -1,6 +1,6 @@
 # NativeBase Migration Codemods
 
-jscodeshift codemods for migrating NativeBase components to Aurora/Nordlys.
+jscodeshift codemods for migrating NativeBase components to Nordlys/Nordlys.
 
 ## Quick Start
 
@@ -24,7 +24,7 @@ npm install
 ./run.sh nb/box "src/**/*.tsx"         # Box → View with StyleSheet
 ./run.sh nb/button "src/**/*.tsx"      # Button → Nordlys Button
 ./run.sh nb/pressable "src/**/*.tsx"   # Pressable → RN Pressable
-./run.sh nb/stack "src/**/*.tsx"       # HStack/VStack → Aurora Stack
+./run.sh nb/stack "src/**/*.tsx"       # HStack/VStack → Nordlys Stack
 ./run.sh nb/switch "src/**/*.tsx"      # Switch → Nordlys Switch
 ./run.sh nb/typography "src/**/*.tsx"  # Typography → Nordlys Typography
 ./run.sh nb/split-atoms "src/**/*.tsx" # Split barrel imports
@@ -125,4 +125,4 @@ npm run lint:fix      # Lint and format with Biome
 
 ## Note
 
-The `src/nb/` folder contains temporary migration code that will be deleted after the NativeBase→Aurora migration is complete. Only `src/helpers/` is designed for long-term reuse.
+The `src/nb/` folder contains temporary migration code that will be deleted after the NativeBase→Nordlys migration is complete. Only `src/helpers/` is designed for long-term reuse.

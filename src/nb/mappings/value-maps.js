@@ -1,5 +1,5 @@
 /**
- * Common value mappings for NativeBase → Aurora token transformations
+ * Common value mappings for NativeBase → Nordlys token transformations
  *
  * PRIORITY: String literal transformations (align, justify) - Numeric values passed through
  *
@@ -41,13 +41,13 @@ export const justifyValues = {
 // =============================================================================
 // COLOR MAPPINGS - TODO for later
 // =============================================================================
-// Color mapping is more complex and should use Aurora's 3-tier token system:
+// Color mapping is more complex and should use Nordlys's 3-tier token system:
 // 1. Reference tokens: core.blue.HB4 = '#005FA5'
 // 2. System tokens: interactive.primary = core.blue.HB4
 // 3. Component tokens: button.background.primary.default = interactive.primary
 //
 // Recommended approach:
-// - Map NativeBase semantic colors to Aurora system tokens
+// - Map NativeBase semantic colors to Nordlys system tokens
 // - Example: themeColors.button.solid.primary.default → color.interactive.primary
 // - Use getColorFromPath() helper at runtime if needed
 //

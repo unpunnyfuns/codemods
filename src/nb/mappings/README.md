@@ -1,6 +1,6 @@
 # Mappings
 
-Prop mapping configurations for NativeBase → Aurora/Nordlys migrations.
+Prop mapping configurations for NativeBase → Nordlys/Nordlys migrations.
 
 Defines which props to extract to StyleSheet, transform, pass through, or drop during component migrations.
 
@@ -193,7 +193,7 @@ export const TRANSFORM_PROPS = {
 
 - Only maps string literals (align="start")
 - Numeric values pass through unchanged
-- Semantic spacing tokens (sm, md, lg) are identical between NativeBase and Aurora - no transformation needed
+- Semantic spacing tokens (sm, md, lg) are identical between NativeBase and Nordlys - no transformation needed
 
 ---
 
@@ -210,7 +210,7 @@ NESTED_PSEUDO; // _text, _icon, _stack, _input, _web, _ios, _android, etc.
 ALL_PSEUDO_PROPS; // Combination of all pseudo-props
 ```
 
-All pseudo-props are dropped during migration - Aurora/Nordlys use different patterns.
+All pseudo-props are dropped during migration - Nordlys/Nordlys use different patterns.
 
 ---
 
@@ -228,8 +228,8 @@ ALL_THEME_PROPS; // Combined
 
 These are typically dropped or transformed:
 
-- `variant` → may map to Aurora variant
-- `size` → may map to Aurora size
+- `variant` → may map to Nordlys variant
+- `size` → may map to Nordlys size
 - `isDisabled` → often becomes `disabled` (TRANSFORM_PROPS)
 
 ---
@@ -288,7 +288,7 @@ DIRECT_PROPS = commonDirectProps.COMMON;
 
 DROP_PROPS = [
   ...commonDropProps.COMMON,
-  "shadow", // Use style-based shadows in Aurora
+  "shadow", // Use style-based shadows in Nordlys
 ];
 ```
 
@@ -302,7 +302,7 @@ DROP_PROPS = [
 
 ### stack-props.js
 
-Stack (HStack/VStack) component migration to Aurora Stack.
+Stack (HStack/VStack) component migration to Nordlys Stack.
 
 **Configuration:**
 
@@ -323,7 +323,7 @@ DIRECT_PROPS = commonDirectProps.COMMON;
 
 DROP_PROPS = [
   ...commonDropProps.COMMON,
-  "divider", // Aurora Stack doesn't support divider
+  "divider", // Nordlys Stack doesn't support divider
   "_text",
   "_stack",
 ];
