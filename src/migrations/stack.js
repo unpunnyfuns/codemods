@@ -21,15 +21,15 @@ import {
   spacing,
 } from '../mappings/style-props.js'
 import { alignValues, justifyValues } from '../mappings/value-maps.js'
-import { addNamedImport, hasNamedImport, removeNamedImport } from '../utils/imports.js'
+import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import {
   addPropsToElement,
   addStyleProp,
   buildStyleValue,
   removePropsFromElement,
   updateElementName,
-} from '../utils/jsx-transforms.js'
-import { addOrExtendStyleSheet, categorizeProps } from '../utils/props.js'
+} from '../helpers/jsx-transforms.js'
+import { addOrExtendStyleSheet, categorizeProps } from '../helpers/props.js'
 
 // Stack prop mappings
 const styleProps = {

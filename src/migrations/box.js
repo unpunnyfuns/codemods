@@ -10,15 +10,15 @@
 import { directProps } from '../mappings/direct-props.js'
 import { dropProps } from '../mappings/drop-props.js'
 import { border, layout, sizing, spacing } from '../mappings/style-props.js'
-import { addNamedImport, hasNamedImport, removeNamedImport } from '../utils/imports.js'
+import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import {
   addPropsToElement,
   addStyleProp,
   buildStyleValue,
   removePropsFromElement,
   updateElementName,
-} from '../utils/jsx-transforms.js'
-import { addOrExtendStyleSheet, categorizeProps } from '../utils/props.js'
+} from '../helpers/jsx-transforms.js'
+import { addOrExtendStyleSheet, categorizeProps } from '../helpers/props.js'
 
 // Box → View prop mappings
 const styleProps = {

@@ -21,7 +21,7 @@
  * node.source = '@org/common/src/components'
  */
 
-import { insertImports, matchesImportPath } from '../utils/imports.js'
+import { insertImports, matchesImportPath } from '../helpers/imports.js'
 
 // Path constants
 const IMPORT_PATH = '@org/common/src/components'

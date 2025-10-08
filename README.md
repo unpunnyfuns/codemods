@@ -1,122 +1,68 @@
 # NativeBase Migration Codemods
 
-Automated transformations for migrating NativeBase components to Aurora/Nordlys design system using jscodeshift.
+jscodeshift codemods for migrating NativeBase components to Aurora/Nordlys.
 
 ## Quick Start
 
 ```bash
 npm install
-./run.sh <codemod> "path/to/files/**/*.{ts,tsx}"
+./run.sh <codemod> "path/**/*.tsx"
 ```
 
 ## Available Codemods
 
-### Migrations
+**Migrations** (component-specific):
+- `migrate-avatar` - Avatar → Nordlys Avatar
+- `migrate-box` - Box → View with StyleSheet
+- `migrate-button` - Button → Nordlys Button
+- `migrate-pressable` - Pressable → React Native Pressable
+- `migrate-stack` - HStack/VStack → Aurora Stack
+- `migrate-switch` - Switch → Nordlys Switch
+- `migrate-typography` - Typography → Nordlys Typography
 
-Transform NativeBase components to Aurora/Nordlys equivalents with prop mapping and StyleSheet extraction:
+**Transforms** (general-purpose):
+- `redirect-imports` - Redirect import paths
+- `split-atoms` - Split barrel imports into individual imports
 
-| Codemod | Description | Example |
-|---------|-------------|---------|
-| `migrate-avatar` | Avatar → Nordlys Avatar with icon/image object transformation | `<Avatar source={uri} />` → `<Avatar image={{ uri }} />` |
-| `migrate-box` | Box → View with StyleSheet | `<Box bg="blue.500" p={4} />` → `<View style={styles.box0} />` |
-| `migrate-button` | Button → Nordlys Button with icon extraction | `<Button leftIcon={<Icon />}>Text</Button>` → `<Button icon={<Icon />}>Text</Button>` |
-| `migrate-pressable` | Pressable → React Native Pressable with StyleSheet | `<Pressable bg="blue" />` → `<Pressable style={styles.pressable0} />` |
-| `migrate-stack` | HStack/VStack → Aurora Stack with direction | `<HStack space={2} />` → `<Stack direction="horizontal" gap={8} />` |
-| `migrate-switch` | Switch → Nordlys Switch with View wrapper | `<Switch isChecked={x} />` → `<View><Switch checked={x} /></View>` |
-| `migrate-typography` | Typography → Nordlys Typography with token imports | `<Typography color="blue.500" />` → `<Typography color={color.blue[500]} />` |
-
-### Transforms
-
-General-purpose code transformations:
-
-| Codemod | Description | Example |
-|---------|-------------|---------|
-| `redirect-imports` | Redirect import paths | `from 'native-base'` → `from '@org/common/src/components/native-base'` |
-| `split-atoms` | Split barrel imports into individual atom imports | `import { Box } from '@org/common'` → `import { Box } from '@org/common/atoms/Box'` |
-
-## Usage Examples
-
-### Basic Migration
+## Usage
 
 ```bash
-# Migrate all Box components
+# Run migration
 ./run.sh migrate-box "src/**/*.tsx"
 
-# Migrate HStack/VStack to Stack
-./run.sh migrate-stack "src/components/**/*.tsx"
-```
-
-### Import Redirects
-
-```bash
-# Redirect NativeBase imports to shim
+# With options
 ./run.sh redirect-imports "src/**/*.tsx" \
   --sourceImport="native-base" \
-  --targetImport="@org/common/src/components/native-base"
-
-# Split barrel imports
-./run.sh split-atoms "src/**/*.tsx"
+  --targetImport="@org/common/native-base"
 ```
 
-### Custom Options
+`run.sh` automatically formats output with Biome.
 
-Some codemods accept options via `--optionName=value`:
+## Helper Library
 
-```bash
-# Redirect with component renaming
-./run.sh redirect-imports "src/**/*.tsx" \
-  --sourceImport="native-base" \
-  --targetImport="@new/path" \
-  --sourceName="Box" \
-  --targetName="Container"
-```
+Reusable jscodeshift helpers in `src/helpers/`:
+- Import management (add, remove, check)
+- JSX manipulation (rename, add/remove props, wrap)
+- Prop categorization (style, transform, direct, drop)
+- StyleSheet generation
+- Token member expressions
 
-## Project Structure
+See [docs/helpers-reference.md](docs/helpers-reference.md) for API documentation.
 
-| Path | Description |
-|------|-------------|
-| `src/migrations/` | Component-specific migration codemods |
-| `src/transforms/` | General-purpose transformation codemods |
-| `src/mappings/` | Shared prop mapping configurations |
-| `src/utils/` | Shared utilities (imports, JSX, props, tokens) |
-| `src/__tests__/` | Vitest tests organized by codemod type |
-| `src/__testfixtures__/` | Input/output fixture pairs for testing |
-| `docs/` | Architecture and implementation documentation |
-| `run.sh` | Wrapper script with auto-formatting via Biome |
+## Documentation
 
-## Testing
-
-```bash
-npm test              # Run all tests once
-npm run test:watch    # Run tests in watch mode
-```
-
-Tests use fixture-based snapshot testing with normalized jscodeshift formatting.
+- **docs/jscodeshift-patterns.md** - Common patterns and techniques
+- **docs/helpers-reference.md** - Helper library API reference
+- **CLAUDE.md** - Project structure and development workflow
 
 ## Development
 
 ```bash
-npm install           # Install dependencies
-npm run lint          # Lint all files
-npm run lint:fix      # Fix and format with Biome
+npm test              # Run tests
+npm run test:watch    # Watch mode
+npm run lint:fix      # Lint and format
 ```
 
-## Documentation
+## Note
 
-- **CLAUDE.md** - Detailed architecture, prop mapping guide, and development workflow
-- **docs/** - In-depth technical documentation (coming soon)
-- **TOKEN_COMPARISON.md** - Design token mapping reference
-- **COLOR_MAPPING.md** - Color system migration guide
-
-## How Migrations Work
-
-All migration codemods follow the same pattern:
-
-1. Parse source with jscodeshift
-2. Find target JSX elements
-3. Categorize props into: styleProps (→ StyleSheet), transformProps (→ renamed), directProps (→ pass through), dropProps (→ removed)
-4. Transform elements and extract styles
-5. Add StyleSheet.create() and necessary imports
-6. Return formatted source
-
-See CLAUDE.md for detailed prop mapping configuration guide.
+Migrations and mappings are temporary - they'll be deleted after the NativeBase→Aurora migration is complete. The helper library (`src/helpers/`) is designed to be reusable and could potentially be extracted into a standalone package.

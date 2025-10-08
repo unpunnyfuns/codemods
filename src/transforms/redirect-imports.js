@@ -15,7 +15,7 @@
  * ./run.sh redirect-imports "src/**\/*.tsx" --sourceImport="native-base" --targetImport="@new/path" --sourceName="Box" --targetName="Container"
  */
 
-import { matchesImportPath } from '../utils/imports.js'
+import { matchesImportPath } from '../helpers/imports.js'
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift

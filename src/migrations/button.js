@@ -45,10 +45,10 @@ import {
   sizing,
   spacing,
 } from '../mappings/style-props.js'
-import { addNamedImport, hasNamedImport, removeNamedImport } from '../utils/imports.js'
-import { extractPropFromJSXElement, extractSimpleChild } from '../utils/jsx-extraction.js'
-import { createViewWrapper } from '../utils/jsx-transforms.js'
-import { addOrExtendStyleSheet, categorizeProps } from '../utils/props.js'
+import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import { extractPropFromJSXElement, extractSimpleChild } from '../helpers/jsx-extraction.js'
+import { createViewWrapper } from '../helpers/jsx-transforms.js'
+import { addOrExtendStyleSheet, categorizeProps } from '../helpers/props.js'
 
 // Button prop mappings
 const styleProps = {
