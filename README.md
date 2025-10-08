@@ -12,8 +12,8 @@ npm install
 ## Structure
 
 - **`src/nb/`** - NativeBase migrations (temporary, deleted after migration complete)
-- **`src/transforms/`** - General-purpose transforms (reusable)
 - **`src/helpers/`** - Generic jscodeshift utilities (reusable, potential library)
+- **`src/redirect-imports.js`** - General-purpose import redirect transform (reusable)
 
 ## Available Codemods
 
@@ -30,10 +30,10 @@ npm install
 ./run.sh nb/split-atoms "src/**/*.tsx" # Split barrel imports
 ```
 
-### General Transforms (`src/transforms/`)
+### General Transforms
 
 ```bash
-./run.sh transforms/redirect-imports "src/**/*.tsx" \
+./run.sh redirect-imports "src/**/*.tsx" \
   --sourceImport="native-base" \
   --targetImport="@org/common/native-base"
 ```
@@ -43,7 +43,7 @@ npm install
 ### Basic Transform
 
 ```javascript
-// src/transforms/my-transform.js
+// src/my-transform.js
 export default function transform(fileInfo, api) {
   const j = api.jscodeshift
   const root = j(fileInfo.source)
@@ -60,7 +60,7 @@ export default function transform(fileInfo, api) {
 
 Run it:
 ```bash
-./run.sh transforms/my-transform "src/**/*.js"
+./run.sh my-transform "src/**/*.js"
 ```
 
 ### Component Migration
@@ -77,13 +77,13 @@ See `src/nb/box.js` for the simplest example.
 ### With Tests
 
 ```javascript
-// src/__tests__/transforms/my-transform.test.js
+// src/__tests__/my-transform.test.js
 import { describe, expect, it } from 'vitest'
-import { testTransform } from '../test-helper.js'
+import { testTransform } from './test-helper.js'
 
-describe('transforms/my-transform', () => {
+describe('my-transform', () => {
   it('transforms oldName to newName', () => {
-    const output = testTransform('transforms/my-transform', 'transforms/my-transform')
+    const output = testTransform('my-transform', 'my-transform')
     expect(output).toMatchSnapshot()
   })
 })
@@ -91,7 +91,7 @@ describe('transforms/my-transform', () => {
 
 Add fixtures:
 ```javascript
-// src/__testfixtures__/transforms/my-transform.input.js
+// src/__testfixtures__/my-transform.input.js
 const x = oldName
 
 // Expected output will be in snapshot
@@ -121,6 +121,7 @@ npm run lint:fix      # Lint and format with Biome
 - **CLAUDE.md** - Project structure, detailed workflows
 - **docs/jscodeshift-patterns.md** - Common AST patterns
 - **docs/helpers-reference.md** - Helper API reference
+- **redirect-imports.md** - Import redirect transform documentation
 
 ## Note
 
