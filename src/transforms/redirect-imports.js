@@ -1,19 +1,5 @@
-/**
- * Redirect imports from one path to another, optionally renaming a specific imported identifier
- *
- * Options:
- * - sourceImport: The import path to look for (required)
- * - targetImport: The import path to redirect to (required)
- * - sourceName: The imported identifier to rename (optional)
- * - targetName: The new name for the identifier (optional, requires sourceName)
- *
- * Examples:
- * // Simple redirect (no renaming)
- * ./run.sh redirect-imports "src/**\/*.tsx" --sourceImport="native-base" --targetImport="@org/common/src/components/native-base"
- *
- * // Redirect with renaming
- * ./run.sh redirect-imports "src/**\/*.tsx" --sourceImport="native-base" --targetImport="@new/path" --sourceName="Box" --targetName="Container"
- */
+// Redirect imports from one path to another, optionally renaming identifiers
+// See redirect-imports.md for documentation
 
 import { matchesImportPath } from '../helpers/imports.js'
 
@@ -34,48 +20,52 @@ function main(fileInfo, api, options = {}) {
     throw new Error('--targetName requires --sourceName to be specified')
   }
 
-  // Find imports (handles trailing slashes)
+  // Find import declarations matching the source path
+  // matchesImportPath handles trailing slashes: 'foo' matches 'foo' and 'foo/'
   const imports = root.find(j.ImportDeclaration, {
     source: {
       value: matchesImportPath(sourceImport),
     },
   })
 
-  // Bail early if nothing to do
   if (!imports.length) {
     return fileInfo.source
   }
 
-  // Track what needs to be renamed in the file
+  // Track local name that needs to be renamed throughout the file
+  // Example: import { View as RNView } → localNameToRename='RNView', newName='CustomView'
   let localNameToRename = null
   let newName = null
 
-  // Process each import
+  // Process each import declaration
   imports.forEach((path) => {
     const { node } = path
 
-    // Process specifiers
+    // Map over import specifiers to handle renaming
+    // ImportSpecifier: { View, Text } or { View as RNView }
     const newSpecifiers = node.specifiers?.map((spec) => {
       if (spec.type === 'ImportSpecifier' && sourceName) {
+        // spec.imported.name = what's imported from the module
+        // spec.local.name = what's used in the file (may be aliased)
         const importedName = spec.imported.name
         const localName = spec.local.name
 
         if (importedName === sourceName && targetName) {
-          // Track this for renaming throughout the file
+          // Track the local name for renaming throughout the file
           localNameToRename = localName
           newName = targetName
 
-          // Create new specifier with renamed import
+          // Create new import specifier with renamed identifier
           return j.importSpecifier(j.identifier(targetName), j.identifier(targetName))
         }
       }
       return spec
     })
 
-    // Create new import with updated path and specifiers
+    // Create new import declaration with updated path and specifiers
     const newImport = j.importDeclaration(newSpecifiers || node.specifiers, j.literal(targetImport))
 
-    // Preserve type imports
+    // Preserve type-only imports: import type { Foo } from 'bar'
     if (node.importKind) {
       newImport.importKind = node.importKind
     }
@@ -83,16 +73,15 @@ function main(fileInfo, api, options = {}) {
     j(path).replaceWith(newImport)
   })
 
-  // Rename all usages throughout the file
+  // Rename all usages of the identifier throughout the file
   if (localNameToRename && newName) {
     root
       .find(j.Identifier, { name: localNameToRename })
       .filter((path) => {
-        // Don't rename in import declarations (already handled)
+        // Skip identifiers in import/export specifiers (already handled above)
         if (path.parent.node.type === 'ImportSpecifier') {
           return false
         }
-        // Don't rename in export declarations
         if (path.parent.node.type === 'ExportSpecifier') {
           return false
         }

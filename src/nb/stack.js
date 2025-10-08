@@ -1,12 +1,5 @@
-/**
- * Migrate NativeBase HStack/VStack → Aurora Stack with direction
- *
- * <HStack space={2}>{children}</HStack>
- * <VStack space={4}>{children}</VStack>
- * =>
- * <Stack direction="horizontal" gap={space[2]}>{children}</Stack>
- * <Stack direction="vertical" gap={space[4]}>{children}</Stack>
- */
+// Migrate NativeBase HStack/VStack → Aurora Stack with direction
+// See stack.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import {
@@ -43,19 +36,22 @@ const styleProps = {
   ...extra,
 
   // Stack-specific props with value mapping
+  // align="start" → alignItems: 'flex-start' (extracted to StyleSheet)
   align: {
     styleName: 'alignItems',
     valueMap: alignValues,
   },
+  // justify="between" → justifyContent: 'space-between' (extracted to StyleSheet)
   justify: {
     styleName: 'justifyContent',
     valueMap: justifyValues,
   },
 }
 
-// Remove space from STYLE_PROPS since it should stay on element
+// Remove space from STYLE_PROPS since it should stay on element as gap
 delete styleProps.space
 
+// space={2} → gap={space[2]} (stays on element, not extracted)
 const transformProps = {
   space: 'gap',
 }

@@ -1,24 +1,5 @@
-/**
- * Migrate NativeBase/Common Switch → Nordlys Switch
- *
- * Key differences:
- * - isChecked → value
- * - onToggle → onValueChange
- * - isDisabled → disabled
- * - children wrapped in <Switch.Label>
- * - label prop becomes <Switch.Description>
- *
- * Before:
- * <Switch label="Label" isChecked={bool} onToggle={fn}>
- *   Description text
- * </Switch>
- *
- * After:
- * <Switch value={bool} onValueChange={fn}>
- *   <Switch.Label>Description text</Switch.Label>
- *   <Switch.Description>Label</Switch.Description>
- * </Switch>
- */
+// Migrate NativeBase/Common Switch → Nordlys Switch with compound components
+// See switch.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'

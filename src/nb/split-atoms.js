@@ -1,33 +1,13 @@
-/**
- * Make sure atom components are imported from their individual paths
- *
- * import { Box, Button as Btn, type ButtonProps } from '@org/common/src/components'
- * //=>
- * import { Box } from '@org/common/src/components/atoms/Box'
- * import { Button as Btn } from '@org/common/src/components/atoms/Button'
- *
- * A quick breakdown AST import nodes:
- *
- * node.specifiers = [
- *   { type: 'ImportSpecifier', imported: { name: 'Box' }, local: { name: 'Box' }},
- *   { type: 'ImportSpecifier', imported: { name: 'Button' }, local: { name: 'Btn' }}
- *   { type: 'ImportSpecifier',
- *     imported: { name: 'ButtonProps' },
- *     local: { name: 'ButtonProps' },
- *     importKind: 'type'
- *   }
- * ]
- *
- * node.source = '@org/common/src/components'
- */
+// Split barrel imports into individual atom imports
+// See split-atoms.md for documentation
 
 import { insertImports, matchesImportPath } from '../helpers/imports.js'
 
-// Path constants
 const IMPORT_PATH = '@org/common/src/components'
 const ATOM_PREFIX = '@org/common/src/components/atoms/'
 
-// Atom components and types we care about, organically hand-picked and curated
+// Hardcoded map of atom components and their associated types
+// Maintained manually - see split-atoms.md for full list
 const ATOMS = new Map([
   ['Actionsheet', ['ActionsheetContentProps', 'ActionsheetItemProps', 'ActionsheetProps']],
   ['Alert', ['AlertProps']],
@@ -51,12 +31,14 @@ const ATOMS = new Map([
   ['Typography', ['TypographyProps', 'TypographySize', 'TypographyType']],
 ])
 
-// Resolve component name from import name in ATOMS
+// Resolve component name from import name
+// If it's a component, return itself. If it's a type, return its component.
 function getComponent(importName) {
+  // Direct component match
   if (ATOMS.has(importName)) {
     return importName
   }
-  // Check if it's one of our known types
+  // Type match - find which component this type belongs to
   for (const [componentName, associatedTypes] of ATOMS) {
     if (associatedTypes.includes(importName)) {
       return componentName

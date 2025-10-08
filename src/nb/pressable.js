@@ -1,13 +1,5 @@
-/**
- * Migrate NativeBase Pressable → React Native Pressable
- *
- * Common wrapper sets accessibilityRole="button" by default, preserve this behavior
- *
- * <Pressable bg="blue.500" p={4} onPress={fn}>{children}</Pressable>
- * =>
- * <Pressable style={styles.pressable0} onPress={fn} accessibilityRole="button">{children}</Pressable>
- * const styles = StyleSheet.create({ pressable0: { backgroundColor: color.blue['500'], padding: 4 } })
- */
+// Migrate NativeBase Pressable → React Native Pressable with StyleSheet
+// See pressable.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import {

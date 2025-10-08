@@ -1,22 +1,5 @@
-/**
- * Migrate NativeBase/Common Avatar → Nordlys Avatar
- *
- * Key transformations:
- * - iconName="name" → icon={{ name: "name", fill: "blue" }}
- * - imageUri="url" → image={{ source: { uri: "url" } }}
- * - imageSource={source} → image={{ source }}
- * - letters not supported (drop with warning)
- *
- * Before:
- * <Avatar iconName="user" size="md" bgColor="blue" />
- * <Avatar imageUri="https://..." size="lg" />
- * <Avatar letters="AB" size="sm" />
- *
- * After:
- * <Avatar icon={{ name: "user", fill: "blue" }} size="md" />
- * <Avatar image={{ source: { uri: "https://..." } }} size="lg" />
- * // Warning: Avatar with letters prop cannot be migrated (not supported in Nordlys)
- */
+// Migrate NativeBase/Common Avatar → Nordlys Avatar with object-based props
+// See avatar.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'

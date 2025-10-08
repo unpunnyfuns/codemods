@@ -1,38 +1,5 @@
-/**
- * Migrate NativeBase/Common Button → Nordlys Button
- *
- * Handles ~80% of common cases:
- * - Extracts icon name from <Icon name="..." /> in leftIcon
- * - Extracts simple text children (string literals, variables, call expressions)
- * - Maps props: size, variant, onPress, isDisabled→disabled, isLoading
- * - Adds required type="solid" (default, may need manual adjustment)
- * - Drops: rightIcon, style props, _text, etc
- *
- * Before:
- * <Button
- *   leftIcon={<Icon name="Plus" />}
- *   variant="secondary"
- *   size="md"
- *   onPress={fn}
- * >
- *   {t('text')}
- * </Button>
- *
- * After:
- * <Button
- *   icon="Plus"
- *   text={t('text')}
- *   variant="secondary"
- *   size="md"
- *   type="solid"
- *   onPress={fn}
- * />
- *
- * Warns when:
- * - Children are complex JSX (multiple elements, conditionals)
- * - rightIcon is used (not supported)
- * - Both icon and children are missing (icon-only not supported in migration)
- */
+// Migrate NativeBase/Common Button → Nordlys Button with extracted icon and text props
+// See button.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { extractPropFromJSXElement, extractSimpleChild } from '../helpers/jsx-extraction.js'

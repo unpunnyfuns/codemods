@@ -1,28 +1,5 @@
-/**
- * Migrate NativeBase Typography to Nordlys Typography
- *
- * Key differences:
- * - Nordlys Typography doesn't accept style props (margin, padding, etc.)
- * - Style props need to be wrapped in a View with StyleSheet
- * - fontWeight/fontSize/lineHeight props are dropped (managed internally)
- * - Color expects ColorPath string (Typography resolves internally)
- *
- * Before:
- * <Typography type="heading" size="xl" mb="lg" fontWeight="700">
- *   {text}
- * </Typography>
- *
- * After:
- * <View style={styles.typography0}>
- *   <Typography type="heading" size="xl">
- *     {text}
- *   </Typography>
- * </View>
- *
- * const styles = StyleSheet.create({
- *   typography0: { marginBottom: space.lg }
- * })
- */
+// Migrate NativeBase Typography → Nordlys Typography with wrapper View for style props
+// See typography.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'
