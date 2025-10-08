@@ -9,16 +9,24 @@ set -e
 if [ "$#" -lt 2 ]; then
   echo "Usage: $0 <codemod-name> <file-pattern> [jscodeshift-options...]"
   echo ""
-  echo "Available codemods:"
-  echo "  - nb-redirect"
-  echo "  - shim-redirect"
-  echo "  - split-atoms"
-  echo "  - migrate-stack"
-  echo "  - hstack-to-stack"
-  echo "  - migrate-nb-component"
+  echo "Available migrations:"
+  echo "  - migrate-avatar      Migrate NativeBase Avatar → Nordlys Avatar"
+  echo "  - migrate-box         Migrate NativeBase Box → React Native View"
+  echo "  - migrate-button      Migrate NativeBase Button → Nordlys Button"
+  echo "  - migrate-pressable   Migrate NativeBase Pressable → React Native Pressable"
+  echo "  - migrate-stack       Migrate NativeBase HStack/VStack → Nordlys Stack"
+  echo "  - migrate-switch      Migrate NativeBase Switch → Nordlys Switch"
+  echo "  - migrate-typography  Migrate NativeBase Typography → Nordlys Typography"
   echo ""
-  echo "Example: $0 split-atoms \"src/**/*.{js,jsx,ts,tsx}\""
-  echo "Example with options: $0 migrate-stack \"src/**/*.js\" --sourceName=VStack"
+  echo "Available transforms:"
+  echo "  - nb-redirect         Redirect native-base imports"
+  echo "  - shim-redirect       Redirect shim imports"
+  echo "  - split-atoms         Split barrel imports into individual imports"
+  echo ""
+  echo "Examples:"
+  echo "  $0 migrate-box \"src/**/*.{js,jsx,ts,tsx}\""
+  echo "  $0 migrate-stack \"src/**/*.js\" --sourceName=VStack"
+  echo "  $0 split-atoms \"src/components/**/*.tsx\""
   echo ""
   echo "All arguments after <file-pattern> are passed directly to jscodeshift."
   exit 1
@@ -27,7 +35,43 @@ fi
 CODEMOD_NAME=$1
 FILE_PATTERN=$2
 shift 2  # Remove first two arguments, all remaining args go to jscodeshift
-TRANSFORM_PATH="src/${CODEMOD_NAME}.js"
+
+# Map codemod names to file paths
+# Migrations: migrate-* → src/migrations/*.js
+# Transforms: everything else → src/transforms/*.js
+case "$CODEMOD_NAME" in
+  migrate-avatar)
+    TRANSFORM_PATH="src/migrations/avatar.js"
+    ;;
+  migrate-box)
+    TRANSFORM_PATH="src/migrations/box.js"
+    ;;
+  migrate-button)
+    TRANSFORM_PATH="src/migrations/button.js"
+    ;;
+  migrate-pressable)
+    TRANSFORM_PATH="src/migrations/pressable.js"
+    ;;
+  migrate-stack)
+    TRANSFORM_PATH="src/migrations/stack.js"
+    ;;
+  migrate-switch)
+    TRANSFORM_PATH="src/migrations/switch.js"
+    ;;
+  migrate-typography)
+    TRANSFORM_PATH="src/migrations/typography.js"
+    ;;
+  nb-redirect|shim-redirect)
+    TRANSFORM_PATH="src/transforms/redirect-imports.js"
+    ;;
+  split-atoms)
+    TRANSFORM_PATH="src/transforms/split-atoms.js"
+    ;;
+  *)
+    # Fallback: try old structure for backwards compatibility
+    TRANSFORM_PATH="src/${CODEMOD_NAME}.js"
+    ;;
+esac
 
 if [ ! -f "$TRANSFORM_PATH" ]; then
   echo "Error: Codemod '${CODEMOD_NAME}' not found at ${TRANSFORM_PATH}"

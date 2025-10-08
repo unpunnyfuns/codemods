@@ -1,0 +1,45 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`migrations/button > migrates Button with leftIcon and children to nordlys Button 1`] = `
+"import { Icon } from '@hb-frontend/common/src/components';
+import { useTranslation } from 'react-i18next'
+
+import { Button } from '@hb-frontend/app/src/components/nordlys/Button';
+import { View, StyleSheet } from 'react-native';
+import { space } from '@hb-frontend/nordlys';
+
+export function MyComponent() {
+  const { t } = useTranslation()
+  const text = 'Submit'
+
+  return (
+    <>
+      <View style={styles.button0}>
+        <Button
+          testID="button1"
+          variant="secondary"
+          size="md"
+          onPress={() => {}}
+          icon={'PlusOutlined'}
+          text={t('addNew')}
+          type='solid' />
+      </View>
+      <Button
+        variant="primary"
+        size="lg"
+        onPress={() => {}}
+        disabled
+        text={'Simple text'}
+        type='solid' />
+      <Button variant="secondary" size="md" onPress={() => {}} text={text} type='solid' />
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  button0: {
+    marginTop: space.xl
+  }
+});
+"
+`;
