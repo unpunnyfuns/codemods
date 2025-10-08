@@ -1,17 +1,18 @@
 /**
- * Redirect imports from one path to another, optionally renaming imported identifiers
+ * Redirect imports from one path to another, optionally renaming a specific imported identifier
  *
  * Options:
  * - sourceImport: The import path to look for (required)
  * - targetImport: The import path to redirect to (required)
- * - rename: JSON object mapping old names to new names (optional)
+ * - sourceName: The imported identifier to rename (optional)
+ * - targetName: The new name for the identifier (optional, requires sourceName)
  *
  * Examples:
  * // Simple redirect (no renaming)
  * ./run.sh redirect-imports "src/**\/*.tsx" --sourceImport="native-base" --targetImport="@org/common/src/components/native-base"
  *
  * // Redirect with renaming
- * ./run.sh redirect-imports "src/**\/*.tsx" --sourceImport="native-base" --targetImport="@new/path" --rename='{"Box":"Container","Button":"Btn"}'
+ * ./run.sh redirect-imports "src/**\/*.tsx" --sourceImport="native-base" --targetImport="@new/path" --sourceName="Box" --targetName="Container"
  */
 
 import { matchesImportPath } from './utils/imports.js'
@@ -26,15 +27,11 @@ function main(fileInfo, api, options = {}) {
 
   const sourceImport = options.sourceImport
   const targetImport = options.targetImport
+  const sourceName = options.sourceName
+  const targetName = options.targetName
 
-  // Parse rename mapping if provided
-  let renameMap = {}
-  if (options.rename) {
-    try {
-      renameMap = typeof options.rename === 'string' ? JSON.parse(options.rename) : options.rename
-    } catch (err) {
-      throw new Error(`Invalid rename mapping: ${err.message}`)
-    }
+  if (targetName && !sourceName) {
+    throw new Error('--targetName requires --sourceName to be specified')
   }
 
   // Find imports (handles trailing slashes)
@@ -50,25 +47,26 @@ function main(fileInfo, api, options = {}) {
   }
 
   // Track what needs to be renamed in the file
-  const renamings = new Map() // localName -> newName
+  let localNameToRename = null
+  let newName = null
 
   // Process each import
   imports.forEach((path) => {
     const { node } = path
 
-    // Process specifiers and build rename map
+    // Process specifiers
     const newSpecifiers = node.specifiers?.map((spec) => {
-      if (spec.type === 'ImportSpecifier') {
+      if (spec.type === 'ImportSpecifier' && sourceName) {
         const importedName = spec.imported.name
         const localName = spec.local.name
-        const newName = renameMap[importedName]
 
-        if (newName) {
+        if (importedName === sourceName && targetName) {
           // Track this for renaming throughout the file
-          renamings.set(localName, newName)
+          localNameToRename = localName
+          newName = targetName
 
           // Create new specifier with renamed import
-          return j.importSpecifier(j.identifier(newName), j.identifier(newName))
+          return j.importSpecifier(j.identifier(targetName), j.identifier(targetName))
         }
       }
       return spec
@@ -86,24 +84,21 @@ function main(fileInfo, api, options = {}) {
   })
 
   // Rename all usages throughout the file
-  if (renamings.size > 0) {
-    for (const [oldName, newName] of renamings) {
-      // Rename all identifiers (except in import/export declarations)
-      root
-        .find(j.Identifier, { name: oldName })
-        .filter((path) => {
-          // Don't rename in import declarations (already handled)
-          if (path.parent.node.type === 'ImportSpecifier') {
-            return false
-          }
-          // Don't rename in export declarations
-          if (path.parent.node.type === 'ExportSpecifier') {
-            return false
-          }
-          return true
-        })
-        .replaceWith(() => j.identifier(newName))
-    }
+  if (localNameToRename && newName) {
+    root
+      .find(j.Identifier, { name: localNameToRename })
+      .filter((path) => {
+        // Don't rename in import declarations (already handled)
+        if (path.parent.node.type === 'ImportSpecifier') {
+          return false
+        }
+        // Don't rename in export declarations
+        if (path.parent.node.type === 'ExportSpecifier') {
+          return false
+        }
+        return true
+      })
+      .replaceWith(() => j.identifier(newName))
   }
 
   return root.toSource({

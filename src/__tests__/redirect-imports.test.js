@@ -63,7 +63,7 @@ export function MyComponent() {
     expect(actual).toContain('<Typography>')
   })
 
-  it('redirects and renames imports', () => {
+  it('redirects and renames a single import', () => {
     const input = `import { Box, Button } from 'native-base'
 
 export function MyComponent() {
@@ -77,15 +77,16 @@ export function MyComponent() {
     const actual = runTransform(input, {
       sourceImport: 'native-base',
       targetImport: '@new/path',
-      rename: { Box: 'Container', Button: 'Btn' },
+      sourceName: 'Box',
+      targetName: 'Container',
     })
 
     expect(actual).toContain("from '@new/path'")
-    expect(actual).toContain('{ Container, Btn }')
+    expect(actual).toContain('Container')
     expect(actual).toContain('<Container>')
-    expect(actual).toContain('<Btn>')
+    expect(actual).toContain('Button') // unchanged
+    expect(actual).toContain('<Button>') // unchanged
     expect(actual).not.toContain('<Box>')
-    expect(actual).not.toContain('<Button>')
   })
 
   it('handles aliased imports with renaming', () => {
@@ -98,11 +99,33 @@ export function MyComponent() {
     const actual = runTransform(input, {
       sourceImport: 'native-base',
       targetImport: '@new/path',
-      rename: { Box: 'Container' },
+      sourceName: 'Box',
+      targetName: 'Container',
     })
 
     expect(actual).toContain("from '@new/path'")
     expect(actual).toContain('<Container />')
     expect(actual).not.toContain('MyBox')
+  })
+
+  it('redirects without renaming when sourceName not provided', () => {
+    const input = `import { Box, Button } from 'native-base'
+
+export function MyComponent() {
+  return (
+    <Box>
+      <Button>Click</Button>
+    </Box>
+  )
+}`
+
+    const actual = runTransform(input, {
+      sourceImport: 'native-base',
+      targetImport: '@new/path',
+    })
+
+    expect(actual).toContain("from '@new/path'")
+    expect(actual).toContain('<Box>')
+    expect(actual).toContain('<Button>')
   })
 })
