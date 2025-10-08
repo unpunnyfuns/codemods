@@ -64,14 +64,16 @@ function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
   const root = j(fileInfo.source)
 
-  const sourceImport = options.sourceImport || 'react-native'
-  const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/'
-  const targetName = options.targetName || 'Stack'
-  const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
+  const sourceImport = options.sourceImport ?? 'react-native'
+  const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/'
+  const targetName = options.targetName ?? 'Stack'
+  const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length) return fileInfo.source
+  if (!imports.length) {
+    return fileInfo.source
+  }
 
   let transformed = false
   const elementStyles = []
@@ -80,13 +82,17 @@ function main(fileInfo, api, options = {}) {
   const stackProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
 
   // Process each stack component type
-  STACK_COMPONENTS.forEach(({ name: componentName, direction }) => {
-    if (!hasNamedImport(imports, componentName)) return
+  for (const { name: componentName, direction } of STACK_COMPONENTS) {
+    if (!hasNamedImport(imports, componentName)) {
+      continue
+    }
 
     const stackElements = root.find(j.JSXElement, {
       openingElement: { name: { name: componentName } },
     })
-    if (stackElements.length === 0) return
+    if (stackElements.length === 0) {
+      continue
+    }
 
     // Transform each element
     stackElements.forEach((path, index) => {
@@ -101,7 +107,9 @@ function main(fileInfo, api, options = {}) {
         usedTokenHelpers: newHelpers,
       } = categorizeProps(attributes, stackProps, j)
 
-      newHelpers.forEach((h) => usedTokenHelpers.add(h))
+      for (const h of newHelpers) {
+        usedTokenHelpers.add(h)
+      }
 
       // Transform element
       removePropsFromElement(attributes, propsToRemove)
@@ -125,13 +133,17 @@ function main(fileInfo, api, options = {}) {
 
     removeNamedImport(imports, componentName, j)
     transformed = true
-  })
+  }
 
-  if (!transformed) return fileInfo.source
+  if (!transformed) {
+    return fileInfo.source
+  }
 
   // Update imports
   addNamedImport(root, targetImport, targetName, j)
-  usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
+  for (const h of usedTokenHelpers) {
+    addNamedImport(root, tokenImport, h, j)
+  }
 
   // Add StyleSheet
   addOrExtendStyleSheet(root, elementStyles, j)

@@ -50,18 +50,22 @@ function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
   const root = j(fileInfo.source)
 
-  const sourceImport = options.sourceImport || 'native-base'
-  const targetImport = options.targetImport || 'react-native'
-  const targetName = options.targetName || 'View'
-  const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
+  const sourceImport = options.sourceImport ?? 'native-base'
+  const targetImport = options.targetImport ?? 'react-native'
+  const targetName = options.targetName ?? 'View'
+  const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length || !hasNamedImport(imports, 'Box')) return fileInfo.source
+  if (!imports.length || !hasNamedImport(imports, 'Box')) {
+    return fileInfo.source
+  }
 
   // Find all Box elements
   const boxElements = root.find(j.JSXElement, { openingElement: { name: { name: 'Box' } } })
-  if (boxElements.length === 0) return fileInfo.source
+  if (boxElements.length === 0) {
+    return fileInfo.source
+  }
 
   const elementStyles = []
   const usedTokenHelpers = new Set()
@@ -81,7 +85,9 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers: newHelpers,
     } = categorizeProps(attributes, boxProps, j)
 
-    newHelpers.forEach((h) => usedTokenHelpers.add(h))
+    for (const h of newHelpers) {
+      usedTokenHelpers.add(h)
+    }
 
     // Transform element
     removePropsFromElement(attributes, propsToRemove)
@@ -95,7 +101,9 @@ function main(fileInfo, api, options = {}) {
   // Update imports
   removeNamedImport(imports, 'Box', j)
   addNamedImport(root, targetImport, targetName, j)
-  usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
+  for (const h of usedTokenHelpers) {
+    addNamedImport(root, tokenImport, h, j)
+  }
 
   // Add StyleSheet
   addOrExtendStyleSheet(root, elementStyles, j)

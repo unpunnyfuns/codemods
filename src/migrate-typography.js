@@ -92,11 +92,11 @@ function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
   const root = j(fileInfo.source)
 
-  const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
-  const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Typography'
-  const targetName = options.targetName || 'Typography'
-  const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
-  const wrap = options.wrap !== false // Default: true (wrap in View when style props exist)
+  const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
+  const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/Typography'
+  const targetName = options.targetName ?? 'Typography'
+  const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
+  const wrap = options.wrap ?? true // Default: true (wrap in View when style props exist)
 
   // Find Typography imports
   const imports = root.find(j.ImportDeclaration, {
@@ -235,7 +235,9 @@ function main(fileInfo, api, options = {}) {
   // Print warnings
   if (warnings.length > 0) {
     console.warn('⚠️  Typography migration warnings:')
-    warnings.forEach((w) => console.warn(`   ${w}`))
+    for (const w of warnings) {
+      console.warn(`   ${w}`)
+    }
   }
 
   // Update imports
@@ -249,18 +251,20 @@ function main(fileInfo, api, options = {}) {
   }
 
   // Add token imports
-  usedTokenHelpers.forEach((helper) => {
+  for (const helper of usedTokenHelpers) {
     addNamedImport(root, tokenImport, helper, j)
-  })
+  }
 
   // Add StyleSheet.create() if we have styles and wrap is enabled
   if (wrap && elementStyles.length > 0) {
-    const styleProperties = elementStyles.map(({ name, styles }) => {
-      const props = Object.entries(styles).map(([key, value]) => {
-        return j.property('init', j.identifier(key), value)
-      })
-      return j.property('init', j.identifier(name), j.objectExpression(props))
-    })
+    const styleProperties = []
+    for (const { name, styles } of elementStyles) {
+      const props = []
+      for (const [key, value] of Object.entries(styles)) {
+        props.push(j.property('init', j.identifier(key), value))
+      }
+      styleProperties.push(j.property('init', j.identifier(name), j.objectExpression(props)))
+    }
 
     // Check if StyleSheet.create already exists
     const existingStyleSheet = root.find(j.VariableDeclarator, {

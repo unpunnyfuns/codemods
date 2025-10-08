@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": [
+    "experimentalScannerIgnores": [
       "src/__testfixtures__/**",
       "analyze-component.js",
       "extract-component-props.js"
@@ -28,7 +28,10 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true
+      "recommended": true,
+      "style": {
+        "useBlockStatements": "error"
+      }
     }
   }
 }

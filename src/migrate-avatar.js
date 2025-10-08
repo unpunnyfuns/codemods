@@ -61,15 +61,17 @@ function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
   const root = j(fileInfo.source)
 
-  const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
-  const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Avatar'
-  const targetName = options.targetName || 'Avatar'
-  const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
-  const wrap = options.wrap !== false // Default: true (wrap in View when style props exist)
+  const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
+  const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/Avatar'
+  const targetName = options.targetName ?? 'Avatar'
+  const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
+  const wrap = options.wrap ?? true // Default: true (wrap in View when style props exist)
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length || !hasNamedImport(imports, 'Avatar')) return fileInfo.source
+  if (!imports.length || !hasNamedImport(imports, 'Avatar')) {
+    return fileInfo.source
+  }
 
   // Find all Avatar elements (excluding Avatar.Badge and Avatar.Group)
   const avatarElements = root.find(j.JSXElement, {
@@ -81,7 +83,9 @@ function main(fileInfo, api, options = {}) {
     },
   })
 
-  if (avatarElements.length === 0) return fileInfo.source
+  if (avatarElements.length === 0) {
+    return fileInfo.source
+  }
 
   const warnings = []
   const elementStyles = []
@@ -101,22 +105,30 @@ function main(fileInfo, api, options = {}) {
     const iconNameAttr = attributes.find(
       (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'iconName',
     )
-    if (iconNameAttr) iconNameValue = iconNameAttr.value
+    if (iconNameAttr) {
+      iconNameValue = iconNameAttr.value
+    }
 
     const imageUriAttr = attributes.find(
       (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'imageUri',
     )
-    if (imageUriAttr) imageUriValue = imageUriAttr.value
+    if (imageUriAttr) {
+      imageUriValue = imageUriAttr.value
+    }
 
     const imageSourceAttr = attributes.find(
       (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'imageSource',
     )
-    if (imageSourceAttr) imageSourceValue = imageSourceAttr.value
+    if (imageSourceAttr) {
+      imageSourceValue = imageSourceAttr.value
+    }
 
     const lettersAttr = attributes.find(
       (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'letters',
     )
-    if (lettersAttr) lettersValue = lettersAttr.value
+    if (lettersAttr) {
+      lettersValue = lettersAttr.value
+    }
 
     // Warn and skip if letters prop is used (not supported)
     if (lettersValue) {
@@ -133,20 +145,24 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers: newHelpers,
     } = categorizeProps(attributes, avatarProps, j)
 
-    newHelpers.forEach((h) => usedTokenHelpers.add(h))
+    for (const h of newHelpers) {
+      usedTokenHelpers.add(h)
+    }
 
     // Build Avatar props - start with direct props that pass through
     const avatarAttributes = attributes.filter((attr) => {
-      if (attr.type !== 'JSXAttribute' || !attr.name) return false
+      if (attr.type !== 'JSXAttribute' || !attr.name) {
+        return false
+      }
       const propName = attr.name.name
       // Keep direct props that weren't removed
       return DIRECT_PROPS.includes(propName) && !propsToRemove.includes(propName)
     })
 
     // Add transformed props
-    Object.entries(transformedProps).forEach(([name, value]) => {
+    for (const [name, value] of Object.entries(transformedProps)) {
       avatarAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
-    })
+    }
 
     // Add custom transformed props
     if (iconNameValue) {
@@ -235,7 +251,9 @@ function main(fileInfo, api, options = {}) {
   // Print warnings
   if (warnings.length > 0) {
     console.warn('⚠️  Avatar migration warnings:')
-    warnings.forEach((w) => console.warn(`   ${w}`))
+    for (const w of warnings) {
+      console.warn(`   ${w}`)
+    }
   }
 
   // Update imports
@@ -246,7 +264,9 @@ function main(fileInfo, api, options = {}) {
   if (wrap && elementStyles.length > 0) {
     addNamedImport(root, 'react-native', 'View', j)
     addNamedImport(root, 'react-native', 'StyleSheet', j)
-    usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
+    for (const h of usedTokenHelpers) {
+      addNamedImport(root, tokenImport, h, j)
+    }
   }
 
   // Add StyleSheet

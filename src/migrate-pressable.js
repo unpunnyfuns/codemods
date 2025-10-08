@@ -55,22 +55,26 @@ function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
   const root = j(fileInfo.source)
 
-  const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
-  const targetImport = options.targetImport || 'react-native'
-  const targetName = options.targetName || 'Pressable'
-  const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
+  const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
+  const targetImport = options.targetImport ?? 'react-native'
+  const targetName = options.targetName ?? 'Pressable'
+  const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, {
     source: { value: sourceImport },
   })
-  if (!imports.length || !hasNamedImport(imports, 'Pressable')) return fileInfo.source
+  if (!imports.length || !hasNamedImport(imports, 'Pressable')) {
+    return fileInfo.source
+  }
 
   // Find all Pressable elements
   const pressableElements = root.find(j.JSXElement, {
     openingElement: { name: { name: 'Pressable' } },
   })
-  if (pressableElements.length === 0) return fileInfo.source
+  if (pressableElements.length === 0) {
+    return fileInfo.source
+  }
 
   const elementStyles = []
   const usedTokenHelpers = new Set()
@@ -90,9 +94,9 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers: newHelpers,
     } = categorizeProps(attributes, pressableProps, j)
 
-    newHelpers.forEach((h) => {
+    for (const h of newHelpers) {
       usedTokenHelpers.add(h)
-    })
+    }
 
     // Transform element
     removePropsFromElement(attributes, propsToRemove)
@@ -122,7 +126,9 @@ function main(fileInfo, api, options = {}) {
   // Update imports
   removeNamedImport(imports, 'Pressable', j)
   addNamedImport(root, targetImport, targetName, j)
-  usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
+  for (const h of usedTokenHelpers) {
+    addNamedImport(root, tokenImport, h, j)
+  }
 
   // Add StyleSheet
   if (elementStyles.length > 0) {

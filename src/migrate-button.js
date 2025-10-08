@@ -68,16 +68,18 @@ function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
   const root = j(fileInfo.source)
 
-  const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
-  const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Button'
-  const targetName = options.targetName || 'Button'
-  const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
-  const defaultType = options.defaultType || 'solid'
-  const wrap = options.wrap !== false // Default: true (wrap in View when style props exist)
+  const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
+  const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/Button'
+  const targetName = options.targetName ?? 'Button'
+  const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
+  const defaultType = options.defaultType ?? 'solid'
+  const wrap = options.wrap ?? true // Default: true (wrap in View when style props exist)
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length || !hasNamedImport(imports, 'Button')) return fileInfo.source
+  if (!imports.length || !hasNamedImport(imports, 'Button')) {
+    return fileInfo.source
+  }
 
   // Find all Button elements
   const buttonElements = root.find(j.JSXElement, {
@@ -89,7 +91,9 @@ function main(fileInfo, api, options = {}) {
     },
   })
 
-  if (buttonElements.length === 0) return fileInfo.source
+  if (buttonElements.length === 0) {
+    return fileInfo.source
+  }
 
   const warnings = []
   let migrated = 0
@@ -147,7 +151,9 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers: newHelpers,
     } = categorizeProps(attributes, buttonProps, j)
 
-    newHelpers.forEach((h) => usedTokenHelpers.add(h))
+    for (const h of newHelpers) {
+      usedTokenHelpers.add(h)
+    }
 
     // Check for rightIcon warning
     if (
@@ -158,16 +164,18 @@ function main(fileInfo, api, options = {}) {
 
     // Build Button props - start with direct props that pass through
     const buttonAttributes = attributes.filter((attr) => {
-      if (attr.type !== 'JSXAttribute' || !attr.name) return false
+      if (attr.type !== 'JSXAttribute' || !attr.name) {
+        return false
+      }
       const propName = attr.name.name
       // Keep direct props that weren't removed
       return DIRECT_PROPS.includes(propName) && !propsToRemove.includes(propName)
     })
 
     // Add transformed props
-    Object.entries(transformedProps).forEach(([name, value]) => {
+    for (const [name, value] of Object.entries(transformedProps)) {
       buttonAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
-    })
+    }
 
     // Add icon prop if extracted
     if (iconValue) {
@@ -231,7 +239,9 @@ function main(fileInfo, api, options = {}) {
   if (warnings.length > 0) {
     console.warn(`⚠️  Button migration: ${migrated} migrated, ${skipped} skipped`)
     const uniqueWarnings = [...new Set(warnings)]
-    uniqueWarnings.forEach((w) => console.warn(`   ${w}`))
+    for (const w of uniqueWarnings) {
+      console.warn(`   ${w}`)
+    }
   }
 
   // Update imports
@@ -242,7 +252,9 @@ function main(fileInfo, api, options = {}) {
   if (wrap && elementStyles.length > 0) {
     addNamedImport(root, 'react-native', 'View', j)
     addNamedImport(root, 'react-native', 'StyleSheet', j)
-    usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
+    for (const h of usedTokenHelpers) {
+      addNamedImport(root, tokenImport, h, j)
+    }
   }
 
   // Add StyleSheet

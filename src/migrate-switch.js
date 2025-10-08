@@ -65,19 +65,23 @@ function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
   const root = j(fileInfo.source)
 
-  const sourceImport = options.sourceImport || '@hb-frontend/common/src/components'
-  const targetImport = options.targetImport || '@hb-frontend/app/src/components/nordlys/Switch'
-  const targetName = options.targetName || 'Switch'
-  const tokenImport = options.tokenImport || '@hb-frontend/nordlys'
-  const wrap = options.wrap !== false // Default: true (wrap in View when style props exist)
+  const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
+  const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/Switch'
+  const targetName = options.targetName ?? 'Switch'
+  const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
+  const wrap = options.wrap ?? true // Default: true (wrap in View when style props exist)
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length || !hasNamedImport(imports, 'Switch')) return fileInfo.source
+  if (!imports.length || !hasNamedImport(imports, 'Switch')) {
+    return fileInfo.source
+  }
 
   // Find all Switch elements
   const switchElements = root.find(j.JSXElement, { openingElement: { name: { name: 'Switch' } } })
-  if (switchElements.length === 0) return fileInfo.source
+  if (switchElements.length === 0) {
+    return fileInfo.source
+  }
 
   const elementStyles = []
   const usedTokenHelpers = new Set()
@@ -106,20 +110,24 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers: newHelpers,
     } = categorizeProps(attributes, switchProps, j)
 
-    newHelpers.forEach((h) => usedTokenHelpers.add(h))
+    for (const h of newHelpers) {
+      usedTokenHelpers.add(h)
+    }
 
     // Build Switch props - start with direct props that pass through
     const switchAttributes = attributes.filter((attr) => {
-      if (attr.type !== 'JSXAttribute' || !attr.name) return false
+      if (attr.type !== 'JSXAttribute' || !attr.name) {
+        return false
+      }
       const propName = attr.name.name
       // Keep direct props that weren't removed
       return DIRECT_PROPS.includes(propName) && !propsToRemove.includes(propName)
     })
 
     // Add transformed props
-    Object.entries(transformedProps).forEach(([name, value]) => {
+    for (const [name, value] of Object.entries(transformedProps)) {
       switchAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
-    })
+    }
 
     // Update element attributes
     path.node.openingElement.attributes = switchAttributes
@@ -201,7 +209,9 @@ function main(fileInfo, api, options = {}) {
   if (wrap && elementStyles.length > 0) {
     addNamedImport(root, 'react-native', 'View', j)
     addNamedImport(root, 'react-native', 'StyleSheet', j)
-    usedTokenHelpers.forEach((h) => addNamedImport(root, tokenImport, h, j))
+    for (const h of usedTokenHelpers) {
+      addNamedImport(root, tokenImport, h, j)
+    }
   }
 
   // Add StyleSheet
