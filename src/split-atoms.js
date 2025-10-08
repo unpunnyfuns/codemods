@@ -70,57 +70,57 @@ function getComponent(importName) {
 function processImports(imports, j) {
   const atoms = new Map()
 
-  imports
-    // Get rid of pesky side-effect imports (import './something')
-    .filter((path) => path.node.specifiers?.length > 0)
-    .forEach((path) => {
-      const { node } = path
-      const atomSpecifiers = []
-      const otherSpecifiers = []
+  // Get rid of pesky side-effect imports (import './something')
+  const importsWithSpecifiers = imports.filter((path) => path.node.specifiers?.length > 0).paths()
 
-      // Populate the two lists
-      node.specifiers.forEach((spec) => {
-        // Non-named imports are of no interest here
-        if (spec.type !== 'ImportSpecifier') {
-          otherSpecifiers.push(spec)
-          return
-        }
+  for (const path of importsWithSpecifiers) {
+    const { node } = path
+    const atomSpecifiers = []
+    const otherSpecifiers = []
 
-        // Please be an atom.. or else
-        const component = getComponent(spec.imported.name)
-        if (component) {
-          atomSpecifiers.push({ spec, component })
-        } else {
-          otherSpecifiers.push(spec)
-        }
-      })
-
-      // Keep track of components vs types; ComponentName:boolean
-      atomSpecifiers.forEach(({ spec, component }) => {
-        const importPath = `${ATOM_PREFIX}${component}`
-        const isType = node.importKind === 'type' || spec.importKind === 'type'
-
-        // Create a unique key for the group
-        const groupKey = `${importPath}:${isType}`
-
-        if (!atoms.has(groupKey)) {
-          atoms.set(groupKey, {
-            path: importPath,
-            isType,
-            specifiers: [],
-          })
-        }
-
-        atoms.get(groupKey).specifiers.push(spec)
-      })
-
-      // Update or remove the original import
-      if (otherSpecifiers.length > 0) {
-        j(path).replaceWith(j.importDeclaration(otherSpecifiers, node.source))
-      } else {
-        j(path).remove()
+    // Populate the two lists
+    for (const spec of node.specifiers) {
+      // Non-named imports are of no interest here
+      if (spec.type !== 'ImportSpecifier') {
+        otherSpecifiers.push(spec)
+        continue
       }
-    })
+
+      // Please be an atom.. or else
+      const component = getComponent(spec.imported.name)
+      if (component) {
+        atomSpecifiers.push({ spec, component })
+      } else {
+        otherSpecifiers.push(spec)
+      }
+    }
+
+    // Keep track of components vs types; ComponentName:boolean
+    for (const { spec, component } of atomSpecifiers) {
+      const importPath = `${ATOM_PREFIX}${component}`
+      const isType = node.importKind === 'type' || spec.importKind === 'type'
+
+      // Create a unique key for the group
+      const groupKey = `${importPath}:${isType}`
+
+      if (!atoms.has(groupKey)) {
+        atoms.set(groupKey, {
+          path: importPath,
+          isType,
+          specifiers: [],
+        })
+      }
+
+      atoms.get(groupKey).specifiers.push(spec)
+    }
+
+    // Update or remove the original import
+    if (otherSpecifiers.length > 0) {
+      j(path).replaceWith(j.importDeclaration(otherSpecifiers, node.source))
+    } else {
+      j(path).remove()
+    }
+  }
 
   return atoms
 }
