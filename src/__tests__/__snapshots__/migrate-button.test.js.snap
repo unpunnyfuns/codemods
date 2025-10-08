@@ -1,9 +1,12 @@
-import { Icon } from '@hb-frontend/common/src/components'
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`migrate-button > migrates Button with leftIcon and children to nordlys Button 1`] = `
+"import { Icon } from '@hb-frontend/common/src/components';
 import { useTranslation } from 'react-i18next'
 
-import { Button } from '@hb-frontend/app/src/components/nordlys/Button'
-import { View, StyleSheet } from 'react-native'
-import { space } from '@hb-frontend/nordlys'
+import { Button } from '@hb-frontend/app/src/components/nordlys/Button';
+import { View, StyleSheet } from 'react-native';
+import { space } from '@hb-frontend/nordlys';
 
 export function MyComponent() {
   const { t } = useTranslation()
@@ -30,11 +33,13 @@ export function MyComponent() {
         type='solid' />
       <Button variant="secondary" size="md" onPress={() => {}} text={text} type='solid' />
     </>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   button0: {
     marginTop: space.xl
   }
-})
+});
+"
+`;

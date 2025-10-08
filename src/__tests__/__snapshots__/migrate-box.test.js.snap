@@ -1,4 +1,7 @@
-import { View, StyleSheet } from 'react-native';
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`migrate-box > migrates Box to View with StyleSheet styles 1`] = `
+"import { View, StyleSheet } from 'react-native';
 import { space, color, radius } from '@hb-frontend/nordlys';
 
 export function MyComponent() {
@@ -36,3 +39,5 @@ const styles = StyleSheet.create({
     borderRadius: 16
   }
 });
+"
+`;

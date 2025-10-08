@@ -18,31 +18,40 @@
  * // Warning: Avatar with letters prop cannot be migrated (not supported in Nordlys)
  */
 
-import * as commonStyleProps from './mappings/style-props.js'
+import {
+  border,
+  color,
+  extra,
+  flexbox,
+  layout,
+  position,
+  sizing,
+  spacing,
+} from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import { createViewWrapper } from './utils/jsx-transforms.js'
 import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
 
 // Avatar prop mappings
-const STYLE_PROPS = {
-  ...commonStyleProps.SPACING,
-  ...commonStyleProps.SIZING,
-  ...commonStyleProps.COLOR,
-  ...commonStyleProps.BORDER,
-  ...commonStyleProps.LAYOUT,
-  ...commonStyleProps.FLEXBOX,
-  ...commonStyleProps.POSITION,
-  ...commonStyleProps.EXTRA,
+const styleProps = {
+  ...spacing,
+  ...sizing,
+  ...color,
+  ...border,
+  ...layout,
+  ...flexbox,
+  ...position,
+  ...extra,
 }
 
 // Remove size from STYLE_PROPS - it's a semantic Avatar prop, not a style prop
-delete STYLE_PROPS.size
+delete styleProps.size
 
-const TRANSFORM_PROPS = {}
+const transformProps = {}
 
-const DIRECT_PROPS = ['size', 'testID', 'accessibilityLabel']
+const directPropsList = ['size', 'testID', 'accessibilityLabel']
 
-const DROP_PROPS = [
+const dropPropsList = [
   'iconName',
   'imageUri',
   'imageSource',
@@ -90,7 +99,12 @@ function main(fileInfo, api, options = {}) {
   const warnings = []
   const elementStyles = []
   const usedTokenHelpers = new Set()
-  const avatarProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
+  const avatarProps = {
+    styleProps,
+    transformProps,
+    directProps: directPropsList,
+    dropProps: dropPropsList,
+  }
 
   // Transform each Avatar element
   avatarElements.forEach((path, index) => {
@@ -156,7 +170,7 @@ function main(fileInfo, api, options = {}) {
       }
       const propName = attr.name.name
       // Keep direct props that weren't removed
-      return DIRECT_PROPS.includes(propName) && !propsToRemove.includes(propName)
+      return directPropsList.includes(propName) && !propsToRemove.includes(propName)
     })
 
     // Add transformed props

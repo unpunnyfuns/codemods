@@ -1,6 +1,9 @@
-import { Typography } from '@hb-frontend/common/src/components'
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-import { Switch } from '@hb-frontend/app/src/components/nordlys/Switch'
+exports[`migrate-switch > migrates Switch to Nordlys with children wrapping and prop transformations 1`] = `
+"import { Typography } from '@hb-frontend/common/src/components';
+
+import { Switch } from '@hb-frontend/app/src/components/nordlys/Switch';
 
 export function MyComponent() {
   return (
@@ -18,5 +21,7 @@ export function MyComponent() {
                 </Switch.Label>
       </Switch>
     </>
-  )
+  );
 }
+"
+`;

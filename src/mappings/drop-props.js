@@ -8,21 +8,21 @@
  * - Component-agnostic NativeBase props (shadow, etc.)
  */
 
-import * as pseudoProps from './pseudo-props.js'
-import * as themeProps from './theme-props.js'
+import { allPseudoProps } from './pseudo-props.js'
+import { allThemeProps } from './theme-props.js'
 
-export const PLATFORM_OVERRIDES = ['_web', '_ios', '_android']
+export const platformOverrides = ['_web', '_ios', '_android']
 
-export const THEME_OVERRIDES = ['_light', '_dark']
+export const themeOverrides = ['_light', '_dark']
 
-export const COMPONENT_SPECIFIC = [
+export const componentSpecific = [
   'shadow', // NativeBase shadow system - use style-based shadows in Aurora
 ]
 
-export const COMMON = [
-  ...pseudoProps.ALL_PSEUDO_PROPS,
-  ...themeProps.ALL_THEME_PROPS,
-  ...PLATFORM_OVERRIDES,
-  ...THEME_OVERRIDES,
-  ...COMPONENT_SPECIFIC,
+export const dropProps = [
+  ...allPseudoProps,
+  ...allThemeProps,
+  ...platformOverrides,
+  ...themeOverrides,
+  ...componentSpecific,
 ]

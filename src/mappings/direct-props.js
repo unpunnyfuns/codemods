@@ -3,9 +3,9 @@
  * Standard React Native props that work across most components
  */
 
-export const EVENT_HANDLERS = ['onPress', 'onLongPress', 'onLayout', 'onFocus', 'onBlur']
+export const eventHandlers = ['onPress', 'onLongPress', 'onLayout', 'onFocus', 'onBlur']
 
-export const ACCESSIBILITY = [
+export const accessibility = [
   'testID',
   'accessibilityLabel',
   'accessibilityHint',
@@ -16,4 +16,4 @@ export const ACCESSIBILITY = [
   'importantForAccessibility',
 ]
 
-export const COMMON = [...EVENT_HANDLERS, ...ACCESSIBILITY]
+export const directProps = [...eventHandlers, ...accessibility]

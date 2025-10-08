@@ -7,9 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "experimentalScannerIgnores": [
-      "src/__testfixtures__/**"
-    ]
+    "experimentalScannerIgnores": ["src/__testfixtures__/**"]
   },
   "formatter": {
     "enabled": true,
@@ -31,5 +29,13 @@
         "useBlockStatements": "error"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["src/__testfixtures__/**"],
+      "linter": {
+        "enabled": false
+      }
+    }
+  ]
 }

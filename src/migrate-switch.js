@@ -20,32 +20,41 @@
  * </Switch>
  */
 
-import * as commonStyleProps from './mappings/style-props.js'
+import {
+  border,
+  color,
+  extra,
+  flexbox,
+  layout,
+  position,
+  sizing,
+  spacing,
+} from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import { createViewWrapper } from './utils/jsx-transforms.js'
 import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
 
 // Switch prop mappings
-const STYLE_PROPS = {
-  ...commonStyleProps.SPACING,
-  ...commonStyleProps.SIZING,
-  ...commonStyleProps.COLOR,
-  ...commonStyleProps.BORDER,
-  ...commonStyleProps.LAYOUT,
-  ...commonStyleProps.FLEXBOX,
-  ...commonStyleProps.POSITION,
-  ...commonStyleProps.EXTRA,
+const styleProps = {
+  ...spacing,
+  ...sizing,
+  ...color,
+  ...border,
+  ...layout,
+  ...flexbox,
+  ...position,
+  ...extra,
 }
 
-const TRANSFORM_PROPS = {
+const transformProps = {
   isChecked: 'value',
   onToggle: 'onValueChange',
   isDisabled: 'disabled',
 }
 
-const DIRECT_PROPS = ['testID', 'accessibilityLabel', 'accessibilityHint']
+const directPropsList = ['testID', 'accessibilityLabel', 'accessibilityHint']
 
-const DROP_PROPS = [
+const dropPropsList = [
   'label',
   'switchPosition',
   'hStackProps',
@@ -85,7 +94,12 @@ function main(fileInfo, api, options = {}) {
 
   const elementStyles = []
   const usedTokenHelpers = new Set()
-  const switchProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
+  const switchProps = {
+    styleProps,
+    transformProps,
+    directProps: directPropsList,
+    dropProps: dropPropsList,
+  }
 
   // Transform each Switch element
   switchElements.forEach((path, index) => {
@@ -121,7 +135,7 @@ function main(fileInfo, api, options = {}) {
       }
       const propName = attr.name.name
       // Keep direct props that weren't removed
-      return DIRECT_PROPS.includes(propName) && !propsToRemove.includes(propName)
+      return directPropsList.includes(propName) && !propsToRemove.includes(propName)
     })
 
     // Add transformed props

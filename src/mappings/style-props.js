@@ -3,7 +3,7 @@
  * These are reusable across most NativeBase components
  */
 
-export const SPACING = {
+export const spacing = {
   // Margin - full names
   margin: { styleName: 'margin', tokenHelper: 'space' },
   marginTop: { styleName: 'marginTop', tokenHelper: 'space' },
@@ -41,7 +41,7 @@ export const SPACING = {
   py: { styleName: 'paddingVertical', tokenHelper: 'space' },
 }
 
-export const SIZING = {
+export const sizing = {
   // Full names
   width: 'width',
   height: 'height',
@@ -63,14 +63,14 @@ export const SIZING = {
   boxSize: { properties: ['width', 'height'] },
 }
 
-export const COLOR = {
+export const color = {
   bg: { styleName: 'backgroundColor', tokenHelper: 'color' },
   bgColor: { styleName: 'backgroundColor', tokenHelper: 'color' },
   background: { styleName: 'backgroundColor', tokenHelper: 'color' },
   backgroundColor: { styleName: 'backgroundColor', tokenHelper: 'color' },
 }
 
-export const BORDER = {
+export const border = {
   // Simple borders
   borderColor: 'borderColor',
   borderWidth: 'borderWidth',
@@ -138,11 +138,11 @@ export const BORDER = {
   },
 }
 
-export const LAYOUT = {
+export const layout = {
   space: 'gap',
 }
 
-export const FLEXBOX = {
+export const flexbox = {
   alignItems: 'alignItems',
   alignContent: 'alignContent',
   alignSelf: 'alignSelf',
@@ -159,7 +159,7 @@ export const FLEXBOX = {
   display: 'display',
 }
 
-export const POSITION = {
+export const position = {
   position: 'position',
   top: 'top',
   right: 'right',
@@ -168,7 +168,7 @@ export const POSITION = {
   zIndex: 'zIndex',
 }
 
-export const EXTRA = {
+export const extra = {
   overflow: 'overflow',
   opacity: 'opacity',
 }

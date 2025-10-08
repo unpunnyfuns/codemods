@@ -9,9 +9,18 @@
  * const styles = StyleSheet.create({ pressable0: { backgroundColor: color.blue['500'], padding: 4 } })
  */
 
-import * as commonDirectProps from './mappings/direct-props.js'
-import * as commonDropProps from './mappings/drop-props.js'
-import * as commonStyleProps from './mappings/style-props.js'
+import { directProps } from './mappings/direct-props.js'
+import { dropProps } from './mappings/drop-props.js'
+import {
+  border,
+  color,
+  extra,
+  flexbox,
+  layout,
+  position,
+  sizing,
+  spacing,
+} from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import {
   addPropsToElement,
@@ -22,21 +31,21 @@ import {
 import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
 
 // Pressable prop mappings
-const STYLE_PROPS = {
-  ...commonStyleProps.SPACING,
-  ...commonStyleProps.SIZING,
-  ...commonStyleProps.COLOR,
-  ...commonStyleProps.BORDER,
-  ...commonStyleProps.LAYOUT,
-  ...commonStyleProps.FLEXBOX,
-  ...commonStyleProps.POSITION,
-  ...commonStyleProps.EXTRA,
+const styleProps = {
+  ...spacing,
+  ...sizing,
+  ...color,
+  ...border,
+  ...layout,
+  ...flexbox,
+  ...position,
+  ...extra,
 }
 
-const TRANSFORM_PROPS = {}
+const transformProps = {}
 
-const DIRECT_PROPS = [
-  ...commonDirectProps.COMMON,
+const directPropsList = [
+  ...directProps,
   'onPress',
   'onPressIn',
   'onPressOut',
@@ -49,7 +58,7 @@ const DIRECT_PROPS = [
   'unstable_pressDelay',
 ]
 
-const DROP_PROPS = [...commonDropProps.COMMON, 'isDisabled']
+const dropPropsList = [...dropProps, 'isDisabled']
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -79,7 +88,12 @@ function main(fileInfo, api, options = {}) {
   const elementStyles = []
   const usedTokenHelpers = new Set()
 
-  const pressableProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
+  const pressableProps = {
+    styleProps,
+    transformProps,
+    directProps: directPropsList,
+    dropProps: dropPropsList,
+  }
 
   // Transform each Pressable element
   pressableElements.forEach((path, index) => {

@@ -10,7 +10,7 @@
  */
 
 // Value mappings for alignment props (used in TRANSFORM_PROPS)
-export const ALIGN_VALUES = {
+export const alignValues = {
   start: 'flex-start',
   end: 'flex-end',
   center: 'center',
@@ -18,7 +18,7 @@ export const ALIGN_VALUES = {
   baseline: 'baseline',
 }
 
-export const JUSTIFY_VALUES = {
+export const justifyValues = {
   start: 'flex-start',
   end: 'flex-end',
   center: 'center',

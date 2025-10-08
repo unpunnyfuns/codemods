@@ -1,4 +1,7 @@
-import { Text, Pressable, StyleSheet } from 'react-native';
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`migrate-pressable > migrates Pressable to React Native with StyleSheet and default accessibilityRole 1`] = `
+"import { Text, Pressable, StyleSheet } from 'react-native';
 
 import { color } from '@hb-frontend/nordlys';
 
@@ -29,3 +32,5 @@ const styles = StyleSheet.create({
     marginTop: 8
   }
 });
+"
+`;

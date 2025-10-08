@@ -34,35 +34,44 @@
  * - Both icon and children are missing (icon-only not supported in migration)
  */
 
-import * as commonDropProps from './mappings/drop-props.js'
-import * as commonStyleProps from './mappings/style-props.js'
+import { dropProps } from './mappings/drop-props.js'
+import {
+  border,
+  color,
+  extra,
+  flexbox,
+  layout,
+  position,
+  sizing,
+  spacing,
+} from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import { extractPropFromJSXElement, extractSimpleChild } from './utils/jsx-extraction.js'
 import { createViewWrapper } from './utils/jsx-transforms.js'
 import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
 
 // Button prop mappings
-const STYLE_PROPS = {
-  ...commonStyleProps.SPACING,
-  ...commonStyleProps.SIZING,
-  ...commonStyleProps.COLOR,
-  ...commonStyleProps.BORDER,
-  ...commonStyleProps.LAYOUT,
-  ...commonStyleProps.FLEXBOX,
-  ...commonStyleProps.POSITION,
-  ...commonStyleProps.EXTRA,
+const styleProps = {
+  ...spacing,
+  ...sizing,
+  ...color,
+  ...border,
+  ...layout,
+  ...flexbox,
+  ...position,
+  ...extra,
 }
 
 // Remove size from STYLE_PROPS - it's a semantic Button prop, not a style prop
-delete STYLE_PROPS.size
+delete styleProps.size
 
-const TRANSFORM_PROPS = {
+const transformProps = {
   isDisabled: 'disabled',
 }
 
-const DIRECT_PROPS = ['size', 'variant', 'onPress', 'testID', 'isLoading', 'type']
+const directPropsList = ['size', 'variant', 'onPress', 'testID', 'isLoading', 'type']
 
-const DROP_PROPS = [...commonDropProps.COMMON, 'leftIcon', 'rightIcon', '_text', '_loading']
+const dropPropsList = [...dropProps, 'leftIcon', 'rightIcon', '_text', '_loading']
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -100,7 +109,12 @@ function main(fileInfo, api, options = {}) {
   let skipped = 0
   const elementStyles = []
   const usedTokenHelpers = new Set()
-  const buttonProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
+  const buttonProps = {
+    styleProps,
+    transformProps,
+    directProps: directPropsList,
+    dropProps: dropPropsList,
+  }
 
   // Transform each Button element
   buttonElements.forEach((path, index) => {
@@ -169,7 +183,7 @@ function main(fileInfo, api, options = {}) {
       }
       const propName = attr.name.name
       // Keep direct props that weren't removed
-      return DIRECT_PROPS.includes(propName) && !propsToRemove.includes(propName)
+      return directPropsList.includes(propName) && !propsToRemove.includes(propName)
     })
 
     // Add transformed props

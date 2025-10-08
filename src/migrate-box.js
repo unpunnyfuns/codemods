@@ -7,9 +7,9 @@
  * const styles = StyleSheet.create({ box0: { backgroundColor: color.blue['500'], padding: 4, margin: 2, borderRadius: radius.md } })
  */
 
-import * as commonDirectProps from './mappings/direct-props.js'
-import * as commonDropProps from './mappings/drop-props.js'
-import * as commonStyleProps from './mappings/style-props.js'
+import { directProps } from './mappings/direct-props.js'
+import { dropProps } from './mappings/drop-props.js'
+import { border, layout, sizing, spacing } from './mappings/style-props.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import {
   addPropsToElement,
@@ -21,11 +21,11 @@ import {
 import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
 
 // Box → View prop mappings
-const STYLE_PROPS = {
-  ...commonStyleProps.SPACING,
-  ...commonStyleProps.SIZING,
-  ...commonStyleProps.LAYOUT,
-  ...commonStyleProps.BORDER,
+const styleProps = {
+  ...spacing,
+  ...sizing,
+  ...layout,
+  ...border,
 
   // Color/Background props with color token helper
   bgColor: { styleName: 'backgroundColor', tokenHelper: 'color' },
@@ -40,11 +40,11 @@ const STYLE_PROPS = {
   borderRightColor: { styleName: 'borderRightColor', tokenHelper: 'color' },
 }
 
-const TRANSFORM_PROPS = {}
+const transformProps = {}
 
-const DIRECT_PROPS = [...commonDirectProps.COMMON, 'safeAreaBottom']
+const directPropsList = [...directProps, 'safeAreaBottom']
 
-const DROP_PROPS = [...commonDropProps.COMMON, 'disableTopRounding', 'disableBottomRounding']
+const dropPropsList = [...dropProps, 'disableTopRounding', 'disableBottomRounding']
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -70,7 +70,12 @@ function main(fileInfo, api, options = {}) {
   const elementStyles = []
   const usedTokenHelpers = new Set()
 
-  const boxProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
+  const boxProps = {
+    styleProps,
+    transformProps,
+    directProps: directPropsList,
+    dropProps: dropPropsList,
+  }
 
   // Transform each Box element
   boxElements.forEach((path, index) => {

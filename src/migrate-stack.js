@@ -8,10 +8,19 @@
  * <Stack direction="vertical" gap={space[4]}>{children}</Stack>
  */
 
-import * as commonDirectProps from './mappings/direct-props.js'
-import * as commonDropProps from './mappings/drop-props.js'
-import * as commonStyleProps from './mappings/style-props.js'
-import * as commonValueMaps from './mappings/value-maps.js'
+import { directProps } from './mappings/direct-props.js'
+import { dropProps } from './mappings/drop-props.js'
+import {
+  border,
+  color,
+  extra,
+  flexbox,
+  layout,
+  position,
+  sizing,
+  spacing,
+} from './mappings/style-props.js'
+import { alignValues, justifyValues } from './mappings/value-maps.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from './utils/imports.js'
 import {
   addPropsToElement,
@@ -23,37 +32,37 @@ import {
 import { addOrExtendStyleSheet, categorizeProps } from './utils/props.js'
 
 // Stack prop mappings
-const STYLE_PROPS = {
-  ...commonStyleProps.SPACING,
-  ...commonStyleProps.SIZING,
-  ...commonStyleProps.COLOR,
-  ...commonStyleProps.BORDER,
-  ...commonStyleProps.LAYOUT,
-  ...commonStyleProps.FLEXBOX,
-  ...commonStyleProps.POSITION,
-  ...commonStyleProps.EXTRA,
+const styleProps = {
+  ...spacing,
+  ...sizing,
+  ...color,
+  ...border,
+  ...layout,
+  ...flexbox,
+  ...position,
+  ...extra,
 
   // Stack-specific props with value mapping
   align: {
     styleName: 'alignItems',
-    valueMap: commonValueMaps.ALIGN_VALUES,
+    valueMap: alignValues,
   },
   justify: {
     styleName: 'justifyContent',
-    valueMap: commonValueMaps.JUSTIFY_VALUES,
+    valueMap: justifyValues,
   },
 }
 
 // Remove space from STYLE_PROPS since it should stay on element
-delete STYLE_PROPS.space
+delete styleProps.space
 
-const TRANSFORM_PROPS = {
+const transformProps = {
   space: 'gap',
 }
 
-const DIRECT_PROPS = commonDirectProps.COMMON
+const directPropsList = directProps
 
-const DROP_PROPS = [...commonDropProps.COMMON, 'divider', 'reversed', '_text', '_stack']
+const dropPropsList = [...dropProps, 'divider', 'reversed', '_text', '_stack']
 
 const STACK_COMPONENTS = [
   { name: 'HStack', direction: 'horizontal' },
@@ -79,7 +88,12 @@ function main(fileInfo, api, options = {}) {
   const elementStyles = []
   const usedTokenHelpers = new Set()
 
-  const stackProps = { STYLE_PROPS, TRANSFORM_PROPS, DIRECT_PROPS, DROP_PROPS }
+  const stackProps = {
+    styleProps,
+    transformProps,
+    directProps: directPropsList,
+    dropProps: dropPropsList,
+  }
 
   // Process each stack component type
   for (const { name: componentName, direction } of STACK_COMPONENTS) {

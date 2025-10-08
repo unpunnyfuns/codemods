@@ -10,7 +10,9 @@ import { buildNestedMemberExpression } from './token-helpers.js'
  * Check if a value can be extracted to StyleSheet (literal or token helper reference)
  */
 export function shouldExtractToStyleSheet(value, isTokenHelper = false) {
-  if (!value) return false
+  if (!value) {
+    return false
+  }
 
   // Literals can be extracted
   if (
@@ -62,7 +64,9 @@ export function processTokenHelper(value, tokenHelper, j, usedTokenHelpers) {
  * Apply value mapping to a prop value
  */
 export function applyValueMapping(value, valueMap, j) {
-  if (!valueMap) return value
+  if (!valueMap) {
+    return value
+  }
 
   // For string literals
   if (value.type === 'StringLiteral' || value.type === 'Literal') {
@@ -97,7 +101,11 @@ export function applyValueMapping(value, valueMap, j) {
  * - usedTokenHelpers: Set of token helpers used
  */
 export function categorizeProps(attributes, mappings, j) {
-  const { STYLE_PROPS = {}, TRANSFORM_PROPS = {}, DROP_PROPS = [] } = mappings
+  const {
+    styleProps: stylePropMappings = {},
+    transformProps: transformPropMappings = {},
+    dropProps: dropPropList = [],
+  } = mappings
   const styleProps = {}
   const inlineStyles = {}
   const transformedProps = {}
@@ -105,14 +113,18 @@ export function categorizeProps(attributes, mappings, j) {
   const usedTokenHelpers = new Set()
 
   attributes.forEach((attr) => {
-    if (attr.type !== 'JSXAttribute') return
-    if (!attr.name || attr.name.type !== 'JSXIdentifier') return
+    if (attr.type !== 'JSXAttribute') {
+      return
+    }
+    if (!attr.name || attr.name.type !== 'JSXIdentifier') {
+      return
+    }
 
     const propName = attr.name.name
 
     // Check if it should be extracted to stylesheet
-    if (STYLE_PROPS[propName]) {
-      const config = STYLE_PROPS[propName]
+    if (stylePropMappings[propName]) {
+      const config = stylePropMappings[propName]
       let styleName, properties, valueMap, tokenHelper
 
       // Support both string (simple mapping) and object (with options)
@@ -169,8 +181,8 @@ export function categorizeProps(attributes, mappings, j) {
       }
     }
     // Check if it should be transformed on element
-    else if (TRANSFORM_PROPS[propName]) {
-      const config = TRANSFORM_PROPS[propName]
+    else if (transformPropMappings[propName]) {
+      const config = transformPropMappings[propName]
       let newPropName, valueMap, tokenHelper
 
       // Support both string (simple rename) and object (with options)
@@ -216,7 +228,7 @@ export function categorizeProps(attributes, mappings, j) {
       propsToRemove.push(attr)
     }
     // Check if it should be dropped
-    else if (DROP_PROPS.includes(propName)) {
+    else if (dropPropList.includes(propName)) {
       propsToRemove.push(attr)
     }
     // Everything else (DIRECT_PROPS) stays on element as-is
@@ -238,7 +250,9 @@ export function buildStyleSheetProperties(styleProps, j) {
  * Create or extend StyleSheet.create() at the end of the file
  */
 export function addOrExtendStyleSheet(root, elementStyles, j) {
-  if (elementStyles.length === 0) return
+  if (elementStyles.length === 0) {
+    return
+  }
 
   // Build the new style properties
   const newStyleProperties = elementStyles.map(({ name, styles }) => {

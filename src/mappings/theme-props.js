@@ -10,7 +10,7 @@
  * Theme props found across multiple components
  * These control the visual variant/style of components
  */
-export const THEME_PROPS = [
+export const themeProps = [
   'colorScheme', // NativeBase color theme key (e.g., 'primary', 'secondary', 'blue')
   'variant', // Component variant (e.g., 'solid', 'outline', 'ghost', 'link')
   'size', // Component size token (e.g., 'xs', 'sm', 'md', 'lg', 'xl')
@@ -19,4 +19,4 @@ export const THEME_PROPS = [
 /**
  * ALL theme props to drop
  */
-export const ALL_THEME_PROPS = THEME_PROPS
+export const allThemeProps = themeProps

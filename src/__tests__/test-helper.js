@@ -3,18 +3,18 @@ import { resolve } from 'node:path'
 import jscodeshift from 'jscodeshift'
 
 /**
- * Test a codemod transform against input/output fixtures
- * Note: Formats output for comparison - production transforms don't format
+ * Test a codemod transform with normalized output for snapshot testing
+ * Normalization: parse → reformat with consistent options
+ * This ensures formatting differences don't cause test failures
  */
-export function testTransform(transformPath, fixtureName, extension = 'js') {
-  const transform = require(transformPath).default
-  const fixturesPath = resolve(__dirname, '../__testfixtures__')
+export function testTransform(transformName, fixtureName, extension = 'js') {
+  const transform = require(resolve(__dirname, `../${transformName}.js`)).default
+  const j = jscodeshift.withParser('tsx')
 
+  const fixturesPath = resolve(__dirname, '../__testfixtures__')
   const inputPath = resolve(fixturesPath, `${fixtureName}.input.${extension}`)
-  const outputPath = resolve(fixturesPath, `${fixtureName}.output.${extension}`)
 
   const input = readFileSync(inputPath, 'utf8')
-  const expectedOutput = readFileSync(outputPath, 'utf8')
 
   const fileInfo = {
     path: inputPath,
@@ -22,22 +22,23 @@ export function testTransform(transformPath, fixtureName, extension = 'js') {
   }
 
   const api = {
-    jscodeshift: jscodeshift.withParser('tsx'),
-    j: jscodeshift.withParser('tsx'),
+    jscodeshift: j,
+    j,
     stats: () => {},
     report: () => {},
   }
 
   const options = {}
 
-  const actualOutput = transform(fileInfo, api, options)
+  const output = transform(fileInfo, api, options)
 
-  // Simple normalization: remove semicolons, normalize quotes
-  // This is just for test comparison - your project formats the real output
-  const normalize = (code) => code.replace(/;$/gm, '').replace(/'/g, "'")
-
-  return {
-    actual: normalize(actualOutput),
-    expected: normalize(expectedOutput),
-  }
+  // Normalize by round-tripping through jscodeshift with consistent formatting
+  // This makes snapshots formatting-independent
+  return j(output).toSource({
+    quote: 'single',
+    trailingComma: true,
+    arrowParensAlways: false,
+    tabWidth: 2,
+    useTabs: false,
+  })
 }

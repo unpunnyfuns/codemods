@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { resolve } from 'node:path'
 import jscodeshift from 'jscodeshift'
+import { describe, expect, it } from 'vitest'
 import transform from '../redirect-imports.js'
 
 function runTransform(source, options = {}) {

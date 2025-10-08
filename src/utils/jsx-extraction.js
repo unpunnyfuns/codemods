@@ -15,7 +15,9 @@
  * @returns {string|object|null} - String literal value, AST expression, or null if not found
  */
 export function extractPropFromJSXElement(element, expectedElementName, propName) {
-  if (!element || element.type !== 'JSXElement') return null
+  if (!element || element.type !== 'JSXElement') {
+    return null
+  }
 
   const openingElement = element.openingElement
   if (!openingElement || !openingElement.name || openingElement.name.name !== expectedElementName) {
@@ -26,7 +28,9 @@ export function extractPropFromJSXElement(element, expectedElementName, propName
     (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === propName,
   )
 
-  if (!attr) return null
+  if (!attr) {
+    return null
+  }
 
   // Handle string literals (Literal in JSX) and StringLiteral
   if (attr.value.type === 'Literal' || attr.value.type === 'StringLiteral') {

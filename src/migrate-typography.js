@@ -43,50 +43,8 @@ const TEXT_PROPS = [
   'accessible',
 ]
 
-// Style props that need View wrapper (from common-style-props)
-const STYLE_PROPS = {
-  // Spacing
-  margin: { styleName: 'margin', tokenHelper: 'space' },
-  marginTop: { styleName: 'marginTop', tokenHelper: 'space' },
-  marginBottom: { styleName: 'marginBottom', tokenHelper: 'space' },
-  marginLeft: { styleName: 'marginLeft', tokenHelper: 'space' },
-  marginRight: { styleName: 'marginRight', tokenHelper: 'space' },
-  m: { styleName: 'margin', tokenHelper: 'space' },
-  mt: { styleName: 'marginTop', tokenHelper: 'space' },
-  mb: { styleName: 'marginBottom', tokenHelper: 'space' },
-  ml: { styleName: 'marginLeft', tokenHelper: 'space' },
-  mr: { styleName: 'marginRight', tokenHelper: 'space' },
-  mx: { styleName: 'marginHorizontal', tokenHelper: 'space' },
-  my: { styleName: 'marginVertical', tokenHelper: 'space' },
-  padding: { styleName: 'padding', tokenHelper: 'space' },
-  paddingTop: { styleName: 'paddingTop', tokenHelper: 'space' },
-  paddingBottom: { styleName: 'paddingBottom', tokenHelper: 'space' },
-  paddingLeft: { styleName: 'paddingLeft', tokenHelper: 'space' },
-  paddingRight: { styleName: 'paddingRight', tokenHelper: 'space' },
-  p: { styleName: 'padding', tokenHelper: 'space' },
-  pt: { styleName: 'paddingTop', tokenHelper: 'space' },
-  pb: { styleName: 'paddingBottom', tokenHelper: 'space' },
-  pl: { styleName: 'paddingLeft', tokenHelper: 'space' },
-  pr: { styleName: 'paddingRight', tokenHelper: 'space' },
-  px: { styleName: 'paddingHorizontal', tokenHelper: 'space' },
-  py: { styleName: 'paddingVertical', tokenHelper: 'space' },
-
-  // Sizing
-  width: 'width',
-  height: 'height',
-  minWidth: 'minWidth',
-  maxWidth: 'maxWidth',
-  w: 'width',
-  h: 'height',
-
-  // Flex
-  flex: 'flex',
-  flexGrow: 'flexGrow',
-  flexShrink: 'flexShrink',
-}
-
 // Font props that are managed internally by Typography (drop with warning)
-const FONT_PROPS = ['fontWeight', 'fontSize', 'lineHeight', 'fontFamily']
+const fontProps = ['fontWeight', 'fontSize', 'lineHeight', 'fontFamily']
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -194,7 +152,7 @@ function main(fileInfo, api, options = {}) {
       }
 
       // Check if it's a font prop (drop with warning)
-      if (FONT_PROPS.includes(propName)) {
+      if (fontProps.includes(propName)) {
         warnings.push(
           `Typography: Dropped ${propName} prop (managed internally by Nordlys Typography)`,
         )

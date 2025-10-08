@@ -13,7 +13,7 @@
  * Interaction state pseudo-props
  * Used for styling components based on user interaction
  */
-export const INTERACTION_PSEUDO_PROPS = [
+export const interactionPseudoProps = [
   '_hover', // Applied when component is hovered
   '_pressed', // Applied when component is pressed/clicked
   '_focus', // Applied when component receives focus
@@ -24,7 +24,7 @@ export const INTERACTION_PSEUDO_PROPS = [
  * Component state pseudo-props
  * Used for styling components based on their state
  */
-export const STATE_PSEUDO_PROPS = [
+export const statePseudoProps = [
   '_disabled', // Applied when component is disabled
   '_invalid', // Applied when form input is invalid
   '_readOnly', // Applied when input is read-only
@@ -37,7 +37,7 @@ export const STATE_PSEUDO_PROPS = [
  * Nested component pseudo-props
  * Used for styling nested/child components
  */
-export const NESTED_COMPONENT_PSEUDO_PROPS = [
+export const nestedComponentPseudoProps = [
   '_text', // Props passed to nested Text component
   '_icon', // Props passed to nested Icon component
   '_stack', // Props passed to nested Stack/HStack/VStack component
@@ -55,8 +55,8 @@ export const NESTED_COMPONENT_PSEUDO_PROPS = [
  * ALL pseudo-props to drop
  * Complete list combining all categories
  */
-export const ALL_PSEUDO_PROPS = [
-  ...INTERACTION_PSEUDO_PROPS,
-  ...STATE_PSEUDO_PROPS,
-  ...NESTED_COMPONENT_PSEUDO_PROPS,
+export const allPseudoProps = [
+  ...interactionPseudoProps,
+  ...statePseudoProps,
+  ...nestedComponentPseudoProps,
 ]
