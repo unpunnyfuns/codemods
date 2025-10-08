@@ -24,10 +24,10 @@
  * })
  */
 
-import { getNordlysColorPath } from './mappings/color-mappings.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'
 import { buildNestedMemberExpression } from '../helpers/token-helpers.js'
+import { getNordlysColorPath } from './mappings/color-mappings.js'
 
 // Props that stay on Typography element
 const TYPOGRAPHY_PROPS = ['type', 'size', 'color', 'align', 'numberOfLines', 'textDecorationLine']

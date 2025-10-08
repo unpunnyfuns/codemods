@@ -8,6 +8,14 @@
  * <Stack direction="vertical" gap={space[4]}>{children}</Stack>
  */
 
+import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import {
+  addPropsToElement,
+  addStyleProp,
+  buildStyleValue,
+  removePropsFromElement,
+  updateElementName,
+} from '../helpers/jsx-transforms.js'
 import { directProps } from './mappings/direct-props.js'
 import { dropProps } from './mappings/drop-props.js'
 import {
@@ -21,15 +29,7 @@ import {
   spacing,
 } from './mappings/style-props.js'
 import { alignValues, justifyValues } from './mappings/value-maps.js'
-import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import {
-  addPropsToElement,
-  addStyleProp,
-  buildStyleValue,
-  removePropsFromElement,
-  updateElementName,
-} from '../helpers/jsx-transforms.js'
-import { addOrExtendStyleSheet, categorizeProps } from '../helpers/props.js'
+import { addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Stack prop mappings
 const styleProps = {

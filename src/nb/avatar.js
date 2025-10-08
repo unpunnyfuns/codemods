@@ -18,6 +18,8 @@
  * // Warning: Avatar with letters prop cannot be migrated (not supported in Nordlys)
  */
 
+import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import { createViewWrapper } from '../helpers/jsx-transforms.js'
 import {
   border,
   color,
@@ -28,9 +30,7 @@ import {
   sizing,
   spacing,
 } from './mappings/style-props.js'
-import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { createViewWrapper } from '../helpers/jsx-transforms.js'
-import { addOrExtendStyleSheet, categorizeProps } from '../helpers/props.js'
+import { addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Avatar prop mappings
 const styleProps = {

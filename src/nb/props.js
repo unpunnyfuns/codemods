@@ -1,10 +1,11 @@
 /**
- * Shared utilities for prop categorization and transformation
+ * NativeBase-specific prop categorization and transformation utilities
+ * Handles prop mapping, StyleSheet extraction, and NativeBase→Nordlys token remapping
  */
 
-import { getNordlysColorPath } from '../nb/mappings/color-mappings.js'
-import { addNamedImport } from './imports.js'
-import { buildNestedMemberExpression } from './token-helpers.js'
+import { addNamedImport } from '../helpers/imports.js'
+import { buildNestedMemberExpression } from '../helpers/token-helpers.js'
+import { getNordlysColorPath } from './mappings/color-mappings.js'
 
 /**
  * Check if a value can be extracted to StyleSheet (literal or token helper reference)
@@ -36,6 +37,7 @@ export function shouldExtractToStyleSheet(value, isTokenHelper = false) {
 
 /**
  * Process a prop value with token helper transformation
+ * NativeBase-specific: remaps color tokens from NativeBase to Nordlys
  */
 export function processTokenHelper(value, tokenHelper, j, usedTokenHelpers) {
   if (!tokenHelper || (value.type !== 'StringLiteral' && value.type !== 'Literal')) {
@@ -49,7 +51,7 @@ export function processTokenHelper(value, tokenHelper, j, usedTokenHelpers) {
     return { value, isTokenHelper: false }
   }
 
-  // Apply color remapping if this is a color token
+  // NativeBase→Nordlys color token remapping
   if (tokenHelper === 'color') {
     tokenPath = getNordlysColorPath(tokenPath)
   }
