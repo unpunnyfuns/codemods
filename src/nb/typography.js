@@ -17,7 +17,7 @@ import {
 } from './mappings/style-props.js'
 
 // Style props that get extracted to View wrapper
-const STYLE_PROPS = {
+const stylePropsConfig = {
   ...spacing,
   ...sizing,
   ...color,
@@ -29,10 +29,10 @@ const STYLE_PROPS = {
 }
 
 // Props that stay on Typography element
-const TYPOGRAPHY_PROPS = ['type', 'size', 'color', 'align', 'numberOfLines', 'textDecorationLine']
+const typographyProps = ['type', 'size', 'color', 'align', 'numberOfLines', 'textDecorationLine']
 
 // React Native Text props that pass through
-const TEXT_PROPS = [
+const textProps = [
   'testID',
   'onPress',
   'onLongPress',
@@ -99,7 +99,7 @@ function main(fileInfo, api, options = {}) {
       const propName = attr.name.name
 
       // Check if it's a Typography-specific prop
-      if (TYPOGRAPHY_PROPS.includes(propName)) {
+      if (typographyProps.includes(propName)) {
         // Handle color - remap path but keep as string literal (Typography resolves internally)
         if (propName === 'color' && attr.value?.type === 'StringLiteral') {
           const colorPath = getNordlysColorPath(attr.value.value)
@@ -110,14 +110,14 @@ function main(fileInfo, api, options = {}) {
       }
 
       // Check if it's a Text prop (pass through)
-      if (TEXT_PROPS.includes(propName)) {
+      if (textProps.includes(propName)) {
         propsToKeep.push(attr)
         return
       }
 
       // Check if it's a style prop (extract to View wrapper)
-      if (STYLE_PROPS[propName]) {
-        const config = STYLE_PROPS[propName]
+      if (stylePropsConfig[propName]) {
+        const config = stylePropsConfig[propName]
         let styleName, tokenHelper
 
         if (typeof config === 'string') {
