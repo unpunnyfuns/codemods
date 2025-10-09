@@ -36,6 +36,31 @@ export function shouldExtractToStyleSheet(value, isTokenHelper = false) {
 }
 
 /**
+ * Transform token MemberExpression with numeric bracket notation to numeric literal
+ * e.g., space['4'] → 4, radius['16'] → 16
+ */
+function transformNumericTokenAccess(value, j) {
+  if (value.type !== 'MemberExpression') {
+    return value
+  }
+
+  const tokenName = value.object?.name
+  if (!tokenName || !['space', 'radius'].includes(tokenName)) {
+    return value
+  }
+
+  // Check for bracket notation with numeric string
+  if (value.computed && value.property?.type === 'StringLiteral') {
+    const propertyValue = value.property.value
+    if (/^\d+$/.test(propertyValue)) {
+      return j.numericLiteral(Number.parseInt(propertyValue, 10))
+    }
+  }
+
+  return value
+}
+
+/**
  * Process a prop value with token helper transformation
  * NativeBase-specific: remaps color tokens from NativeBase to Nordlys
  */
@@ -49,6 +74,12 @@ export function processTokenHelper(value, tokenHelper, j, usedTokenHelpers) {
   // Ensure tokenPath is a string
   if (typeof tokenPath !== 'string') {
     return { value, isTokenHelper: false }
+  }
+
+  // If token path is a numeric string, convert to number literal
+  if (/^\d+$/.test(tokenPath)) {
+    const numericValue = Number.parseInt(tokenPath, 10)
+    return { value: j.numericLiteral(numericValue), isTokenHelper: false }
   }
 
   // NativeBase→Nordlys color token remapping
@@ -139,7 +170,8 @@ export function categorizeProps(attributes, mappings, j) {
               // Extract object literal to styleProps
               for (const prop of element.properties) {
                 if (prop.type === 'Property' && prop.key.type === 'Identifier') {
-                  styleProps[prop.key.name] = prop.value
+                  // Transform numeric token access like space['4'] → 4
+                  styleProps[prop.key.name] = transformNumericTokenAccess(prop.value, j)
                 }
               }
             } else if (element.type === 'MemberExpression') {
@@ -152,7 +184,8 @@ export function categorizeProps(attributes, mappings, j) {
         else if (expr.type === 'ObjectExpression') {
           for (const prop of expr.properties) {
             if (prop.type === 'Property' && prop.key.type === 'Identifier') {
-              styleProps[prop.key.name] = prop.value
+              // Transform numeric token access like space['4'] → 4
+              styleProps[prop.key.name] = transformNumericTokenAccess(prop.value, j)
             }
           }
         }
@@ -439,13 +472,26 @@ export function validateElementStyles(styles, _j) {
         }
       } else if (value.type === 'MemberExpression') {
         const tokenName = value.object?.name
-        const property = value.property?.name
+        let property = value.property?.name
 
-        if (tokenName === 'space' && !validSpaceTokens.includes(property)) {
-          issues.push({
-            styleName,
-            value: `${tokenName}.${property}`,
-          })
+        // Handle bracket notation: space['4']
+        if (!property && value.computed && value.property?.type === 'StringLiteral') {
+          property = value.property.value
+        }
+
+        if (tokenName === 'space') {
+          // Check if it's a numeric string in bracket notation
+          if (/^\d+$/.test(property)) {
+            issues.push({
+              styleName,
+              value: `${tokenName}['${property}']`,
+            })
+          } else if (!validSpaceTokens.includes(property)) {
+            issues.push({
+              styleName,
+              value: value.computed ? `${tokenName}['${property}']` : `${tokenName}.${property}`,
+            })
+          }
         }
       }
     }
@@ -453,13 +499,26 @@ export function validateElementStyles(styles, _j) {
     if (styleName.includes('radius') || styleName.includes('Radius')) {
       if (value.type === 'MemberExpression') {
         const tokenName = value.object?.name
-        const property = value.property?.name
+        let property = value.property?.name
 
-        if (tokenName === 'radius' && !validRadiusTokens.includes(property)) {
-          issues.push({
-            styleName,
-            value: `${tokenName}.${property}`,
-          })
+        // Handle bracket notation: radius['16']
+        if (!property && value.computed && value.property?.type === 'StringLiteral') {
+          property = value.property.value
+        }
+
+        if (tokenName === 'radius') {
+          // Check if it's a numeric string in bracket notation
+          if (/^\d+$/.test(property)) {
+            issues.push({
+              styleName,
+              value: `${tokenName}['${property}']`,
+            })
+          } else if (!validRadiusTokens.includes(property)) {
+            issues.push({
+              styleName,
+              value: value.computed ? `${tokenName}['${property}']` : `${tokenName}.${property}`,
+            })
+          }
         }
       }
     }
