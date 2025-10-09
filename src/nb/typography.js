@@ -53,7 +53,8 @@ function main(fileInfo, api, options = {}) {
   const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/Typography'
   const targetName = options.targetName ?? 'Typography'
   const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
-  const wrap = options.wrap ?? true // Default: true (wrap in View when style props exist)
+  // Default: true (wrap in View when style props exist)
+  const wrap = options.wrap ?? true
 
   // Find Typography imports
   const imports = root.find(j.ImportDeclaration, {

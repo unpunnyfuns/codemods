@@ -23,7 +23,10 @@ export const platformOverrides = ['_web', '_ios', '_android']
 export const themeOverrides = ['_light', '_dark']
 
 export const componentAgnostic = [
-  'shadow', // NativeBase shadow system - use style-based shadows in Nordlys
-  'justifyItems', // CSS Grid property - not supported in React Native (use alignItems)
-  'justifySelf', // CSS Grid property - not supported in React Native (use alignSelf)
+  // NativeBase shadow system - use style-based shadows in Nordlys
+  'shadow',
+  // CSS Grid property - not supported in React Native (use alignItems)
+  'justifyItems',
+  // CSS Grid property - not supported in React Native (use alignSelf)
+  'justifySelf',
 ]

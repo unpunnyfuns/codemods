@@ -15,7 +15,10 @@
  * Theme variant props found across multiple components
  */
 export const themeProps = [
-  'colorScheme', // NativeBase color theme key (e.g., 'primary', 'secondary', 'blue')
-  'variant', // Component variant (e.g., 'solid', 'outline', 'ghost', 'link')
-  'size', // Component size token (e.g., 'xs', 'sm', 'md', 'lg', 'xl') - CONTEXT DEPENDENT
+  // NativeBase color theme key (e.g., 'primary', 'secondary', 'blue')
+  'colorScheme',
+  // Component variant (e.g., 'solid', 'outline', 'ghost', 'link')
+  'variant',
+  // Component size token (e.g., 'xs', 'sm', 'md', 'lg', 'xl') - CONTEXT DEPENDENT
+  'size',
 ]

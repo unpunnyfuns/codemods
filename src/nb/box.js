@@ -29,10 +29,11 @@ import {
 } from './mappings/props-style.js'
 import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
-// Box → View prop mappings
+// Box to View prop mappings
 const styleProps = {
   ...spacing,
-  ...sizing, // ← includes 'size' for layout (width/height)
+  // Includes 'size' for layout (width/height)
+  ...sizing,
   ...color,
   ...border,
   ...layout,
@@ -48,14 +49,15 @@ const directPropsList = [...directProps]
 
 // Explicit drop list for Box
 // NOTE: Box is a layout component (migrates to View), not themed - drop colorScheme/variant
-// 'size' is handled by styleProps as layout (width/height)
+// The 'size' prop is handled by styleProps as layout (width/height)
 const dropPropsList = [
   ...allPseudoProps,
   ...platformOverrides,
   ...themeOverrides,
   ...componentAgnostic,
-  'colorScheme', // Box is a layout component, not themed
-  'variant', // Box is a layout component, not themed
+  // Box is a layout component, not themed
+  'colorScheme',
+  'variant',
   'disableTopRounding',
   'disableBottomRounding',
   'safeAreaBottom',

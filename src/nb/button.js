@@ -54,7 +54,8 @@ const dropPropsList = [
   ...platformOverrides,
   ...themeOverrides,
   ...componentAgnostic,
-  'colorScheme', // From themeProps, but keep 'size' and 'variant'
+  // From themeProps, but keep 'size' and 'variant'
+  'colorScheme',
   'leftIcon',
   'rightIcon',
   '_text',
@@ -70,7 +71,8 @@ function main(fileInfo, api, options = {}) {
   const targetName = options.targetName ?? 'Button'
   const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
   const defaultType = options.defaultType ?? 'solid'
-  const wrap = options.wrap ?? true // Default: true (wrap in View when style props exist)
+  // Default: true (wrap in View when style props exist)
+  const wrap = options.wrap ?? true
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })

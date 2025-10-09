@@ -294,8 +294,10 @@ export function categorizeProps(attributes, mappings, j) {
   const propsToRemove = []
   const usedTokenHelpers = new Set()
   const droppedProps = []
-  const invalidStyles = [] // Invalid style values that should be dropped
-  const existingStyleReferences = [] // StyleSheet references like styles.foo
+  // Invalid style values that should be dropped
+  const invalidStyles = []
+  // StyleSheet references like styles.foo
+  const existingStyleReferences = []
 
   attributes.forEach((attr) => {
     if (attr.type !== 'JSXAttribute') {

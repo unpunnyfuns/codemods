@@ -39,7 +39,8 @@ import {
 // Stack prop mappings
 const styleProps = {
   ...spacing,
-  ...sizing, // ← includes 'size' for layout (width/height)
+  // Includes 'size' for layout (width/height)
+  ...sizing,
   ...color,
   ...border,
   ...layout,
@@ -49,12 +50,12 @@ const styleProps = {
   ...extra,
 
   // Stack-specific props with value mapping
-  // align="start" → alignItems: 'flex-start' (extracted to StyleSheet)
+  // align="start" transforms to alignItems: 'flex-start' (extracted to StyleSheet)
   align: {
     styleName: 'alignItems',
     valueMap: alignValues,
   },
-  // justify="between" → justifyContent: 'space-between' (extracted to StyleSheet)
+  // justify="between" transforms to justifyContent: 'space-between' (extracted to StyleSheet)
   justify: {
     styleName: 'justifyContent',
     valueMap: justifyValues,
@@ -64,7 +65,8 @@ const styleProps = {
 // Remove space from STYLE_PROPS since it should stay on element as gap
 delete styleProps.space
 
-// space={2} → gap={space[2]} (stays on element, not extracted)
+// Transform space prop to gap prop
+// space={2} becomes gap={space[2]} (stays on element, not extracted)
 const transformProps = {
   space: 'gap',
 }
@@ -73,14 +75,15 @@ const directPropsList = directProps
 
 // Explicit drop list for Stack
 // NOTE: Stack is a layout component, not themed - drop colorScheme/variant
-// 'size' is handled by styleProps as layout (width/height)
+// The 'size' prop is handled by styleProps as layout (width/height)
 const dropPropsList = [
   ...allPseudoProps,
   ...platformOverrides,
   ...themeOverrides,
   ...componentAgnostic,
-  'colorScheme', // Stack is a layout component, not themed
-  'variant', // Stack is a layout component, not themed
+  // Stack is a layout component, not themed
+  'colorScheme',
+  'variant',
   'divider',
   'reversed',
   '_text',

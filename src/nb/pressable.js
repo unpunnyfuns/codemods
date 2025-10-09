@@ -31,7 +31,8 @@ import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './pro
 // Pressable prop mappings
 const styleProps = {
   ...spacing,
-  ...sizing, // ← includes 'size' for layout (width/height)
+  // Includes 'size' for layout (width/height)
+  ...sizing,
   ...color,
   ...border,
   ...layout,
@@ -59,14 +60,15 @@ const directPropsList = [
 
 // Explicit drop list for Pressable
 // NOTE: Pressable is an interaction component (migrates to RN Pressable), not themed - drop colorScheme/variant
-// 'size' is handled by styleProps as layout (width/height)
+// The 'size' prop is handled by styleProps as layout (width/height)
 const dropPropsList = [
   ...allPseudoProps,
   ...platformOverrides,
   ...themeOverrides,
   ...componentAgnostic,
-  'colorScheme', // Pressable is an interaction component, not themed
-  'variant', // Pressable is an interaction component, not themed
+  // Pressable is an interaction component, not themed
+  'colorScheme',
+  'variant',
   'isDisabled',
 ]
 

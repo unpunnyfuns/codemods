@@ -59,7 +59,8 @@ function main(fileInfo, api, options = {}) {
   const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/Avatar'
   const targetName = options.targetName ?? 'Avatar'
   const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
-  const wrap = options.wrap ?? true // Default: true (wrap in View when style props exist)
+  // Default: true (wrap in View when style props exist)
+  const wrap = options.wrap ?? true
 
   // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
