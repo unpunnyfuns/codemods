@@ -15,7 +15,7 @@ import {
   sizing,
   spacing,
 } from './mappings/style-props.js'
-import { addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Button prop mappings
 const styleProps = {
@@ -76,6 +76,7 @@ function main(fileInfo, api, options = {}) {
   let skipped = 0
   const elementStyles = []
   const usedTokenHelpers = new Set()
+  const droppedPropsMap = new Map()
   const buttonProps = {
     styleProps,
     transformProps,
@@ -130,10 +131,16 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
+      droppedProps,
     } = categorizeProps(attributes, buttonProps, j)
 
     for (const h of newHelpers) {
       usedTokenHelpers.add(h)
+    }
+
+    // Store dropped props for this element
+    if (droppedProps.length > 0) {
+      droppedPropsMap.set(index, droppedProps)
     }
 
     // Check for rightIcon warning
@@ -242,6 +249,9 @@ function main(fileInfo, api, options = {}) {
   if (wrap && elementStyles.length > 0) {
     addOrExtendStyleSheet(root, elementStyles, j)
   }
+
+  // Add comment about dropped props
+  addDroppedPropsComment(root, droppedPropsMap, 'Button', j)
 
   return root.toSource({
     quote: 'single',

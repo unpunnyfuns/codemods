@@ -38,5 +38,18 @@ const styles = StyleSheet.create({
     backgroundColor: color.blue
   }
 });
+
+/*
+Dropped props during migration:
+  avatar0:
+    iconName="user"
+  avatar1:
+    imageUri="https://example.com/avatar.jpg"
+    isSecondaryColor={true}
+  avatar2:
+    imageSource={...}
+    placeholder={true}
+*/
+
 "
 `;

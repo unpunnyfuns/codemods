@@ -262,7 +262,7 @@ export function buildStyleSheetProperties(styleProps, j) {
 /**
  * Format a JSX attribute value for display
  */
-function formatPropValue(attr, j) {
+function formatPropValue(attr, _j) {
   if (!attr.value) {
     return '{true}'
   }
@@ -329,7 +329,7 @@ export function addDroppedPropsComment(root, droppedPropsMap, componentName, j) 
     }
   }
 
-  const commentText = lines.join('\n') + '\n'
+  const commentText = `${lines.join('\n')}\n`
 
   // Add comment block to the end of the program body
   root.find(j.Program).forEach((path) => {

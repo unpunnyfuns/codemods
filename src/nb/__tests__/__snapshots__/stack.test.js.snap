@@ -41,5 +41,13 @@ const styles = StyleSheet.create({
     marginBottom: 1
   }
 });
+
+/*
+Dropped props during migration:
+  stack2:
+    reversed={true}
+    divider={...}
+*/
+
 "
 `;

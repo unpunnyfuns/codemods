@@ -20,7 +20,7 @@ import {
   sizing,
   spacing,
 } from './mappings/style-props.js'
-import { addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Pressable prop mappings
 const styleProps = {
@@ -79,6 +79,7 @@ function main(fileInfo, api, options = {}) {
 
   const elementStyles = []
   const usedTokenHelpers = new Set()
+  const droppedPropsMap = new Map()
 
   const pressableProps = {
     styleProps,
@@ -98,10 +99,16 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
+      droppedProps,
     } = categorizeProps(attributes, pressableProps, j)
 
     for (const h of newHelpers) {
       usedTokenHelpers.add(h)
+    }
+
+    // Store dropped props for this element
+    if (droppedProps.length > 0) {
+      droppedPropsMap.set(index, droppedProps)
     }
 
     // Transform element
@@ -141,6 +148,9 @@ function main(fileInfo, api, options = {}) {
     addNamedImport(root, targetImport, 'StyleSheet', j)
   }
   addOrExtendStyleSheet(root, elementStyles, j)
+
+  // Add comment about dropped props
+  addDroppedPropsComment(root, droppedPropsMap, 'Pressable', j)
 
   return root.toSource({
     quote: 'single',

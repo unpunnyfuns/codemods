@@ -13,7 +13,7 @@ import {
   sizing,
   spacing,
 } from './mappings/style-props.js'
-import { addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Avatar prop mappings
 const styleProps = {
@@ -82,6 +82,7 @@ function main(fileInfo, api, options = {}) {
   const warnings = []
   const elementStyles = []
   const usedTokenHelpers = new Set()
+  const droppedPropsMap = new Map()
   const avatarProps = {
     styleProps,
     transformProps,
@@ -140,10 +141,16 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
+      droppedProps,
     } = categorizeProps(attributes, avatarProps, j)
 
     for (const h of newHelpers) {
       usedTokenHelpers.add(h)
+    }
+
+    // Store dropped props for this element
+    if (droppedProps.length > 0) {
+      droppedPropsMap.set(index, droppedProps)
     }
 
     // Build Avatar props - start with direct props that pass through
@@ -270,6 +277,9 @@ function main(fileInfo, api, options = {}) {
   if (wrap && elementStyles.length > 0) {
     addOrExtendStyleSheet(root, elementStyles, j)
   }
+
+  // Add comment about dropped props
+  addDroppedPropsComment(root, droppedPropsMap, 'Avatar', j)
 
   return root.toSource({
     quote: 'single',

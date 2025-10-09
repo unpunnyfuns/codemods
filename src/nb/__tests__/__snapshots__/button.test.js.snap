@@ -41,5 +41,20 @@ const styles = StyleSheet.create({
     marginTop: space.xl
   }
 });
+
+/*
+Dropped props during migration:
+  button0:
+    leftIcon={...}
+    variant="secondary"
+    size="md"
+  button1:
+    variant="primary"
+    size="lg"
+  button2:
+    variant="secondary"
+    size="md"
+*/
+
 "
 `;
