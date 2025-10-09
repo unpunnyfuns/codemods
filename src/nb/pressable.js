@@ -58,13 +58,15 @@ const directPropsList = [
 ]
 
 // Explicit drop list for Pressable
-// NOTE: Does NOT include themeProps (colorScheme, variant, size)
-// because Pressable uses 'size' as a layout prop (width/height)
+// NOTE: Pressable is an interaction component (migrates to RN Pressable), not themed - drop colorScheme/variant
+// 'size' is handled by styleProps as layout (width/height)
 const dropPropsList = [
   ...allPseudoProps,
   ...platformOverrides,
   ...themeOverrides,
   ...componentAgnostic,
+  'colorScheme', // Pressable is an interaction component, not themed
+  'variant',     // Pressable is an interaction component, not themed
   'isDisabled',
 ]
 

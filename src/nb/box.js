@@ -47,13 +47,15 @@ const transformProps = {}
 const directPropsList = [...directProps]
 
 // Explicit drop list for Box
-// NOTE: Does NOT include themeProps (colorScheme, variant, size)
-// because Box uses 'size' as a layout prop (width/height)
+// NOTE: Box is a layout component (migrates to View), not themed - drop colorScheme/variant
+// 'size' is handled by styleProps as layout (width/height)
 const dropPropsList = [
   ...allPseudoProps,
   ...platformOverrides,
   ...themeOverrides,
   ...componentAgnostic,
+  'colorScheme', // Box is a layout component, not themed
+  'variant',     // Box is a layout component, not themed
   'disableTopRounding',
   'disableBottomRounding',
   'safeAreaBottom',
