@@ -11,7 +11,12 @@ import {
 } from '../helpers/jsx-transforms.js'
 import { alignValues, justifyValues } from './mappings/maps-values.js'
 import { directProps } from './mappings/props-direct.js'
-import { dropProps } from './mappings/props-drop.js'
+import {
+  allPseudoProps,
+  componentAgnostic,
+  platformOverrides,
+  themeOverrides,
+} from './mappings/props-drop.js'
 import {
   border,
   color,
@@ -27,14 +32,14 @@ import {
   addElementComment,
   addOrExtendStyleSheet,
   categorizeProps,
-  validSpaceTokens,
   validateTokenValue,
+  validSpaceTokens,
 } from './props.js'
 
 // Stack prop mappings
 const styleProps = {
   ...spacing,
-  ...sizing,
+  ...sizing, // ← includes 'size' for layout (width/height)
   ...color,
   ...border,
   ...layout,
@@ -66,7 +71,19 @@ const transformProps = {
 
 const directPropsList = directProps
 
-const dropPropsList = [...dropProps, 'divider', 'reversed', '_text', '_stack']
+// Explicit drop list for Stack
+// NOTE: Does NOT include themeProps (colorScheme, variant, size)
+// because Stack uses 'size' as a layout prop (width/height)
+const dropPropsList = [
+  ...allPseudoProps,
+  ...platformOverrides,
+  ...themeOverrides,
+  ...componentAgnostic,
+  'divider',
+  'reversed',
+  '_text',
+  '_stack',
+]
 
 const STACK_COMPONENTS = [
   { name: 'HStack', direction: 'horizontal' },

@@ -8,6 +8,156 @@ import { buildNestedMemberExpression } from '../helpers/token-helpers.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 
 /**
+ * Parse existing style prop (style={...})
+ * Handles arrays, objects, and StyleSheet references
+ */
+function parseExistingStyleProp(attr, j) {
+  const styleProps = {}
+  const inlineStyles = {}
+  const invalidStyles = []
+  const existingStyleReferences = []
+
+  if (!attr.value || attr.value.type !== 'JSXExpressionContainer') {
+    return { styleProps, inlineStyles, invalidStyles, existingStyleReferences }
+  }
+
+  const expr = attr.value.expression
+
+  // Handle array of styles: [styles.foo, { bar: 'baz' }]
+  if (expr.type === 'ArrayExpression') {
+    for (const element of expr.elements) {
+      if (element.type === 'ObjectExpression') {
+        // Extract object literal to styleProps or inlineStyles
+        for (const prop of element.properties) {
+          if (prop.type === 'Property' && prop.key.type === 'Identifier') {
+            const styleName = prop.key.name
+            const transformedValue = transformNumericTokenAccess(prop.value, j)
+
+            const validation = validateStyleValue(styleName, transformedValue)
+            if (!validation.isValid) {
+              invalidStyles.push({ styleName, value: validation.reason })
+              continue
+            }
+
+            const targetStyles = shouldExtractToStyleSheet(transformedValue, false)
+              ? styleProps
+              : inlineStyles
+            targetStyles[styleName] = transformedValue
+          }
+        }
+      } else if (element.type === 'MemberExpression') {
+        existingStyleReferences.push(element)
+      }
+    }
+  }
+  // Handle single object: { bar: 'baz' }
+  else if (expr.type === 'ObjectExpression') {
+    for (const prop of expr.properties) {
+      if (prop.type === 'Property' && prop.key.type === 'Identifier') {
+        const styleName = prop.key.name
+        const transformedValue = transformNumericTokenAccess(prop.value, j)
+
+        const validation = validateStyleValue(styleName, transformedValue)
+        if (!validation.isValid) {
+          invalidStyles.push({ styleName, value: validation.reason })
+          continue
+        }
+
+        const targetStyles = shouldExtractToStyleSheet(transformedValue, false)
+          ? styleProps
+          : inlineStyles
+        targetStyles[styleName] = transformedValue
+      }
+    }
+  }
+  // Handle StyleSheet reference: styles.foo
+  else if (expr.type === 'MemberExpression') {
+    existingStyleReferences.push(expr)
+  }
+
+  return { styleProps, inlineStyles, invalidStyles, existingStyleReferences }
+}
+
+/**
+ * Process a style prop that should be extracted to StyleSheet
+ * Handles token helpers, value mapping, and multi-property expansion
+ */
+function processStylePropMapping(attr, config, j, usedTokenHelpers) {
+  const styleProps = {}
+  const inlineStyles = {}
+  const invalidStyles = []
+
+  let styleName, properties, valueMap, tokenHelper
+
+  // Support both string (simple mapping) and object (with options)
+  if (typeof config === 'string') {
+    styleName = config
+    properties = null
+    valueMap = null
+    tokenHelper = null
+  } else {
+    styleName = config.styleName
+    properties = config.properties
+    valueMap = config.valueMap
+    tokenHelper = config.tokenHelper
+  }
+
+  let value = null
+  if (attr.value?.type === 'JSXExpressionContainer') {
+    value = attr.value.expression
+  } else if (attr.value?.type === 'StringLiteral' || attr.value?.type === 'Literal') {
+    value = attr.value
+  }
+
+  if (!value) {
+    return { styleProps, inlineStyles, invalidStyles }
+  }
+
+  let processedValue = value
+  let isTokenHelperCall = false
+
+  // Apply tokenHelper transformation for string literals
+  if (tokenHelper && (value.type === 'StringLiteral' || value.type === 'Literal')) {
+    const result = processTokenHelper(value, tokenHelper, j, usedTokenHelpers)
+    processedValue = result.value
+    isTokenHelperCall = result.isTokenHelper
+  }
+  // Apply value mapping if configured
+  else if (valueMap) {
+    processedValue = applyValueMapping(value, valueMap, j)
+  }
+
+  // Decide whether to extract to StyleSheet or keep inline
+  const shouldExtract = shouldExtractToStyleSheet(processedValue, isTokenHelperCall)
+
+  // Handle multi-property expansion or single property
+  if (properties) {
+    // Expand to multiple properties with same value
+    for (const prop of properties) {
+      const validation = validateStyleValue(prop, processedValue)
+      if (!validation.isValid) {
+        invalidStyles.push({ styleName: prop, value: validation.reason })
+        continue
+      }
+
+      const targetStyles = shouldExtract ? styleProps : inlineStyles
+      targetStyles[prop] = processedValue
+    }
+  } else {
+    // Validate single property
+    const validation = validateStyleValue(styleName, processedValue)
+    if (validation.isValid) {
+      const targetStyles = shouldExtract ? styleProps : inlineStyles
+      targetStyles[styleName] = processedValue
+    } else {
+      invalidStyles.push({ styleName, value: validation.reason })
+    }
+  }
+
+  return { styleProps, inlineStyles, invalidStyles }
+}
+
+/**
  * Check if a value can be extracted to StyleSheet (literal or token helper reference)
  */
 export function shouldExtractToStyleSheet(value, isTokenHelper = false) {
@@ -309,141 +459,25 @@ export function categorizeProps(attributes, mappings, j) {
 
     // Handle existing style prop
     if (propName === 'style') {
-      if (attr.value?.type === 'JSXExpressionContainer') {
-        const expr = attr.value.expression
-
-        // Handle array of styles: [styles.foo, { bar: 'baz' }]
-        if (expr.type === 'ArrayExpression') {
-          for (const element of expr.elements) {
-            if (element.type === 'ObjectExpression') {
-              // Extract object literal to styleProps or inlineStyles
-              for (const prop of element.properties) {
-                if (prop.type === 'Property' && prop.key.type === 'Identifier') {
-                  const styleName = prop.key.name
-                  // Transform numeric token access like space['4'] → 4
-                  const transformedValue = transformNumericTokenAccess(prop.value, j)
-
-                  // Validate style value
-                  const validation = validateStyleValue(styleName, transformedValue)
-                  if (!validation.isValid) {
-                    invalidStyles.push({ styleName, value: validation.reason })
-                    continue
-                  }
-
-                  // Decide whether to extract to StyleSheet or keep inline
-                  const targetStyles = shouldExtractToStyleSheet(transformedValue, false)
-                    ? styleProps
-                    : inlineStyles
-                  targetStyles[styleName] = transformedValue
-                }
-              }
-            } else if (element.type === 'MemberExpression') {
-              // Keep StyleSheet reference (styles.foo)
-              existingStyleReferences.push(element)
-            }
-          }
-        }
-        // Handle single object: { bar: 'baz' }
-        else if (expr.type === 'ObjectExpression') {
-          for (const prop of expr.properties) {
-            if (prop.type === 'Property' && prop.key.type === 'Identifier') {
-              const styleName = prop.key.name
-              // Transform numeric token access like space['4'] → 4
-              const transformedValue = transformNumericTokenAccess(prop.value, j)
-
-              // Validate style value
-              const validation = validateStyleValue(styleName, transformedValue)
-              if (!validation.isValid) {
-                invalidStyles.push({ styleName, value: validation.reason })
-                continue
-              }
-
-              // Decide whether to extract to StyleSheet or keep inline
-              const targetStyles = shouldExtractToStyleSheet(transformedValue, false)
-                ? styleProps
-                : inlineStyles
-              targetStyles[styleName] = transformedValue
-            }
-          }
-        }
-        // Handle StyleSheet reference: styles.foo
-        else if (expr.type === 'MemberExpression') {
-          existingStyleReferences.push(expr)
-        }
-      }
-
+      const parsed = parseExistingStyleProp(attr, j)
+      Object.assign(styleProps, parsed.styleProps)
+      Object.assign(inlineStyles, parsed.inlineStyles)
+      invalidStyles.push(...parsed.invalidStyles)
+      existingStyleReferences.push(...parsed.existingStyleReferences)
       propsToRemove.push(attr)
     }
     // Check if it should be extracted to stylesheet
     else if (stylePropMappings[propName]) {
-      const config = stylePropMappings[propName]
-      let styleName, properties, valueMap, tokenHelper
-
-      // Support both string (simple mapping) and object (with options)
-      if (typeof config === 'string') {
-        styleName = config
-        properties = null
-        valueMap = null
-        tokenHelper = null
-      } else {
-        styleName = config.styleName
-        properties = config.properties
-        valueMap = config.valueMap
-        tokenHelper = config.tokenHelper
-      }
-
-      let value = null
-      if (attr.value?.type === 'JSXExpressionContainer') {
-        value = attr.value.expression
-      } else if (attr.value?.type === 'StringLiteral' || attr.value?.type === 'Literal') {
-        value = attr.value
-      }
-
-      if (value) {
-        let processedValue = value
-        let isTokenHelperCall = false
-
-        // Apply tokenHelper transformation for string literals
-        if (tokenHelper && (value.type === 'StringLiteral' || value.type === 'Literal')) {
-          const result = processTokenHelper(value, tokenHelper, j, usedTokenHelpers)
-          processedValue = result.value
-          isTokenHelperCall = result.isTokenHelper
-        }
-        // Apply value mapping if configured
-        else if (valueMap) {
-          processedValue = applyValueMapping(value, valueMap, j)
-        }
-
-        // Decide whether to extract to StyleSheet or keep inline
-        const shouldExtract = shouldExtractToStyleSheet(processedValue, isTokenHelperCall)
-
-        // Handle multi-property expansion or single property
-        if (properties) {
-          // Expand to multiple properties with same value
-          for (const prop of properties) {
-            // Validate each property
-            const validation = validateStyleValue(prop, processedValue)
-            if (!validation.isValid) {
-              invalidStyles.push({ styleName: prop, value: validation.reason })
-              continue
-            }
-
-            const targetStyles = shouldExtract ? styleProps : inlineStyles
-            targetStyles[prop] = processedValue
-          }
-        } else {
-          // Validate single property
-          const validation = validateStyleValue(styleName, processedValue)
-          if (validation.isValid) {
-            const targetStyles = shouldExtract ? styleProps : inlineStyles
-            targetStyles[styleName] = processedValue
-          } else {
-            invalidStyles.push({ styleName, value: validation.reason })
-          }
-        }
-
-        propsToRemove.push(attr)
-      }
+      const processed = processStylePropMapping(
+        attr,
+        stylePropMappings[propName],
+        j,
+        usedTokenHelpers,
+      )
+      Object.assign(styleProps, processed.styleProps)
+      Object.assign(inlineStyles, processed.inlineStyles)
+      invalidStyles.push(...processed.invalidStyles)
+      propsToRemove.push(attr)
     }
     // Check if it should be transformed on element
     else if (transformPropMappings[propName]) {

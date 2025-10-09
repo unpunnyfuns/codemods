@@ -9,7 +9,12 @@ import {
   removePropsFromElement,
 } from '../helpers/jsx-transforms.js'
 import { directProps } from './mappings/props-direct.js'
-import { dropProps } from './mappings/props-drop.js'
+import {
+  allPseudoProps,
+  componentAgnostic,
+  platformOverrides,
+  themeOverrides,
+} from './mappings/props-drop.js'
 import {
   border,
   color,
@@ -26,7 +31,7 @@ import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './pro
 // Pressable prop mappings
 const styleProps = {
   ...spacing,
-  ...sizing,
+  ...sizing, // ← includes 'size' for layout (width/height)
   ...color,
   ...border,
   ...layout,
@@ -52,7 +57,16 @@ const directPropsList = [
   'unstable_pressDelay',
 ]
 
-const dropPropsList = [...dropProps, 'isDisabled']
+// Explicit drop list for Pressable
+// NOTE: Does NOT include themeProps (colorScheme, variant, size)
+// because Pressable uses 'size' as a layout prop (width/height)
+const dropPropsList = [
+  ...allPseudoProps,
+  ...platformOverrides,
+  ...themeOverrides,
+  ...componentAgnostic,
+  'isDisabled',
+]
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
