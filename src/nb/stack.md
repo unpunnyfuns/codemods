@@ -10,8 +10,8 @@ Migrates NativeBase `HStack`/`VStack` to `Stack` with `direction` prop.
 
 ## Options
 
-- `sourceImport` - Import to look for (default: `'react-native'`)
-- `targetImport` - Import for Stack (default: `'@hb-frontend/app/src/components/nordlys/'`)
+- `sourceImport` - Import to look for (default: `'native-base'`)
+- `targetImport` - Import for Stack (default: `'@hb-frontend/app/src/components/nordlys/Stack'`)
 - `targetName` - Component name (default: `'Stack'`)
 - `tokenImport` - Design tokens import (default: `'@hb-frontend/nordlys'`)
 

@@ -1,5 +1,5 @@
 import { SomeOtherComponent } from '@org/common/src/other'
-import { HStack } from 'react-native'
+import { HStack } from 'native-base'
 
 export function MyComponent() {
   return (

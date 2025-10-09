@@ -1,5 +1,5 @@
 import { SomeOtherComponent } from '@org/common/src/other'
-import { HStack, VStack } from 'react-native'
+import { HStack, VStack } from 'native-base'
 
 export function ComprehensiveExample() {
   return (

@@ -2,7 +2,7 @@
 
 exports[`nb/stack-comprehensive > handles all edge cases: multi-property expansion, tokens, flexbox, position 1`] = `
 "import { SomeOtherComponent } from '@org/common/src/other'
-import { Stack } from '@hb-frontend/app/src/components/nordlys/';
+import { Stack } from '@hb-frontend/app/src/components/nordlys/Stack';
 import { color, radius } from '@hb-frontend/nordlys';
 import { StyleSheet } from 'react-native';
 

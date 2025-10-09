@@ -2,7 +2,7 @@
 
 exports[`nb/stack > migrates HStack to Stack with full prop mapping 1`] = `
 "import { SomeOtherComponent } from '@org/common/src/other'
-import { Stack } from '@hb-frontend/app/src/components/nordlys/';
+import { Stack } from '@hb-frontend/app/src/components/nordlys/Stack';
 import { radius } from '@hb-frontend/nordlys';
 import { StyleSheet } from 'react-native';
 

@@ -76,8 +76,8 @@ function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
   const root = j(fileInfo.source)
 
-  const sourceImport = options.sourceImport ?? 'react-native'
-  const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/'
+  const sourceImport = options.sourceImport ?? 'native-base'
+  const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/Stack'
   const targetName = options.targetName ?? 'Stack'
   const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
 
