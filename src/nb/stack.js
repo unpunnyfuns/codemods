@@ -130,6 +130,44 @@ function main(fileInfo, api, options = {}) {
         usedTokenHelpers.add(h)
       }
 
+      // Validate gap prop (must be a valid space token name)
+      const validGapTokens = ['zero', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']
+      if (transformedProps.gap) {
+        const gapValue = transformedProps.gap
+        let isInvalid = false
+
+        // Check if it's a string literal with invalid value
+        if (gapValue.type === 'StringLiteral' || gapValue.type === 'Literal') {
+          const val = String(gapValue.value)
+          if (!validGapTokens.includes(val)) {
+            isInvalid = true
+          }
+        }
+        // Check if it's a numeric literal
+        else if (gapValue.type === 'NumericLiteral') {
+          isInvalid = true
+        }
+        // Check if it's a JSXExpressionContainer with numeric or invalid string
+        else if (gapValue.type === 'JSXExpressionContainer') {
+          const expr = gapValue.expression
+          if (expr.type === 'NumericLiteral') {
+            isInvalid = true
+          } else if (expr.type === 'StringLiteral' || expr.type === 'Literal') {
+            const val = String(expr.value)
+            if (!validGapTokens.includes(val)) {
+              isInvalid = true
+            }
+          }
+        }
+
+        if (isInvalid) {
+          // Create a JSX attribute for the comment
+          const gapAttr = j.jsxAttribute(j.jsxIdentifier('gap'), gapValue)
+          droppedProps.push({ name: 'gap', attr: gapAttr })
+          delete transformedProps.gap
+        }
+      }
+
       // Transform element
       removePropsFromElement(attributes, propsToRemove)
       updateElementName(path, targetName)

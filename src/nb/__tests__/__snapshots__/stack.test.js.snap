@@ -9,7 +9,10 @@ import { StyleSheet } from 'react-native';
 export function MyComponent() {
   return (
     <>
-      <Stack direction='horizontal' gap={2} style={styles.hstack0}>
+
+      {/* gap={2} */
+      }
+      <Stack direction='horizontal' style={styles.hstack0}>
         <SomeOtherComponent />
       </Stack>
       <Stack testID="test-stack" direction='horizontal' style={styles.hstack1}>

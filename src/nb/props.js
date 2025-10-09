@@ -477,10 +477,23 @@ export function validateElementStyles(styles, _j) {
   ]
 
   for (const [styleName, value] of Object.entries(styles)) {
+    // Check for invalid string numbers and px suffixes
+    if (value.type === 'StringLiteral' || value.type === 'Literal') {
+      const val = String(value.value)
+      // Flag "0", "1", "2px", "230px", etc. (but allow percentages)
+      if (/^\d+px$/.test(val) || (/^\d+$/.test(val) && !val.endsWith('%'))) {
+        issues.push({
+          styleName,
+          value: `"${val}"`,
+        })
+      }
+    }
+
     if (dimensionProps.includes(styleName)) {
       if (value.type === 'StringLiteral') {
         const val = value.value
-        if (!val.endsWith('%')) {
+        // Check for semantic tokens used where numbers expected
+        if (validSpaceTokens.includes(val)) {
           issues.push({
             styleName,
             value: `"${val}"`,
@@ -544,6 +557,20 @@ export function validateElementStyles(styles, _j) {
         styleName,
         value: value.type === 'StringLiteral' ? `"${value.value}"` : '{...}',
       })
+    }
+
+    // Check numeric props that shouldn't be strings
+    const numericProps = ['flex', 'flexGrow', 'flexShrink', 'borderWidth', 'zIndex', 'opacity']
+    if (numericProps.includes(styleName)) {
+      if (value.type === 'StringLiteral' || value.type === 'Literal') {
+        const val = String(value.value)
+        if (/^\d+(\.\d+)?$/.test(val)) {
+          issues.push({
+            styleName,
+            value: `"${val}"`,
+          })
+        }
+      }
     }
   }
 
