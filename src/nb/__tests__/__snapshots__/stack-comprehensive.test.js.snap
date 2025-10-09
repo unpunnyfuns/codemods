@@ -47,10 +47,8 @@ export function ComprehensiveExample() {
 
 const styles = StyleSheet.create({
   hstack0: {
-    marginLeft: 4,
-    marginRight: 4,
-    marginTop: 2,
-    marginBottom: 2
+    marginHorizontal: 4,
+    marginVertical: 2
   },
 
   hstack1: {

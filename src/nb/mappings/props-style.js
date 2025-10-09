@@ -20,9 +20,9 @@ export const spacing = {
   mx: { styleName: 'marginHorizontal', tokenHelper: 'space' },
   my: { styleName: 'marginVertical', tokenHelper: 'space' },
 
-  // Margin - NativeBase specific (expand to multiple)
-  marginX: { properties: ['marginLeft', 'marginRight'], tokenHelper: 'space' },
-  marginY: { properties: ['marginTop', 'marginBottom'], tokenHelper: 'space' },
+  // Margin - NativeBase long-form shortcuts (map to RN native shorthands)
+  marginX: { styleName: 'marginHorizontal', tokenHelper: 'space' },
+  marginY: { styleName: 'marginVertical', tokenHelper: 'space' },
 
   // Padding - full names
   padding: { styleName: 'padding', tokenHelper: 'space' },
@@ -39,6 +39,10 @@ export const spacing = {
   pr: { styleName: 'paddingRight', tokenHelper: 'space' },
   px: { styleName: 'paddingHorizontal', tokenHelper: 'space' },
   py: { styleName: 'paddingVertical', tokenHelper: 'space' },
+
+  // Padding - NativeBase long-form shortcuts (map to RN native shorthands)
+  paddingX: { styleName: 'paddingHorizontal', tokenHelper: 'space' },
+  paddingY: { styleName: 'paddingVertical', tokenHelper: 'space' },
 }
 
 // Value mapping for dimension values

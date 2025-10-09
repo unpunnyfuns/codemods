@@ -13,6 +13,12 @@
  * - `{ property: 'x' }` means rename to 'x'
  * - `{ properties: ['x', 'y'] }` means expand to multiple properties
  * - `scale: 'x'` indicates it uses theme scale (colors, space, sizes, etc.)
+ *
+ * NOTE: Our codemods differ from NativeBase's behavior for mx/my/px/py:
+ * - NativeBase expands: mx → ['marginLeft', 'marginRight']
+ * - Our codemods map: mx → marginHorizontal (uses RN native shorthand)
+ * This is intentional - React Native supports these properties natively,
+ * so we use them instead of expanding to multiple properties.
  */
 
 // SPACING PROPS
