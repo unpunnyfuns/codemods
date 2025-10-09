@@ -1,22 +1,21 @@
 /**
- * NativeBase theme system props to DROP during migration
+ * NativeBase theme system props
  *
  * These props are specific to NativeBase's theming system and don't directly
- * map to Nordlys's component API. Users need to manually migrate these to
- * Nordlys's equivalent props/patterns.
+ * map to Nordlys's component API.
+ *
+ * NOTE: 'size' is context-dependent:
+ * - For Button/Input: theme variant to drop
+ * - For Stack/Box: layout prop (width/height) to transform
+ *
+ * Each component should decide whether to include these in drop list.
  */
 
 /**
- * Theme props found across multiple components
- * These control the visual variant/style of components
+ * Theme variant props found across multiple components
  */
 export const themeProps = [
   'colorScheme', // NativeBase color theme key (e.g., 'primary', 'secondary', 'blue')
   'variant', // Component variant (e.g., 'solid', 'outline', 'ghost', 'link')
-  'size', // Component size token (e.g., 'xs', 'sm', 'md', 'lg', 'xl')
+  'size', // Component size token (e.g., 'xs', 'sm', 'md', 'lg', 'xl') - CONTEXT DEPENDENT
 ]
-
-/**
- * ALL theme props to drop
- */
-export const allThemeProps = themeProps

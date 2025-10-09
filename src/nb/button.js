@@ -4,7 +4,12 @@
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { extractPropFromJSXElement, extractSimpleChild } from '../helpers/jsx-extraction.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
-import { dropProps } from './mappings/props-drop.js'
+import {
+  allPseudoProps,
+  componentAgnostic,
+  platformOverrides,
+  themeOverrides,
+} from './mappings/props-drop.js'
 import {
   border,
   color,
@@ -38,9 +43,23 @@ const transformProps = {
   isDisabled: 'disabled',
 }
 
+// Direct props: 'size' and 'variant' pass through to Nordlys Button
 const directPropsList = ['size', 'variant', 'onPress', 'testID', 'isLoading', 'type']
 
-const dropPropsList = [...dropProps, 'leftIcon', 'rightIcon', '_text', '_loading']
+// Explicit drop list for Button
+// NOTE: Does NOT include themeProps because Button keeps 'size' and 'variant' as direct props
+// Only drops 'colorScheme' from themeProps
+const dropPropsList = [
+  ...allPseudoProps,
+  ...platformOverrides,
+  ...themeOverrides,
+  ...componentAgnostic,
+  'colorScheme', // From themeProps, but keep 'size' and 'variant'
+  'leftIcon',
+  'rightIcon',
+  '_text',
+  '_loading',
+]
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
