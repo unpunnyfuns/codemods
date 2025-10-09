@@ -38,9 +38,6 @@ export function ComprehensiveExample() {
         <SomeOtherComponent />
       </Stack>
       {/* Test all border radius corners */}
-
-      {/* borderTopLeftRadius: radius.xs */
-      }
       <Stack direction='horizontal' style={styles.hstack3}>
         <SomeOtherComponent />
       </Stack>

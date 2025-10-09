@@ -3,8 +3,8 @@
 
 import { insertImports, matchesImportPath } from '../helpers/imports.js'
 
-const IMPORT_PATH = '@org/common/src/components'
-const ATOM_PREFIX = '@org/common/src/components/atoms/'
+const IMPORT_PATH = '@hb-frontend/common/src/components'
+const ATOM_PREFIX = '@hb-frontend/common/src/components/atoms/'
 
 // Hardcoded map of atom components and their associated types
 // Maintained manually - see split-atoms.md for full list

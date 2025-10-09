@@ -21,12 +21,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import {
-  addElementComment,
-  addOrExtendStyleSheet,
-  categorizeProps,
-  validateElementStyles,
-} from './props.js'
+import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Pressable prop mappings
 const styleProps = {
@@ -106,6 +101,7 @@ function main(fileInfo, api, options = {}) {
       propsToRemove,
       usedTokenHelpers: newHelpers,
       droppedProps,
+      invalidStyles,
       existingStyleReferences,
     } = categorizeProps(attributes, pressableProps, j)
 
@@ -141,8 +137,7 @@ function main(fileInfo, api, options = {}) {
     addStyleProp(attributes, styleValue, j)
 
     // Validate styles and add comment if there are issues
-    const styleIssues = validateElementStyles(styleProps, j)
-    addElementComment(path, droppedProps, styleIssues, j)
+    addElementComment(path, droppedProps, invalidStyles, j)
   })
 
   // Update imports
