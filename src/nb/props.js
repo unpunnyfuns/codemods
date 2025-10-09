@@ -260,17 +260,25 @@ export function buildStyleSheetProperties(styleProps, j) {
 
 /**
  * Add a comment at the end of the file listing dropped props
+ * droppedPropsMap: Map of element index -> array of dropped prop names
  */
-export function addDroppedPropsComment(root, droppedProps, componentName, j) {
-  if (droppedProps.length === 0) {
+export function addDroppedPropsComment(root, droppedPropsMap, componentName, j) {
+  if (droppedPropsMap.size === 0) {
     return
   }
 
-  // Get unique dropped props
-  const uniqueDropped = [...new Set(droppedProps)]
+  // Build comment lines
+  const lines = ['\nDropped props during migration:']
 
-  // Create comment as an empty statement with leading comment
-  const commentText = `\nDropped ${componentName} props during migration: ${uniqueDropped.join(', ')}\nThese props are not supported in the target component or were pseudo-props (_hover, _pressed, etc.)\n`
+  for (const [elementIndex, props] of droppedPropsMap.entries()) {
+    if (props.length > 0) {
+      const uniqueProps = [...new Set(props)]
+      const elementName = `${componentName.toLowerCase()}${elementIndex}`
+      lines.push(`  ${elementName}: ${uniqueProps.join(', ')}`)
+    }
+  }
+
+  const commentText = lines.join('\n') + '\n'
 
   // Add comment block to the end of the program body
   root.find(j.Program).forEach((path) => {

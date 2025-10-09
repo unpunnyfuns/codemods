@@ -83,7 +83,7 @@ function main(fileInfo, api, options = {}) {
   let transformed = false
   const elementStyles = []
   const usedTokenHelpers = new Set()
-  const allDroppedProps = []
+  const droppedPropsMap = new Map()
 
   const stackProps = {
     styleProps,
@@ -123,7 +123,10 @@ function main(fileInfo, api, options = {}) {
         usedTokenHelpers.add(h)
       }
 
-      allDroppedProps.push(...droppedProps)
+      // Store dropped props for this element
+      if (droppedProps.length > 0) {
+        droppedPropsMap.set(index, droppedProps)
+      }
 
       // Transform element
       removePropsFromElement(attributes, propsToRemove)
@@ -163,7 +166,7 @@ function main(fileInfo, api, options = {}) {
   addOrExtendStyleSheet(root, elementStyles, j)
 
   // Add comment about dropped props
-  addDroppedPropsComment(root, allDroppedProps, 'Stack', j)
+  addDroppedPropsComment(root, droppedPropsMap, 'Stack', j)
 
   return root.toSource({
     quote: 'single',

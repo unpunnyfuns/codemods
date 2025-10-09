@@ -69,8 +69,8 @@ function main(fileInfo, api, options = {}) {
   const elementStyles = []
   // Track which design token helpers we need to import (e.g., 'color', 'space', 'radius')
   const usedTokenHelpers = new Set()
-  // Track all dropped props across all elements
-  const allDroppedProps = []
+  // Track dropped props per element: Map(elementIndex -> [propNames])
+  const droppedPropsMap = new Map()
 
   const boxProps = {
     styleProps,
@@ -104,8 +104,10 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers.add(h)
     }
 
-    // Collect all dropped props
-    allDroppedProps.push(...droppedProps)
+    // Store dropped props for this element
+    if (droppedProps.length > 0) {
+      droppedPropsMap.set(index, droppedProps)
+    }
 
     // Mutate the AST: remove old props, rename element, add transformed props
     removePropsFromElement(attributes, propsToRemove)
@@ -131,7 +133,7 @@ function main(fileInfo, api, options = {}) {
   addOrExtendStyleSheet(root, elementStyles, j)
 
   // Add comment about dropped props
-  addDroppedPropsComment(root, allDroppedProps, 'Box', j)
+  addDroppedPropsComment(root, droppedPropsMap, 'Box', j)
 
   return root.toSource({
     quote: 'single',
