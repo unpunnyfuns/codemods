@@ -66,7 +66,7 @@ const dropPropsList = [
   ...themeOverrides,
   ...componentAgnostic,
   'colorScheme', // Pressable is an interaction component, not themed
-  'variant',     // Pressable is an interaction component, not themed
+  'variant', // Pressable is an interaction component, not themed
   'isDisabled',
 ]
 

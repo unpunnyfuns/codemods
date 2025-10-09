@@ -55,7 +55,7 @@ const dropPropsList = [
   ...themeOverrides,
   ...componentAgnostic,
   'colorScheme', // Box is a layout component, not themed
-  'variant',     // Box is a layout component, not themed
+  'variant', // Box is a layout component, not themed
   'disableTopRounding',
   'disableBottomRounding',
   'safeAreaBottom',

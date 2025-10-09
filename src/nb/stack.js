@@ -80,7 +80,7 @@ const dropPropsList = [
   ...themeOverrides,
   ...componentAgnostic,
   'colorScheme', // Stack is a layout component, not themed
-  'variant',     // Stack is a layout component, not themed
+  'variant', // Stack is a layout component, not themed
   'divider',
   'reversed',
   '_text',
