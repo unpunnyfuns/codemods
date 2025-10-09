@@ -72,13 +72,15 @@ const transformProps = {
 const directPropsList = directProps
 
 // Explicit drop list for Stack
-// NOTE: Does NOT include themeProps (colorScheme, variant, size)
-// because Stack uses 'size' as a layout prop (width/height)
+// NOTE: Stack is a layout component, not themed - drop colorScheme/variant
+// 'size' is handled by styleProps as layout (width/height)
 const dropPropsList = [
   ...allPseudoProps,
   ...platformOverrides,
   ...themeOverrides,
   ...componentAgnostic,
+  'colorScheme', // Stack is a layout component, not themed
+  'variant',     // Stack is a layout component, not themed
   'divider',
   'reversed',
   '_text',
