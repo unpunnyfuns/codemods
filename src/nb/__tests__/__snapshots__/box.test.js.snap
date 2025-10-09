@@ -10,7 +10,7 @@ export function MyComponent() {
       <View style={styles.box0}>
         Content 1
       </View>
-      <View flex={1} style={styles.box1}>
+      <View style={styles.box1}>
         Content 2
       </View>
       <View style={styles.box2}>
@@ -30,7 +30,8 @@ const styles = StyleSheet.create({
 
   box1: {
     marginBottom: space.xl,
-    backgroundColor: color.white.HW1
+    backgroundColor: color.white.HW1,
+    flex: 1
   },
 
   box2: {

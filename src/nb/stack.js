@@ -9,8 +9,8 @@ import {
   removePropsFromElement,
   updateElementName,
 } from '../helpers/jsx-transforms.js'
-import { directProps } from './mappings/direct-props.js'
-import { dropProps } from './mappings/drop-props.js'
+import { directProps } from './mappings/props-direct.js'
+import { dropProps } from './mappings/props-drop.js'
 import {
   border,
   color,
@@ -20,8 +20,8 @@ import {
   position,
   sizing,
   spacing,
-} from './mappings/style-props.js'
-import { alignValues, justifyValues } from './mappings/value-maps.js'
+} from './mappings/props-style.js'
+import { alignValues, justifyValues } from './mappings/maps-values.js'
 import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Stack prop mappings

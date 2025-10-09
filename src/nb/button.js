@@ -4,7 +4,7 @@
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { extractPropFromJSXElement, extractSimpleChild } from '../helpers/jsx-extraction.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'
-import { dropProps } from './mappings/drop-props.js'
+import { dropProps } from './mappings/props-drop.js'
 import {
   border,
   color,
@@ -14,7 +14,7 @@ import {
   position,
   sizing,
   spacing,
-} from './mappings/style-props.js'
+} from './mappings/props-style.js'
 import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Button prop mappings

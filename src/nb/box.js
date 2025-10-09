@@ -9,29 +9,21 @@ import {
   removePropsFromElement,
   updateElementName,
 } from '../helpers/jsx-transforms.js'
-import { directProps } from './mappings/direct-props.js'
-import { dropProps } from './mappings/drop-props.js'
-import { border, layout, sizing, spacing } from './mappings/style-props.js'
+import { directProps } from './mappings/props-direct.js'
+import { dropProps } from './mappings/props-drop.js'
+import { border, color, extra, flexbox, layout, position, sizing, spacing } from './mappings/props-style.js'
 import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Box → View prop mappings
 const styleProps = {
   ...spacing,
   ...sizing,
-  ...layout,
+  ...color,
   ...border,
-
-  // Color/Background props with color token helper
-  bgColor: { styleName: 'backgroundColor', tokenHelper: 'color' },
-  bg: { styleName: 'backgroundColor', tokenHelper: 'color' },
-  backgroundColor: { styleName: 'backgroundColor', tokenHelper: 'color' },
-
-  // Border colors
-  borderColor: { styleName: 'borderColor', tokenHelper: 'color' },
-  borderTopColor: { styleName: 'borderTopColor', tokenHelper: 'color' },
-  borderBottomColor: { styleName: 'borderBottomColor', tokenHelper: 'color' },
-  borderLeftColor: { styleName: 'borderLeftColor', tokenHelper: 'color' },
-  borderRightColor: { styleName: 'borderRightColor', tokenHelper: 'color' },
+  ...layout,
+  ...flexbox,
+  ...position,
+  ...extra,
 }
 
 const transformProps = {}

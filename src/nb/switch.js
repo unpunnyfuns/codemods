@@ -12,7 +12,7 @@ import {
   position,
   sizing,
   spacing,
-} from './mappings/style-props.js'
+} from './mappings/props-style.js'
 import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Switch prop mappings

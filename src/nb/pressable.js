@@ -8,8 +8,8 @@ import {
   buildStyleValue,
   removePropsFromElement,
 } from '../helpers/jsx-transforms.js'
-import { directProps } from './mappings/direct-props.js'
-import { dropProps } from './mappings/drop-props.js'
+import { directProps } from './mappings/props-direct.js'
+import { dropProps } from './mappings/props-drop.js'
 import {
   border,
   color,
@@ -19,7 +19,7 @@ import {
   position,
   sizing,
   spacing,
-} from './mappings/style-props.js'
+} from './mappings/props-style.js'
 import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Pressable prop mappings

@@ -5,7 +5,7 @@
 
 import { addNamedImport } from '../helpers/imports.js'
 import { buildNestedMemberExpression } from '../helpers/token-helpers.js'
-import { getNordlysColorPath } from './mappings/color-mappings.js'
+import { getNordlysColorPath } from './mappings/maps-color.js'
 
 /**
  * Check if a value can be extracted to StyleSheet (literal or token helper reference)

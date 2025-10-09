@@ -4,7 +4,7 @@
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'
 import { buildNestedMemberExpression } from '../helpers/token-helpers.js'
-import { getNordlysColorPath } from './mappings/color-mappings.js'
+import { getNordlysColorPath } from './mappings/maps-color.js'
 import {
   border,
   color,
@@ -14,7 +14,7 @@ import {
   position,
   sizing,
   spacing,
-} from './mappings/style-props.js'
+} from './mappings/props-style.js'
 
 // Style props that get extracted to View wrapper
 const stylePropsConfig = {
