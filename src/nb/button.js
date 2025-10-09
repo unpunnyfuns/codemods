@@ -16,12 +16,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import {
-  addElementComment,
-  addOrExtendStyleSheet,
-  categorizeProps,
-  validateElementStyles,
-} from './props.js'
+import { addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Button prop mappings
 const styleProps = {

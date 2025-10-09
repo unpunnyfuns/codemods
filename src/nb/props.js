@@ -38,8 +38,14 @@ export function shouldExtractToStyleSheet(value, isTokenHelper = false) {
 /**
  * Transform token MemberExpression with numeric bracket notation to numeric literal
  * e.g., space['4'] → 4, radius['16'] → 16
+ * Also transforms dimension string values: "full" → "100%"
  */
 function transformNumericTokenAccess(value, j) {
+  // Transform dimension string literals
+  if ((value.type === 'StringLiteral' || value.type === 'Literal') && value.value === 'full') {
+    return j.stringLiteral('100%')
+  }
+
   if (value.type !== 'MemberExpression') {
     return value
   }

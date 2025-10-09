@@ -10,10 +10,6 @@ export function ComprehensiveExample() {
   return (
     <>
       {/* Test multi-property expansion with tokens */}
-
-      {/* width: "full"
-        height: "full" */
-      }
       <Stack direction='vertical' gap="md" style={styles.vstack0}>
         <SomeOtherComponent />
       </Stack>
@@ -90,8 +86,8 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radius.lg,
     borderBottomLeftRadius: radius.md,
     borderBottomRightRadius: radius.md,
-    width: "full",
-    height: "full"
+    width: '100%',
+    height: '100%'
   },
 
   vstack1: {

@@ -41,26 +41,31 @@ export const spacing = {
   py: { styleName: 'paddingVertical', tokenHelper: 'space' },
 }
 
+// Value mapping for dimension values
+const dimensionValues = {
+  full: '100%',
+}
+
 export const sizing = {
   // Full names
-  width: 'width',
-  height: 'height',
-  minWidth: 'minWidth',
-  minHeight: 'minHeight',
-  maxWidth: 'maxWidth',
-  maxHeight: 'maxHeight',
+  width: { styleName: 'width', valueMap: dimensionValues },
+  height: { styleName: 'height', valueMap: dimensionValues },
+  minWidth: { styleName: 'minWidth', valueMap: dimensionValues },
+  minHeight: { styleName: 'minHeight', valueMap: dimensionValues },
+  maxWidth: { styleName: 'maxWidth', valueMap: dimensionValues },
+  maxHeight: { styleName: 'maxHeight', valueMap: dimensionValues },
 
   // Shortcuts
-  w: 'width',
-  h: 'height',
-  minW: 'minWidth',
-  minH: 'minHeight',
-  maxW: 'maxWidth',
-  maxH: 'maxHeight',
+  w: { styleName: 'width', valueMap: dimensionValues },
+  h: { styleName: 'height', valueMap: dimensionValues },
+  minW: { styleName: 'minWidth', valueMap: dimensionValues },
+  minH: { styleName: 'minHeight', valueMap: dimensionValues },
+  maxW: { styleName: 'maxWidth', valueMap: dimensionValues },
+  maxH: { styleName: 'maxHeight', valueMap: dimensionValues },
 
   // Multi-property
-  size: { properties: ['width', 'height'] },
-  boxSize: { properties: ['width', 'height'] },
+  size: { properties: ['width', 'height'], valueMap: dimensionValues },
+  boxSize: { properties: ['width', 'height'], valueMap: dimensionValues },
 }
 
 export const color = {
