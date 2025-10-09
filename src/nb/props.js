@@ -234,7 +234,8 @@ export function categorizeProps(attributes, mappings, j) {
     // Check if it should be dropped
     else if (dropPropList.includes(propName)) {
       propsToRemove.push(attr)
-      droppedProps.push(propName)
+      // Store prop name and value for reporting
+      droppedProps.push({ name: propName, attr })
     }
     // Everything else (DIRECT_PROPS) stays on element as-is
   })
@@ -259,8 +260,54 @@ export function buildStyleSheetProperties(styleProps, j) {
 }
 
 /**
+ * Format a JSX attribute value for display
+ */
+function formatPropValue(attr, j) {
+  if (!attr.value) {
+    return '{true}'
+  }
+
+  if (attr.value.type === 'StringLiteral') {
+    return `"${attr.value.value}"`
+  }
+
+  if (attr.value.type === 'JSXExpressionContainer') {
+    const expr = attr.value.expression
+
+    if (expr.type === 'BooleanLiteral') {
+      return `{${expr.value}}`
+    }
+    if (expr.type === 'NumericLiteral') {
+      return `{${expr.value}}`
+    }
+    if (expr.type === 'StringLiteral') {
+      return `{"${expr.value}"}`
+    }
+    if (expr.type === 'Identifier') {
+      return `{${expr.name}}`
+    }
+    if (expr.type === 'ObjectExpression') {
+      return '{...}'
+    }
+    if (expr.type === 'ArrayExpression') {
+      return '{[...]}'
+    }
+    if (expr.type === 'ArrowFunctionExpression' || expr.type === 'FunctionExpression') {
+      return '{() => ...}'
+    }
+    if (expr.type === 'CallExpression') {
+      return '{func(...)}'
+    }
+
+    return '{...}'
+  }
+
+  return '{...}'
+}
+
+/**
  * Add a comment at the end of the file listing dropped props
- * droppedPropsMap: Map of element index -> array of dropped prop names
+ * droppedPropsMap: Map of element index -> array of {name, attr}
  */
 export function addDroppedPropsComment(root, droppedPropsMap, componentName, j) {
   if (droppedPropsMap.size === 0) {
@@ -272,9 +319,13 @@ export function addDroppedPropsComment(root, droppedPropsMap, componentName, j) 
 
   for (const [elementIndex, props] of droppedPropsMap.entries()) {
     if (props.length > 0) {
-      const uniqueProps = [...new Set(props)]
       const elementName = `${componentName.toLowerCase()}${elementIndex}`
-      lines.push(`  ${elementName}: ${uniqueProps.join(', ')}`)
+      lines.push(`  ${elementName}:`)
+
+      for (const { name, attr } of props) {
+        const value = formatPropValue(attr, j)
+        lines.push(`    ${name}=${value}`)
+      }
     }
   }
 
