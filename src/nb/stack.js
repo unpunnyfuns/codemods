@@ -20,6 +20,7 @@ import {
   position,
   sizing,
   spacing,
+  text,
 } from './mappings/props-style.js'
 import { alignValues, justifyValues } from './mappings/maps-values.js'
 import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
@@ -33,6 +34,7 @@ const styleProps = {
   ...layout,
   ...flexbox,
   ...position,
+  ...text,
   ...extra,
 
   // Stack-specific props with value mapping

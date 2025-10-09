@@ -168,6 +168,18 @@ export const position = {
   zIndex: 'zIndex',
 }
 
+export const text = {
+  textAlign: 'textAlign',
+  textDecorationLine: 'textDecorationLine',
+  textTransform: 'textTransform',
+  fontWeight: 'fontWeight',
+  fontStyle: 'fontStyle',
+  fontSize: 'fontSize',
+  fontFamily: 'fontFamily',
+  lineHeight: 'lineHeight',
+  letterSpacing: 'letterSpacing',
+}
+
 export const extra = {
   overflow: 'overflow',
   opacity: 'opacity',

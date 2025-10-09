@@ -11,7 +11,17 @@ import {
 } from '../helpers/jsx-transforms.js'
 import { directProps } from './mappings/props-direct.js'
 import { dropProps } from './mappings/props-drop.js'
-import { border, color, extra, flexbox, layout, position, sizing, spacing } from './mappings/props-style.js'
+import {
+  border,
+  color,
+  extra,
+  flexbox,
+  layout,
+  position,
+  sizing,
+  spacing,
+  text,
+} from './mappings/props-style.js'
 import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Box → View prop mappings
@@ -23,6 +33,7 @@ const styleProps = {
   ...layout,
   ...flexbox,
   ...position,
+  ...text,
   ...extra,
 }
 

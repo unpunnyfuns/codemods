@@ -14,6 +14,7 @@ import {
   position,
   sizing,
   spacing,
+  text,
 } from './mappings/props-style.js'
 import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
@@ -26,6 +27,7 @@ const styleProps = {
   ...layout,
   ...flexbox,
   ...position,
+  ...text,
   ...extra,
 }
 
