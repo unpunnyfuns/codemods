@@ -167,11 +167,16 @@ export function categorizeProps(attributes, mappings, j) {
         if (expr.type === 'ArrayExpression') {
           for (const element of expr.elements) {
             if (element.type === 'ObjectExpression') {
-              // Extract object literal to styleProps
+              // Extract object literal to styleProps or inlineStyles
               for (const prop of element.properties) {
                 if (prop.type === 'Property' && prop.key.type === 'Identifier') {
                   // Transform numeric token access like space['4'] → 4
-                  styleProps[prop.key.name] = transformNumericTokenAccess(prop.value, j)
+                  const transformedValue = transformNumericTokenAccess(prop.value, j)
+                  // Decide whether to extract to StyleSheet or keep inline
+                  const targetStyles = shouldExtractToStyleSheet(transformedValue, false)
+                    ? styleProps
+                    : inlineStyles
+                  targetStyles[prop.key.name] = transformedValue
                 }
               }
             } else if (element.type === 'MemberExpression') {
@@ -185,7 +190,12 @@ export function categorizeProps(attributes, mappings, j) {
           for (const prop of expr.properties) {
             if (prop.type === 'Property' && prop.key.type === 'Identifier') {
               // Transform numeric token access like space['4'] → 4
-              styleProps[prop.key.name] = transformNumericTokenAccess(prop.value, j)
+              const transformedValue = transformNumericTokenAccess(prop.value, j)
+              // Decide whether to extract to StyleSheet or keep inline
+              const targetStyles = shouldExtractToStyleSheet(transformedValue, false)
+                ? styleProps
+                : inlineStyles
+              targetStyles[prop.key.name] = transformedValue
             }
           }
         }
