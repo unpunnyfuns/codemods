@@ -16,7 +16,12 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import {
+  addDroppedPropsComment,
+  addOrExtendStyleSheet,
+  categorizeProps,
+  validateStyleSheetValues,
+} from './props.js'
 
 // Button prop mappings
 const styleProps = {
@@ -252,8 +257,11 @@ function main(fileInfo, api, options = {}) {
     addOrExtendStyleSheet(root, elementStyles, j)
   }
 
-  // Add comment about dropped props
-  addDroppedPropsComment(root, droppedPropsMap, 'Button', j)
+  // Validate styles and detect issues
+  const styleIssues = validateStyleSheetValues(elementStyles, j)
+
+  // Add comment about dropped props and style issues
+  addDroppedPropsComment(root, droppedPropsMap, 'Button', j, styleIssues)
 
   return root.toSource({
     quote: 'single',

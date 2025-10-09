@@ -306,25 +306,155 @@ function formatPropValue(attr, _j) {
 }
 
 /**
- * Add a comment at the end of the file listing dropped props
- * droppedPropsMap: Map of element index -> array of {name, attr}
+ * Validate style values and detect problematic patterns
+ * Returns array of issues: { elementName, styleName, value, issue }
  */
-export function addDroppedPropsComment(root, droppedPropsMap, componentName, j) {
-  if (droppedPropsMap.size === 0) {
+export function validateStyleSheetValues(elementStyles, j) {
+  const issues = []
+
+  // Known Nordlys tokens for validation
+  const validSpaceTokens = ['zero', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']
+  const validRadiusTokens = ['sm', 'md', 'lg', 'xl', '2xl']
+
+  // Dimension properties that should be numbers or percentages
+  const dimensionProps = [
+    'width',
+    'height',
+    'minWidth',
+    'minHeight',
+    'maxWidth',
+    'maxHeight',
+    'top',
+    'right',
+    'bottom',
+    'left',
+    'margin',
+    'marginTop',
+    'marginRight',
+    'marginBottom',
+    'marginLeft',
+    'marginHorizontal',
+    'marginVertical',
+    'padding',
+    'paddingTop',
+    'paddingRight',
+    'paddingBottom',
+    'paddingLeft',
+    'paddingHorizontal',
+    'paddingVertical',
+  ]
+
+  for (const { name: elementName, styles } of elementStyles) {
+    for (const [styleName, value] of Object.entries(styles)) {
+      // Check for invalid string dimension values
+      if (dimensionProps.includes(styleName)) {
+        if (value.type === 'StringLiteral') {
+          const val = value.value
+          // Allow percentages, but flag other strings like "full", "24", etc.
+          if (!val.endsWith('%')) {
+            issues.push({
+              elementName,
+              styleName,
+              value: `"${val}"`,
+              issue: 'String dimension value (should be number or percentage)',
+            })
+          }
+        }
+        // Check for invalid token references like space.auto
+        else if (value.type === 'MemberExpression') {
+          const tokenName = value.object?.name
+          const property = value.property?.name
+
+          if (tokenName === 'space' && !validSpaceTokens.includes(property)) {
+            issues.push({
+              elementName,
+              styleName,
+              value: `${tokenName}.${property}`,
+              issue: `Invalid token (space.${property} does not exist)`,
+            })
+          }
+        }
+      }
+
+      // Check for invalid radius tokens
+      if (styleName.includes('radius') || styleName.includes('Radius')) {
+        if (value.type === 'MemberExpression') {
+          const tokenName = value.object?.name
+          const property = value.property?.name
+
+          if (tokenName === 'radius' && !validRadiusTokens.includes(property)) {
+            issues.push({
+              elementName,
+              styleName,
+              value: `${tokenName}.${property}`,
+              issue: `Invalid token (radius.${property} does not exist)`,
+            })
+          }
+        }
+      }
+
+      // Check for textAlign on View (should be on Text)
+      if (styleName === 'textAlign') {
+        issues.push({
+          elementName,
+          styleName,
+          value: value.type === 'StringLiteral' ? `"${value.value}"` : '{...}',
+          issue: 'textAlign only works on Text components, not View',
+        })
+      }
+    }
+  }
+
+  return issues
+}
+
+/**
+ * Add a comment at the end of the file listing dropped props and style issues
+ * droppedPropsMap: Map of element index -> array of {name, attr}
+ * styleIssues: Array of {elementName, styleName, value, issue}
+ */
+export function addDroppedPropsComment(root, droppedPropsMap, componentName, j, styleIssues = []) {
+  if (droppedPropsMap.size === 0 && styleIssues.length === 0) {
     return
   }
 
-  // Build comment lines
-  const lines = ['\nDropped props during migration:']
+  const lines = []
 
-  for (const [elementIndex, props] of droppedPropsMap.entries()) {
-    if (props.length > 0) {
-      const elementName = `${componentName.toLowerCase()}${elementIndex}`
+  // Add dropped props section
+  if (droppedPropsMap.size > 0) {
+    lines.push('\nDropped props during migration:')
+    for (const [elementIndex, props] of droppedPropsMap.entries()) {
+      if (props.length > 0) {
+        const elementName = `${componentName.toLowerCase()}${elementIndex}`
+        lines.push(`  ${elementName}:`)
+        for (const { name, attr } of props) {
+          const value = formatPropValue(attr, j)
+          lines.push(`    ${name}=${value}`)
+        }
+      }
+    }
+  }
+
+  // Add style issues section
+  if (styleIssues.length > 0) {
+    if (lines.length > 0) {
+      lines.push('')
+    }
+    lines.push('\nInvalid styles requiring manual fix:')
+
+    // Group by element
+    const issuesByElement = new Map()
+    for (const issue of styleIssues) {
+      if (!issuesByElement.has(issue.elementName)) {
+        issuesByElement.set(issue.elementName, [])
+      }
+      issuesByElement.get(issue.elementName).push(issue)
+    }
+
+    for (const [elementName, elementIssues] of issuesByElement.entries()) {
       lines.push(`  ${elementName}:`)
-
-      for (const { name, attr } of props) {
-        const value = formatPropValue(attr, j)
-        lines.push(`    ${name}=${value}`)
+      for (const { styleName, value, issue } of elementIssues) {
+        lines.push(`    ${styleName}: ${value} // ${issue}`)
       }
     }
   }

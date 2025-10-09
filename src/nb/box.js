@@ -22,7 +22,12 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import {
+  addDroppedPropsComment,
+  addOrExtendStyleSheet,
+  categorizeProps,
+  validateStyleSheetValues,
+} from './props.js'
 
 // Box → View prop mappings
 const styleProps = {
@@ -39,9 +44,15 @@ const styleProps = {
 
 const transformProps = {}
 
-const directPropsList = [...directProps, 'safeAreaBottom']
+const directPropsList = [...directProps]
 
-const dropPropsList = [...dropProps, 'disableTopRounding', 'disableBottomRounding']
+const dropPropsList = [
+  ...dropProps,
+  'disableTopRounding',
+  'disableBottomRounding',
+  'safeAreaBottom',
+  'safeAreaTop',
+]
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -135,8 +146,11 @@ function main(fileInfo, api, options = {}) {
   // Add or extend StyleSheet.create() at the end of the file
   addOrExtendStyleSheet(root, elementStyles, j)
 
-  // Add comment about dropped props
-  addDroppedPropsComment(root, droppedPropsMap, 'Box', j)
+  // Validate styles and detect issues
+  const styleIssues = validateStyleSheetValues(elementStyles, j)
+
+  // Add comment about dropped props and style issues
+  addDroppedPropsComment(root, droppedPropsMap, 'Box', j, styleIssues)
 
   return root.toSource({
     quote: 'single',

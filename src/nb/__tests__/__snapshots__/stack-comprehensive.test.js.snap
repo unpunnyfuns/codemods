@@ -115,5 +115,15 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radius.md
   }
 });
+
+/*
+Invalid styles requiring manual fix:
+  hstack3:
+    borderTopLeftRadius: radius.xs // Invalid token (radius.xs does not exist)
+  vstack0:
+    width: "full" // String dimension value (should be number or percentage)
+    height: "full" // String dimension value (should be number or percentage)
+*/
+
 "
 `;
