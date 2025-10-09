@@ -6,12 +6,8 @@
  * Check if any JSX elements have attributes/props
  */
 export function hasAttributes(jsxElements) {
-  let hasAttrs = false
-  jsxElements.forEach((path) => {
+  return jsxElements.some((path) => {
     const attributes = path.node.openingElement.attributes || []
-    if (attributes.length > 0) {
-      hasAttrs = true
-    }
+    return attributes.length > 0
   })
-  return hasAttrs
 }

@@ -38,9 +38,9 @@ export function shouldExtractToStyleSheet(value, isTokenHelper = false) {
 /**
  * Validation helpers
  */
-const VALID_SPACE_TOKENS = ['zero', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']
-const VALID_RADIUS_TOKENS = ['xs', 'sm', 'md', 'lg', 'xl', '2xl']
-const DIMENSION_PROPS = [
+export const validSpaceTokens = ['zero', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']
+export const validRadiusTokens = ['xs', 'sm', 'md', 'lg', 'xl', '2xl']
+const dimensionProps = [
   'width',
   'height',
   'minWidth',
@@ -66,7 +66,43 @@ const DIMENSION_PROPS = [
   'paddingHorizontal',
   'paddingVertical',
 ]
-const NUMERIC_PROPS = ['flex', 'flexGrow', 'flexShrink', 'borderWidth', 'zIndex', 'opacity']
+const numericProps = ['flex', 'flexGrow', 'flexShrink', 'borderWidth', 'zIndex', 'opacity']
+
+/**
+ * Validate a value against a list of valid token names
+ * Returns { isValid: boolean, reason?: string }
+ */
+export function validateTokenValue(value, validTokens, allowNumeric = false) {
+  // Check if it's a string literal with invalid value
+  if (value.type === 'StringLiteral' || value.type === 'Literal') {
+    const val = String(value.value)
+    if (!validTokens.includes(val)) {
+      return { isValid: false, reason: `"${val}"` }
+    }
+  }
+  // Check if it's a numeric literal
+  else if (value.type === 'NumericLiteral') {
+    if (!allowNumeric) {
+      return { isValid: false, reason: `{${value.value}}` }
+    }
+  }
+  // Check if it's a JSXExpressionContainer
+  else if (value.type === 'JSXExpressionContainer') {
+    const expr = value.expression
+    if (expr.type === 'NumericLiteral') {
+      if (!allowNumeric) {
+        return { isValid: false, reason: `{${expr.value}}` }
+      }
+    } else if (expr.type === 'StringLiteral' || expr.type === 'Literal') {
+      const val = String(expr.value)
+      if (!validTokens.includes(val)) {
+        return { isValid: false, reason: `{"${val}"}` }
+      }
+    }
+  }
+
+  return { isValid: true }
+}
 
 /**
  * Check if a style value is valid for the given style property
@@ -89,12 +125,12 @@ function validateStyleValue(styleName, value) {
     }
 
     // Check for semantic tokens used where numbers expected (dimension props)
-    if (DIMENSION_PROPS.includes(styleName) && VALID_SPACE_TOKENS.includes(val)) {
+    if (dimensionProps.includes(styleName) && validSpaceTokens.includes(val)) {
       return { isValid: false, reason: `"${val}"` }
     }
 
     // Check numeric props that shouldn't be strings
-    if (NUMERIC_PROPS.includes(styleName) && /^\d+(\.\d+)?$/.test(val)) {
+    if (numericProps.includes(styleName) && /^\d+(\.\d+)?$/.test(val)) {
       return { isValid: false, reason: `"${val}"` }
     }
   }
@@ -114,7 +150,7 @@ function validateStyleValue(styleName, value) {
       if (/^\d+$/.test(property)) {
         return { isValid: false, reason: `${tokenName}['${property}']` }
       }
-      if (!VALID_SPACE_TOKENS.includes(property)) {
+      if (!validSpaceTokens.includes(property)) {
         const displayValue = value.computed
           ? `${tokenName}['${property}']`
           : `${tokenName}.${property}`
@@ -127,7 +163,7 @@ function validateStyleValue(styleName, value) {
       if (/^\d+$/.test(property)) {
         return { isValid: false, reason: `${tokenName}['${property}']` }
       }
-      if (!VALID_RADIUS_TOKENS.includes(property)) {
+      if (!validRadiusTokens.includes(property)) {
         const displayValue = value.computed
           ? `${tokenName}['${property}']`
           : `${tokenName}.${property}`

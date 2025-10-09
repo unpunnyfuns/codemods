@@ -182,7 +182,8 @@ function main(fileInfo, api, options = {}) {
       )
 
       // Create View wrapper
-      const viewElement = createViewWrapper(typographyElement, styleName, j)
+      const styleValue = j.memberExpression(j.identifier('styles'), j.identifier(styleName))
+      const viewElement = createViewWrapper(typographyElement, styleValue, j)
 
       // Replace Typography with wrapped version
       j(path).replaceWith(viewElement)

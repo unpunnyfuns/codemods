@@ -95,21 +95,16 @@ export function addStyleProp(attributes, styleValue, j) {
 }
 
 /**
- * Create a View wrapper around a child element with a style reference
+ * Create a View wrapper around a child element with a style value
  * @param {Object} childElement - JSX element to wrap
- * @param {string} styleName - Name of the style in StyleSheet (e.g., "button0")
+ * @param {Object} styleValue - AST node for the style value (MemberExpression, ArrayExpression, ObjectExpression, etc.)
  * @param {Object} j - jscodeshift API
  * @returns {Object} - View element wrapping the child
  */
-export function createViewWrapper(childElement, styleName, j) {
+export function createViewWrapper(childElement, styleValue, j) {
   return j.jsxElement(
     j.jsxOpeningElement(j.jsxIdentifier('View'), [
-      j.jsxAttribute(
-        j.jsxIdentifier('style'),
-        j.jsxExpressionContainer(
-          j.memberExpression(j.identifier('styles'), j.identifier(styleName)),
-        ),
-      ),
+      j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(styleValue)),
     ]),
     j.jsxClosingElement(j.jsxIdentifier('View')),
     [j.jsxText('\n  '), childElement, j.jsxText('\n')],

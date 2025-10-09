@@ -102,14 +102,10 @@ export function addNamedImport(root, modulePath, importName, j) {
  * Check if a named import is present in any of the given import declarations
  */
 export function hasNamedImport(imports, importName) {
-  let found = false
-  imports.forEach((path) => {
+  return imports.some((path) => {
     const specifiers = path.node.specifiers || []
-    specifiers.forEach((spec) => {
-      if (spec.type === 'ImportSpecifier' && spec.imported.name === importName) {
-        found = true
-      }
-    })
+    return specifiers.some(
+      (spec) => spec.type === 'ImportSpecifier' && spec.imported.name === importName,
+    )
   })
-  return found
 }

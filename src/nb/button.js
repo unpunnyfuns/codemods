@@ -3,7 +3,7 @@
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { extractPropFromJSXElement, extractSimpleChild } from '../helpers/jsx-extraction.js'
-import { createViewWrapper } from '../helpers/jsx-transforms.js'
+import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import { dropProps } from './mappings/props-drop.js'
 import {
   border,
@@ -192,25 +192,14 @@ function main(fileInfo, api, options = {}) {
     )
 
     // Check if we need to wrap in View
-    const hasStyleProps = Object.keys(styleProps).length > 0 || inlineStyles.length > 0
+    const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
     if (wrap && hasStyleProps) {
       const styleName = `button${index}`
 
-      // Build style object
-      const styleObj = {}
-      for (const key of Object.keys(styleProps)) {
-        styleObj[key] = styleProps[key]
-      }
-
-      elementStyles.push({ name: styleName, styles: styleObj })
-
-      // TODO: handle inline styles
-      if (inlineStyles.length > 0) {
-        // Not yet supported
-      }
-
-      const viewElement = createViewWrapper(buttonElement, styleName, j)
+      // Build style value and create View wrapper
+      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
+      const viewElement = createViewWrapper(buttonElement, styleValue, j)
       path.replace(viewElement)
     } else {
       // No wrapping needed or disabled

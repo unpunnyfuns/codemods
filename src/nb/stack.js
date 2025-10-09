@@ -23,7 +23,13 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import {
+  addElementComment,
+  addOrExtendStyleSheet,
+  categorizeProps,
+  validSpaceTokens,
+  validateTokenValue,
+} from './props.js'
 
 // Stack prop mappings
 const styleProps = {
@@ -127,37 +133,11 @@ function main(fileInfo, api, options = {}) {
       }
 
       // Validate gap prop (must be a valid space token name)
-      const validGapTokens = ['zero', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']
       if (transformedProps.gap) {
         const gapValue = transformedProps.gap
-        let isInvalid = false
+        const validation = validateTokenValue(gapValue, validSpaceTokens, false)
 
-        // Check if it's a string literal with invalid value
-        if (gapValue.type === 'StringLiteral' || gapValue.type === 'Literal') {
-          const val = String(gapValue.value)
-          if (!validGapTokens.includes(val)) {
-            isInvalid = true
-          }
-        }
-        // Check if it's a numeric literal
-        else if (gapValue.type === 'NumericLiteral') {
-          isInvalid = true
-        }
-        // Check if it's a JSXExpressionContainer with numeric or invalid string
-        else if (gapValue.type === 'JSXExpressionContainer') {
-          const expr = gapValue.expression
-          if (expr.type === 'NumericLiteral') {
-            isInvalid = true
-          } else if (expr.type === 'StringLiteral' || expr.type === 'Literal') {
-            const val = String(expr.value)
-            if (!validGapTokens.includes(val)) {
-              isInvalid = true
-            }
-          }
-        }
-
-        if (isInvalid) {
-          // Create a JSX attribute for the comment
+        if (!validation.isValid) {
           const gapAttr = j.jsxAttribute(j.jsxIdentifier('gap'), gapValue)
           droppedProps.push({ name: 'gap', attr: gapAttr })
           delete transformedProps.gap

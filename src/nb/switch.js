@@ -2,7 +2,7 @@
 // See switch.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { createViewWrapper } from '../helpers/jsx-transforms.js'
+import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import {
   border,
   color,
@@ -169,23 +169,10 @@ function main(fileInfo, api, options = {}) {
     path.node.children = newChildren
 
     // Check if we need to wrap in View
-    const hasStyleProps = Object.keys(styleProps).length > 0 || inlineStyles.length > 0
+    const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
     if (wrap && hasStyleProps) {
       const styleName = `switch${index}`
-
-      // Build style object
-      const styleObj = {}
-      for (const key of Object.keys(styleProps)) {
-        styleObj[key] = styleProps[key]
-      }
-
-      elementStyles.push({ name: styleName, styles: styleObj })
-
-      // TODO: handle inline styles
-      if (inlineStyles.length > 0) {
-        // Not yet supported
-      }
 
       // Clone the Switch element
       const switchElement = j.jsxElement(
@@ -195,7 +182,9 @@ function main(fileInfo, api, options = {}) {
         path.node.selfClosing,
       )
 
-      const viewElement = createViewWrapper(switchElement, styleName, j)
+      // Build style value and create View wrapper
+      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
+      const viewElement = createViewWrapper(switchElement, styleValue, j)
       j(path).replaceWith(viewElement)
     }
   })

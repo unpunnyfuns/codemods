@@ -24,7 +24,7 @@ export function extractPropFromJSXElement(element, expectedElementName, propName
     return null
   }
 
-  const attr = openingElement.attributes.find(
+  const attr = (openingElement.attributes || []).find(
     (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === propName,
   )
 
