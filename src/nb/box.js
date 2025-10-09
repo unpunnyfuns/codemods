@@ -12,7 +12,7 @@ import {
 import { directProps } from './mappings/direct-props.js'
 import { dropProps } from './mappings/drop-props.js'
 import { border, layout, sizing, spacing } from './mappings/style-props.js'
-import { addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Box → View prop mappings
 const styleProps = {
@@ -69,6 +69,8 @@ function main(fileInfo, api, options = {}) {
   const elementStyles = []
   // Track which design token helpers we need to import (e.g., 'color', 'space', 'radius')
   const usedTokenHelpers = new Set()
+  // Track all dropped props across all elements
+  const allDroppedProps = []
 
   const boxProps = {
     styleProps,
@@ -94,12 +96,16 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
+      droppedProps,
     } = categorizeProps(attributes, boxProps, j)
 
     // Collect all token helpers used across all elements
     for (const h of newHelpers) {
       usedTokenHelpers.add(h)
     }
+
+    // Collect all dropped props
+    allDroppedProps.push(...droppedProps)
 
     // Mutate the AST: remove old props, rename element, add transformed props
     removePropsFromElement(attributes, propsToRemove)
@@ -123,6 +129,9 @@ function main(fileInfo, api, options = {}) {
 
   // Add or extend StyleSheet.create() at the end of the file
   addOrExtendStyleSheet(root, elementStyles, j)
+
+  // Add comment about dropped props
+  addDroppedPropsComment(root, allDroppedProps, 'Box', j)
 
   return root.toSource({
     quote: 'single',

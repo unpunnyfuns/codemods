@@ -22,7 +22,7 @@ import {
   spacing,
 } from './mappings/style-props.js'
 import { alignValues, justifyValues } from './mappings/value-maps.js'
-import { addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addDroppedPropsComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Stack prop mappings
 const styleProps = {
@@ -83,6 +83,7 @@ function main(fileInfo, api, options = {}) {
   let transformed = false
   const elementStyles = []
   const usedTokenHelpers = new Set()
+  const allDroppedProps = []
 
   const stackProps = {
     styleProps,
@@ -115,11 +116,14 @@ function main(fileInfo, api, options = {}) {
         transformedProps,
         propsToRemove,
         usedTokenHelpers: newHelpers,
+        droppedProps,
       } = categorizeProps(attributes, stackProps, j)
 
       for (const h of newHelpers) {
         usedTokenHelpers.add(h)
       }
+
+      allDroppedProps.push(...droppedProps)
 
       // Transform element
       removePropsFromElement(attributes, propsToRemove)
@@ -157,6 +161,9 @@ function main(fileInfo, api, options = {}) {
 
   // Add StyleSheet
   addOrExtendStyleSheet(root, elementStyles, j)
+
+  // Add comment about dropped props
+  addDroppedPropsComment(root, allDroppedProps, 'Stack', j)
 
   return root.toSource({
     quote: 'single',

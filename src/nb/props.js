@@ -101,6 +101,7 @@ export function applyValueMapping(value, valueMap, j) {
  * - transformedProps: Props to rename/transform on element
  * - propsToRemove: Attributes to remove from element
  * - usedTokenHelpers: Set of token helpers used
+ * - droppedProps: Array of prop names that were dropped
  */
 export function categorizeProps(attributes, mappings, j) {
   const {
@@ -113,6 +114,7 @@ export function categorizeProps(attributes, mappings, j) {
   const transformedProps = {}
   const propsToRemove = []
   const usedTokenHelpers = new Set()
+  const droppedProps = []
 
   attributes.forEach((attr) => {
     if (attr.type !== 'JSXAttribute') {
@@ -232,11 +234,19 @@ export function categorizeProps(attributes, mappings, j) {
     // Check if it should be dropped
     else if (dropPropList.includes(propName)) {
       propsToRemove.push(attr)
+      droppedProps.push(propName)
     }
     // Everything else (DIRECT_PROPS) stays on element as-is
   })
 
-  return { styleProps, inlineStyles, transformedProps, propsToRemove, usedTokenHelpers }
+  return {
+    styleProps,
+    inlineStyles,
+    transformedProps,
+    propsToRemove,
+    usedTokenHelpers,
+    droppedProps,
+  }
 }
 
 /**
@@ -245,6 +255,30 @@ export function categorizeProps(attributes, mappings, j) {
 export function buildStyleSheetProperties(styleProps, j) {
   return Object.entries(styleProps).map(([key, value]) => {
     return j.property('init', j.identifier(key), value)
+  })
+}
+
+/**
+ * Add a comment at the end of the file listing dropped props
+ */
+export function addDroppedPropsComment(root, droppedProps, componentName, j) {
+  if (droppedProps.length === 0) {
+    return
+  }
+
+  // Get unique dropped props
+  const uniqueDropped = [...new Set(droppedProps)]
+
+  // Create comment as an empty statement with leading comment
+  const commentText = `\nDropped ${componentName} props during migration: ${uniqueDropped.join(', ')}\nThese props are not supported in the target component or were pseudo-props (_hover, _pressed, etc.)\n`
+
+  // Add comment block to the end of the program body
+  root.find(j.Program).forEach((path) => {
+    const comment = j.commentBlock(commentText, true, false)
+    // Add blank expression statement with the comment
+    const emptyStatement = j.emptyStatement()
+    emptyStatement.comments = [comment]
+    path.node.body.push(emptyStatement)
   })
 }
 
