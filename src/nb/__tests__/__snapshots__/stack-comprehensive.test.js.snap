@@ -10,6 +10,10 @@ export function ComprehensiveExample() {
   return (
     <>
       {/* Test multi-property expansion with tokens */}
+
+      {/* width: "full"
+        height: "full" */
+      }
       <Stack direction='vertical' gap="md" style={styles.vstack0}>
         <SomeOtherComponent />
       </Stack>
@@ -38,6 +42,9 @@ export function ComprehensiveExample() {
         <SomeOtherComponent />
       </Stack>
       {/* Test all border radius corners */}
+
+      {/* borderTopLeftRadius: radius.xs */
+      }
       <Stack direction='horizontal' style={styles.hstack3}>
         <SomeOtherComponent />
       </Stack>
@@ -115,15 +122,5 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: radius.md
   }
 });
-
-/*
-Invalid styles requiring manual fix:
-  hstack3:
-    borderTopLeftRadius: radius.xs // Invalid token (radius.xs does not exist)
-  vstack0:
-    width: "full" // String dimension value (should be number or percentage)
-    height: "full" // String dimension value (should be number or percentage)
-*/
-
 "
 `;

@@ -23,14 +23,5 @@ export function MyComponent() {
     </>
   );
 }
-
-/*
-Dropped props during migration:
-  switch0:
-    switchPosition="right"
-    hStackProps={...}
-    label="Additional info"
-*/
-
 "
 `;

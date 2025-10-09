@@ -9,6 +9,7 @@ import {
   removePropsFromElement,
   updateElementName,
 } from '../helpers/jsx-transforms.js'
+import { alignValues, justifyValues } from './mappings/maps-values.js'
 import { directProps } from './mappings/props-direct.js'
 import { dropProps } from './mappings/props-drop.js'
 import {
@@ -22,12 +23,11 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { alignValues, justifyValues } from './mappings/maps-values.js'
 import {
-  addDroppedPropsComment,
+  addElementComment,
   addOrExtendStyleSheet,
   categorizeProps,
-  validateStyleSheetValues,
+  validateElementStyles,
 } from './props.js'
 
 // Stack prop mappings
@@ -90,7 +90,6 @@ function main(fileInfo, api, options = {}) {
   let transformed = false
   const elementStyles = []
   const usedTokenHelpers = new Set()
-  const droppedPropsMap = new Map()
 
   const stackProps = {
     styleProps,
@@ -124,15 +123,11 @@ function main(fileInfo, api, options = {}) {
         propsToRemove,
         usedTokenHelpers: newHelpers,
         droppedProps,
+        existingStyleReferences,
       } = categorizeProps(attributes, stackProps, j)
 
       for (const h of newHelpers) {
         usedTokenHelpers.add(h)
-      }
-
-      // Store dropped props for this element
-      if (droppedProps.length > 0) {
-        droppedPropsMap.set(index, droppedProps)
       }
 
       // Transform element
@@ -151,8 +146,13 @@ function main(fileInfo, api, options = {}) {
         `${componentName.toLowerCase()}${index}`,
         elementStyles,
         j,
+        existingStyleReferences,
       )
       addStyleProp(attributes, styleValue, j)
+
+      // Validate styles and add comment if there are issues
+      const styleIssues = validateElementStyles(styleProps, j)
+      addElementComment(path, droppedProps, styleIssues, j)
     })
 
     removeNamedImport(imports, componentName, j)
@@ -171,12 +171,6 @@ function main(fileInfo, api, options = {}) {
 
   // Add StyleSheet
   addOrExtendStyleSheet(root, elementStyles, j)
-
-  // Validate styles and detect issues
-  const styleIssues = validateStyleSheetValues(elementStyles, j)
-
-  // Add comment about dropped props and style issues
-  addDroppedPropsComment(root, droppedPropsMap, 'Stack', j, styleIssues)
 
   return root.toSource({
     quote: 'single',

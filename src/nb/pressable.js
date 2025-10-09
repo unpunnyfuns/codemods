@@ -22,10 +22,10 @@ import {
   text,
 } from './mappings/props-style.js'
 import {
-  addDroppedPropsComment,
+  addElementComment,
   addOrExtendStyleSheet,
   categorizeProps,
-  validateStyleSheetValues,
+  validateElementStyles,
 } from './props.js'
 
 // Pressable prop mappings
@@ -86,7 +86,6 @@ function main(fileInfo, api, options = {}) {
 
   const elementStyles = []
   const usedTokenHelpers = new Set()
-  const droppedPropsMap = new Map()
 
   const pressableProps = {
     styleProps,
@@ -107,6 +106,7 @@ function main(fileInfo, api, options = {}) {
       propsToRemove,
       usedTokenHelpers: newHelpers,
       droppedProps,
+      existingStyleReferences,
     } = categorizeProps(attributes, pressableProps, j)
 
     for (const h of newHelpers) {
@@ -114,9 +114,6 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Store dropped props for this element
-    if (droppedProps.length > 0) {
-      droppedPropsMap.set(index, droppedProps)
-    }
 
     // Transform element
     removePropsFromElement(attributes, propsToRemove)
@@ -139,8 +136,13 @@ function main(fileInfo, api, options = {}) {
       `pressable${index}`,
       elementStyles,
       j,
+      existingStyleReferences,
     )
     addStyleProp(attributes, styleValue, j)
+
+    // Validate styles and add comment if there are issues
+    const styleIssues = validateElementStyles(styleProps, j)
+    addElementComment(path, droppedProps, styleIssues, j)
   })
 
   // Update imports
@@ -155,12 +157,6 @@ function main(fileInfo, api, options = {}) {
     addNamedImport(root, targetImport, 'StyleSheet', j)
   }
   addOrExtendStyleSheet(root, elementStyles, j)
-
-  // Validate styles and detect issues
-  const styleIssues = validateStyleSheetValues(elementStyles, j)
-
-  // Add comment about dropped props and style issues
-  addDroppedPropsComment(root, droppedPropsMap, 'Pressable', j, styleIssues)
 
   return root.toSource({
     quote: 'single',

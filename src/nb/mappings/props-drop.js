@@ -17,6 +17,8 @@ export const themeOverrides = ['_light', '_dark']
 
 export const componentSpecific = [
   'shadow', // NativeBase shadow system - use style-based shadows in Nordlys
+  'justifyItems', // CSS Grid property - not supported in React Native (use alignItems)
+  'justifySelf', // CSS Grid property - not supported in React Native (use alignSelf)
 ]
 
 export const dropProps = [

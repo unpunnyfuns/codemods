@@ -147,8 +147,6 @@ export const flexbox = {
   alignContent: 'alignContent',
   alignSelf: 'alignSelf',
   justifyContent: 'justifyContent',
-  justifyItems: 'justifyItems',
-  justifySelf: 'justifySelf',
   flex: 'flex',
   flexGrow: 'flexGrow',
   flexShrink: 'flexShrink',

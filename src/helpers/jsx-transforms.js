@@ -36,13 +36,32 @@ export function addPropsToElement(attributes, transformedProps, j) {
 
 /**
  * Build style prop value combining StyleSheet reference and/or inline styles
+ * @param {Object} styleProps - Props to extract to StyleSheet
+ * @param {Object} inlineStyles - Props to keep as inline styles
+ * @param {string} styleName - Name for the StyleSheet entry
+ * @param {Array} elementStyles - Array to push StyleSheet entries to
+ * @param {Object} j - jscodeshift API
+ * @param {Array} existingStyleReferences - Existing StyleSheet references like styles.foo
  */
-export function buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j) {
-  let styleValue = null
+export function buildStyleValue(
+  styleProps,
+  inlineStyles,
+  styleName,
+  elementStyles,
+  j,
+  existingStyleReferences = [],
+) {
+  const styleArray = []
+
+  // Add existing StyleSheet references first
+  for (const ref of existingStyleReferences) {
+    styleArray.push(ref)
+  }
 
   // If we have StyleSheet styles, reference styles.name
   if (Object.keys(styleProps).length > 0) {
-    styleValue = j.memberExpression(j.identifier('styles'), j.identifier(styleName))
+    const newStyleRef = j.memberExpression(j.identifier('styles'), j.identifier(styleName))
+    styleArray.push(newStyleRef)
     elementStyles.push({ name: styleName, styles: styleProps })
   }
 
@@ -52,16 +71,17 @@ export function buildStyleValue(styleProps, inlineStyles, styleName, elementStyl
       return j.property('init', j.identifier(key), value)
     })
     const inlineObject = j.objectExpression(inlineProperties)
-
-    // If we also have StyleSheet styles, combine them in an array
-    if (styleValue) {
-      styleValue = j.arrayExpression([styleValue, inlineObject])
-    } else {
-      styleValue = inlineObject
-    }
+    styleArray.push(inlineObject)
   }
 
-  return styleValue
+  // Build final style value
+  if (styleArray.length === 0) {
+    return null
+  } else if (styleArray.length === 1) {
+    return styleArray[0]
+  } else {
+    return j.arrayExpression(styleArray)
+  }
 }
 
 /**

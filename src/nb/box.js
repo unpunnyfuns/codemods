@@ -23,10 +23,10 @@ import {
   text,
 } from './mappings/props-style.js'
 import {
-  addDroppedPropsComment,
+  addElementComment,
   addOrExtendStyleSheet,
   categorizeProps,
-  validateStyleSheetValues,
+  validateElementStyles,
 } from './props.js'
 
 // Box → View prop mappings
@@ -83,8 +83,6 @@ function main(fileInfo, api, options = {}) {
   const elementStyles = []
   // Track which design token helpers we need to import (e.g., 'color', 'space', 'radius')
   const usedTokenHelpers = new Set()
-  // Track dropped props per element: Map(elementIndex -> [propNames])
-  const droppedPropsMap = new Map()
 
   const boxProps = {
     styleProps,
@@ -111,16 +109,12 @@ function main(fileInfo, api, options = {}) {
       propsToRemove,
       usedTokenHelpers: newHelpers,
       droppedProps,
+      existingStyleReferences,
     } = categorizeProps(attributes, boxProps, j)
 
     // Collect all token helpers used across all elements
     for (const h of newHelpers) {
       usedTokenHelpers.add(h)
-    }
-
-    // Store dropped props for this element
-    if (droppedProps.length > 0) {
-      droppedPropsMap.set(index, droppedProps)
     }
 
     // Mutate the AST: remove old props, rename element, add transformed props
@@ -130,8 +124,19 @@ function main(fileInfo, api, options = {}) {
 
     // Build the style prop value: either styles.box0 or inline object or both
     // Also adds to elementStyles array for StyleSheet.create()
-    const styleValue = buildStyleValue(styleProps, inlineStyles, `box${index}`, elementStyles, j)
+    const styleValue = buildStyleValue(
+      styleProps,
+      inlineStyles,
+      `box${index}`,
+      elementStyles,
+      j,
+      existingStyleReferences,
+    )
     addStyleProp(attributes, styleValue, j)
+
+    // Validate styles and add comment if there are issues
+    const styleIssues = validateElementStyles(styleProps, j)
+    addElementComment(path, droppedProps, styleIssues, j)
   })
 
   // Clean up old import, add new ones
@@ -145,12 +150,6 @@ function main(fileInfo, api, options = {}) {
 
   // Add or extend StyleSheet.create() at the end of the file
   addOrExtendStyleSheet(root, elementStyles, j)
-
-  // Validate styles and detect issues
-  const styleIssues = validateStyleSheetValues(elementStyles, j)
-
-  // Add comment about dropped props and style issues
-  addDroppedPropsComment(root, droppedPropsMap, 'Box', j, styleIssues)
 
   return root.toSource({
     quote: 'single',

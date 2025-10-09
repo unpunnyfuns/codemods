@@ -15,6 +15,10 @@ export function MyComponent() {
       <Stack testID="test-stack" direction='horizontal' style={styles.hstack1}>
         <SomeOtherComponent />
       </Stack>
+
+      {/* reversed={true}
+        divider={...} */
+      }
       <Stack onPress={() => {}} direction='horizontal' style={styles.hstack2}>
         <SomeOtherComponent />
       </Stack>
@@ -41,13 +45,5 @@ const styles = StyleSheet.create({
     marginBottom: 1
   }
 });
-
-/*
-Dropped props during migration:
-  stack2:
-    reversed={true}
-    divider={...}
-*/
-
 "
 `;

@@ -15,10 +15,10 @@ import {
   text,
 } from './mappings/props-style.js'
 import {
-  addDroppedPropsComment,
+  addElementComment,
   addOrExtendStyleSheet,
   categorizeProps,
-  validateStyleSheetValues,
+  validateElementStyles,
 } from './props.js'
 
 // Switch prop mappings
@@ -82,7 +82,6 @@ function main(fileInfo, api, options = {}) {
 
   const elementStyles = []
   const usedTokenHelpers = new Set()
-  const droppedPropsMap = new Map()
   const switchProps = {
     styleProps,
     transformProps,
@@ -111,7 +110,6 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
-      droppedProps,
     } = categorizeProps(attributes, switchProps, j)
 
     for (const h of newHelpers) {
@@ -119,9 +117,6 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Store dropped props for this element
-    if (droppedProps.length > 0) {
-      droppedPropsMap.set(index, droppedProps)
-    }
 
     // Build Switch props - start with direct props that pass through
     const switchAttributes = attributes.filter((attr) => {
@@ -227,12 +222,6 @@ function main(fileInfo, api, options = {}) {
   if (wrap && elementStyles.length > 0) {
     addOrExtendStyleSheet(root, elementStyles, j)
   }
-
-  // Validate styles and detect issues
-  const styleIssues = validateStyleSheetValues(elementStyles, j)
-
-  // Add comment about dropped props and style issues
-  addDroppedPropsComment(root, droppedPropsMap, 'Switch', j, styleIssues)
 
   return root.toSource({
     quote: 'single',

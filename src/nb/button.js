@@ -17,10 +17,10 @@ import {
   text,
 } from './mappings/props-style.js'
 import {
-  addDroppedPropsComment,
+  addElementComment,
   addOrExtendStyleSheet,
   categorizeProps,
-  validateStyleSheetValues,
+  validateElementStyles,
 } from './props.js'
 
 // Button prop mappings
@@ -83,7 +83,6 @@ function main(fileInfo, api, options = {}) {
   let skipped = 0
   const elementStyles = []
   const usedTokenHelpers = new Set()
-  const droppedPropsMap = new Map()
   const buttonProps = {
     styleProps,
     transformProps,
@@ -138,7 +137,6 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
-      droppedProps,
     } = categorizeProps(attributes, buttonProps, j)
 
     for (const h of newHelpers) {
@@ -146,9 +144,6 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Store dropped props for this element
-    if (droppedProps.length > 0) {
-      droppedPropsMap.set(index, droppedProps)
-    }
 
     // Check for rightIcon warning
     if (
@@ -256,12 +251,6 @@ function main(fileInfo, api, options = {}) {
   if (wrap && elementStyles.length > 0) {
     addOrExtendStyleSheet(root, elementStyles, j)
   }
-
-  // Validate styles and detect issues
-  const styleIssues = validateStyleSheetValues(elementStyles, j)
-
-  // Add comment about dropped props and style issues
-  addDroppedPropsComment(root, droppedPropsMap, 'Button', j, styleIssues)
 
   return root.toSource({
     quote: 'single',

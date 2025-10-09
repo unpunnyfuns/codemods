@@ -115,6 +115,7 @@ export function categorizeProps(attributes, mappings, j) {
   const propsToRemove = []
   const usedTokenHelpers = new Set()
   const droppedProps = []
+  const existingStyleReferences = [] // StyleSheet references like styles.foo
 
   attributes.forEach((attr) => {
     if (attr.type !== 'JSXAttribute') {
@@ -126,8 +127,45 @@ export function categorizeProps(attributes, mappings, j) {
 
     const propName = attr.name.name
 
+    // Handle existing style prop
+    if (propName === 'style') {
+      if (attr.value?.type === 'JSXExpressionContainer') {
+        const expr = attr.value.expression
+
+        // Handle array of styles: [styles.foo, { bar: 'baz' }]
+        if (expr.type === 'ArrayExpression') {
+          for (const element of expr.elements) {
+            if (element.type === 'ObjectExpression') {
+              // Extract object literal to styleProps
+              for (const prop of element.properties) {
+                if (prop.type === 'Property' && prop.key.type === 'Identifier') {
+                  styleProps[prop.key.name] = prop.value
+                }
+              }
+            } else if (element.type === 'MemberExpression') {
+              // Keep StyleSheet reference (styles.foo)
+              existingStyleReferences.push(element)
+            }
+          }
+        }
+        // Handle single object: { bar: 'baz' }
+        else if (expr.type === 'ObjectExpression') {
+          for (const prop of expr.properties) {
+            if (prop.type === 'Property' && prop.key.type === 'Identifier') {
+              styleProps[prop.key.name] = prop.value
+            }
+          }
+        }
+        // Handle StyleSheet reference: styles.foo
+        else if (expr.type === 'MemberExpression') {
+          existingStyleReferences.push(expr)
+        }
+      }
+
+      propsToRemove.push(attr)
+    }
     // Check if it should be extracted to stylesheet
-    if (stylePropMappings[propName]) {
+    else if (stylePropMappings[propName]) {
       const config = stylePropMappings[propName]
       let styleName, properties, valueMap, tokenHelper
 
@@ -247,6 +285,7 @@ export function categorizeProps(attributes, mappings, j) {
     propsToRemove,
     usedTokenHelpers,
     droppedProps,
+    existingStyleReferences,
   }
 }
 
@@ -306,17 +345,61 @@ function formatPropValue(attr, _j) {
 }
 
 /**
- * Validate style values and detect problematic patterns
- * Returns array of issues: { elementName, styleName, value, issue }
+ * Add JSX comment before element with dropped props and style issues
  */
-export function validateStyleSheetValues(elementStyles, j) {
+export function addElementComment(path, droppedProps, styleIssues, j) {
+  if (droppedProps.length === 0 && styleIssues.length === 0) {
+    return
+  }
+
+  const lines = []
+
+  if (droppedProps.length > 0) {
+    for (const { name, attr } of droppedProps) {
+      const value = formatPropValue(attr, j)
+      lines.push(`${name}=${value}`)
+    }
+  }
+
+  if (styleIssues.length > 0) {
+    if (lines.length > 0) {
+      lines.push('')
+    }
+    for (const { styleName, value } of styleIssues) {
+      lines.push(`${styleName}: ${value}`)
+    }
+  }
+
+  const commentText = ` ${lines.join('\n  ')} `
+  const comment = j.commentBlock(commentText, true, false)
+
+  // Create JSX comment: {/* ... */}
+  const jsxEmptyExpr = j.jsxEmptyExpression()
+  jsxEmptyExpr.comments = [comment]
+  const jsxComment = j.jsxExpressionContainer(jsxEmptyExpr)
+
+  // Insert comment before the element with proper spacing
+  const parent = path.parent.node
+  if (parent.type === 'JSXElement' || parent.type === 'JSXFragment') {
+    const children = parent.children
+    const index = children.indexOf(path.node)
+    if (index !== -1) {
+      // Add newline before comment, comment, then newline before element
+      children.splice(index, 0, j.jsxText('\n      '), jsxComment, j.jsxText('\n      '))
+    }
+  }
+}
+
+/**
+ * Validate style values and detect problematic patterns
+ * Returns array of issues: { styleName, value }
+ */
+export function validateElementStyles(styles, _j) {
   const issues = []
 
-  // Known Nordlys tokens for validation
   const validSpaceTokens = ['zero', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']
   const validRadiusTokens = ['sm', 'md', 'lg', 'xl', '2xl']
 
-  // Dimension properties that should be numbers or percentages
   const dimensionProps = [
     'width',
     'height',
@@ -344,131 +427,52 @@ export function validateStyleSheetValues(elementStyles, j) {
     'paddingVertical',
   ]
 
-  for (const { name: elementName, styles } of elementStyles) {
-    for (const [styleName, value] of Object.entries(styles)) {
-      // Check for invalid string dimension values
-      if (dimensionProps.includes(styleName)) {
-        if (value.type === 'StringLiteral') {
-          const val = value.value
-          // Allow percentages, but flag other strings like "full", "24", etc.
-          if (!val.endsWith('%')) {
-            issues.push({
-              elementName,
-              styleName,
-              value: `"${val}"`,
-              issue: 'String dimension value (should be number or percentage)',
-            })
-          }
+  for (const [styleName, value] of Object.entries(styles)) {
+    if (dimensionProps.includes(styleName)) {
+      if (value.type === 'StringLiteral') {
+        const val = value.value
+        if (!val.endsWith('%')) {
+          issues.push({
+            styleName,
+            value: `"${val}"`,
+          })
         }
-        // Check for invalid token references like space.auto
-        else if (value.type === 'MemberExpression') {
-          const tokenName = value.object?.name
-          const property = value.property?.name
+      } else if (value.type === 'MemberExpression') {
+        const tokenName = value.object?.name
+        const property = value.property?.name
 
-          if (tokenName === 'space' && !validSpaceTokens.includes(property)) {
-            issues.push({
-              elementName,
-              styleName,
-              value: `${tokenName}.${property}`,
-              issue: `Invalid token (space.${property} does not exist)`,
-            })
-          }
+        if (tokenName === 'space' && !validSpaceTokens.includes(property)) {
+          issues.push({
+            styleName,
+            value: `${tokenName}.${property}`,
+          })
         }
       }
+    }
 
-      // Check for invalid radius tokens
-      if (styleName.includes('radius') || styleName.includes('Radius')) {
-        if (value.type === 'MemberExpression') {
-          const tokenName = value.object?.name
-          const property = value.property?.name
+    if (styleName.includes('radius') || styleName.includes('Radius')) {
+      if (value.type === 'MemberExpression') {
+        const tokenName = value.object?.name
+        const property = value.property?.name
 
-          if (tokenName === 'radius' && !validRadiusTokens.includes(property)) {
-            issues.push({
-              elementName,
-              styleName,
-              value: `${tokenName}.${property}`,
-              issue: `Invalid token (radius.${property} does not exist)`,
-            })
-          }
+        if (tokenName === 'radius' && !validRadiusTokens.includes(property)) {
+          issues.push({
+            styleName,
+            value: `${tokenName}.${property}`,
+          })
         }
       }
+    }
 
-      // Check for textAlign on View (should be on Text)
-      if (styleName === 'textAlign') {
-        issues.push({
-          elementName,
-          styleName,
-          value: value.type === 'StringLiteral' ? `"${value.value}"` : '{...}',
-          issue: 'textAlign only works on Text components, not View',
-        })
-      }
+    if (styleName === 'textAlign') {
+      issues.push({
+        styleName,
+        value: value.type === 'StringLiteral' ? `"${value.value}"` : '{...}',
+      })
     }
   }
 
   return issues
-}
-
-/**
- * Add a comment at the end of the file listing dropped props and style issues
- * droppedPropsMap: Map of element index -> array of {name, attr}
- * styleIssues: Array of {elementName, styleName, value, issue}
- */
-export function addDroppedPropsComment(root, droppedPropsMap, componentName, j, styleIssues = []) {
-  if (droppedPropsMap.size === 0 && styleIssues.length === 0) {
-    return
-  }
-
-  const lines = []
-
-  // Add dropped props section
-  if (droppedPropsMap.size > 0) {
-    lines.push('\nDropped props during migration:')
-    for (const [elementIndex, props] of droppedPropsMap.entries()) {
-      if (props.length > 0) {
-        const elementName = `${componentName.toLowerCase()}${elementIndex}`
-        lines.push(`  ${elementName}:`)
-        for (const { name, attr } of props) {
-          const value = formatPropValue(attr, j)
-          lines.push(`    ${name}=${value}`)
-        }
-      }
-    }
-  }
-
-  // Add style issues section
-  if (styleIssues.length > 0) {
-    if (lines.length > 0) {
-      lines.push('')
-    }
-    lines.push('\nInvalid styles requiring manual fix:')
-
-    // Group by element
-    const issuesByElement = new Map()
-    for (const issue of styleIssues) {
-      if (!issuesByElement.has(issue.elementName)) {
-        issuesByElement.set(issue.elementName, [])
-      }
-      issuesByElement.get(issue.elementName).push(issue)
-    }
-
-    for (const [elementName, elementIssues] of issuesByElement.entries()) {
-      lines.push(`  ${elementName}:`)
-      for (const { styleName, value, issue } of elementIssues) {
-        lines.push(`    ${styleName}: ${value} // ${issue}`)
-      }
-    }
-  }
-
-  const commentText = `${lines.join('\n')}\n`
-
-  // Add comment block to the end of the program body
-  root.find(j.Program).forEach((path) => {
-    const comment = j.commentBlock(commentText, true, false)
-    // Add blank expression statement with the comment
-    const emptyStatement = j.emptyStatement()
-    emptyStatement.comments = [comment]
-    path.node.body.push(emptyStatement)
-  })
 }
 
 /**
