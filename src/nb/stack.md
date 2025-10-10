@@ -5,7 +5,7 @@ Migrates NativeBase `HStack`/`VStack` to `Stack` with `direction` prop.
 ## Usage
 
 ```bash
-./run.sh nb/stack "src/**/*.tsx"
+./run.sh nb/stack
 ```
 
 ## Options

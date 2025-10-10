@@ -5,7 +5,7 @@ Migrates NativeBase `Box` to React Native `View` with `StyleSheet`.
 ## Usage
 
 ```bash
-./run.sh nb/box "src/**/*.tsx"
+./run.sh nb/box
 ```
 
 ## Options

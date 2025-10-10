@@ -5,7 +5,7 @@ Migrates NativeBase/Common `Button` to Nordlys `Button` with extracted `icon` an
 ## Usage
 
 ```bash
-./run.sh nb/button "src/**/*.tsx"
+./run.sh nb/button
 ```
 
 ## Options
