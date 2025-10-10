@@ -19,6 +19,8 @@ npm install
 
 ### NativeBase Migrations (`src/nb/`)
 
+Default behavior (from `native-base` to standard targets):
+
 ```bash
 ./run.sh nb/avatar "src/**/*.tsx"      # Avatar → Nordlys Avatar
 ./run.sh nb/box "src/**/*.tsx"         # Box → View with StyleSheet
@@ -29,6 +31,40 @@ npm install
 ./run.sh nb/typography "src/**/*.tsx"  # Typography → Nordlys Typography
 ./run.sh nb/split-atoms "src/**/*.tsx" # Split barrel imports
 ```
+
+### Custom Import Sources
+
+Most codemods support `--sourceImport` and `--targetImport` options:
+
+```bash
+# Migrate Box from a wrapped NativeBase export
+./run.sh nb/box "src/**/*.tsx" \
+  --sourceImport="@hb-frontend/common/src/components"
+
+# Migrate Button from custom wrapper with custom target
+./run.sh nb/button "src/**/*.tsx" \
+  --sourceImport="@hb-frontend/common/src/components" \
+  --targetImport="@hb-frontend/app/src/components/nordlys/Button"
+
+# Migrate Stack with all custom paths
+./run.sh nb/stack "src/**/*.tsx" \
+  --sourceImport="@hb-frontend/common/src/components" \
+  --targetImport="@hb-frontend/app/src/components/nordlys/Stack" \
+  --tokenImport="@hb-frontend/nordlys"
+
+# Migrate Pressable to React Native Pressable
+./run.sh nb/pressable "src/**/*.tsx" \
+  --sourceImport="@hb-frontend/common/src/components" \
+  --targetImport="react-native"
+```
+
+**Common source imports:**
+- `native-base` (default for most codemods)
+- `@hb-frontend/common/src/components` (wrapped exports)
+
+**Common targets:**
+- `react-native` (for Box → View, Pressable)
+- `@hb-frontend/app/src/components/nordlys/[Component]` (Nordlys components)
 
 ### General Transforms
 
