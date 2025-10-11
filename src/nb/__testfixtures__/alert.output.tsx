@@ -1,0 +1,32 @@
+import { Alert } from '@hb-frontend/app/src/components/nordlys/Alert'
+import { space } from '@hb-frontend/nordlys'
+import { StyleSheet, View } from 'react-native'
+
+export function Example() {
+  return (
+    <>
+      {/* Basic Alert with compound components */}
+      <Alert status="success" title="Success" description="Your changes have been saved" />
+      {/* Alert with expression */}
+      <Alert status="error" title="Error" description={errorMessage} />
+      {/* Alert with testID */}
+      <Alert
+        status="info"
+        testID="info-alert"
+        title="Information"
+        description="Please review the details below"
+      />
+      {/* Alert with layout props */}
+      <View style={styles.alert3}>
+        <Alert status="warning" description="This action cannot be undone" />
+      </View>
+    </>
+  )
+}
+
+const styles = StyleSheet.create({
+  alert3: {
+    marginTop: space.md,
+    marginBottom: space.lg,
+  },
+})

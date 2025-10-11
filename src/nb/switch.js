@@ -3,6 +3,8 @@
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
+import { accessibility } from './mappings/props-direct.js'
+import { allPseudoProps } from './mappings/props-drop.js'
 import {
   border,
   color,
@@ -35,22 +37,17 @@ const transformProps = {
   isDisabled: 'disabled',
 }
 
-const directPropsList = ['testID', 'accessibilityLabel', 'accessibilityHint']
+const directPropsList = accessibility
 
 const dropPropsList = [
+  ...allPseudoProps,
+  // Switch-specific props
   'label',
   'switchPosition',
   'hStackProps',
   'childrenProps',
   'labelProps',
   'LeftElement',
-  '_hover',
-  '_pressed',
-  '_disabled',
-  '_focus',
-  '_invalid',
-  '_checked',
-  '_indeterminate',
 ]
 
 function main(fileInfo, api, options = {}) {
@@ -64,13 +61,12 @@ function main(fileInfo, api, options = {}) {
   // Default: true (wrap in View when style props exist)
   const wrap = options.wrap ?? true
 
-  // Find imports
+  // import { Switch } from '@hb-frontend/common/src/components'
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
   if (!imports.length || !hasNamedImport(imports, 'Switch')) {
     return fileInfo.source
   }
 
-  // Find all Switch elements
   const switchElements = root.find(j.JSXElement, { openingElement: { name: { name: 'Switch' } } })
   if (switchElements.length === 0) {
     return fileInfo.source
@@ -85,12 +81,11 @@ function main(fileInfo, api, options = {}) {
     dropProps: dropPropsList,
   }
 
-  // Transform each Switch element
   switchElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
     const children = path.node.children || []
 
-    // Extract label prop (custom transformation)
+    // Extract label prop to transform into <Switch.Description>
     let labelValue = null
     const labelAttr = attributes.find(
       (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'label',
@@ -99,7 +94,6 @@ function main(fileInfo, api, options = {}) {
       labelValue = labelAttr.value
     }
 
-    // Categorize props using standard mappings
     const {
       styleProps,
       inlineStyles,
@@ -112,27 +106,21 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers.add(h)
     }
 
-    // Store dropped props for this element
-
-    // Build Switch props - start with direct props that pass through
     const switchAttributes = attributes.filter((attr) => {
       if (attr.type !== 'JSXAttribute' || !attr.name) {
         return false
       }
       const propName = attr.name.name
-      // Keep direct props that weren't removed
       return directPropsList.includes(propName) && !propsToRemove.includes(propName)
     })
 
-    // Add transformed props
     for (const [name, value] of Object.entries(transformedProps)) {
       switchAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
     }
 
-    // Update element attributes
     path.node.openingElement.attributes = switchAttributes
 
-    // Transform children: wrap in <Switch.Label>
+    // Wrap children in <Switch.Label>
     const labelElement = j.jsxElement(
       j.jsxOpeningElement(
         j.jsxMemberExpression(j.jsxIdentifier('Switch'), j.jsxIdentifier('Label')),
@@ -146,7 +134,7 @@ function main(fileInfo, api, options = {}) {
 
     const newChildren = [j.jsxText('\n  '), labelElement]
 
-    // Add <Switch.Description> if label value exists
+    // Add <Switch.Description> if label prop exists
     if (labelValue) {
       const descriptionChildren =
         labelValue.type === 'JSXExpressionContainer'
@@ -169,13 +157,11 @@ function main(fileInfo, api, options = {}) {
     newChildren.push(j.jsxText('\n'))
     path.node.children = newChildren
 
-    // Check if we need to wrap in View
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
     if (wrap && hasStyleProps) {
       const styleName = `switch${index}`
 
-      // Clone the Switch element
       const switchElement = j.jsxElement(
         path.node.openingElement,
         path.node.closingElement,
@@ -183,18 +169,15 @@ function main(fileInfo, api, options = {}) {
         path.node.selfClosing,
       )
 
-      // Build style value and create View wrapper
       const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
       const viewElement = createViewWrapper(switchElement, styleValue, j)
       j(path).replaceWith(viewElement)
     }
   })
 
-  // Update imports
   removeNamedImport(imports, 'Switch', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  // Add View and StyleSheet imports if we have wrapped elements
   if (wrap && elementStyles.length > 0) {
     addNamedImport(root, 'react-native', 'View', j)
     addNamedImport(root, 'react-native', 'StyleSheet', j)
@@ -203,7 +186,6 @@ function main(fileInfo, api, options = {}) {
     }
   }
 
-  // Add StyleSheet
   if (wrap && elementStyles.length > 0) {
     addOrExtendStyleSheet(root, elementStyles, j)
   }

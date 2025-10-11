@@ -32,12 +32,9 @@ export function extractPropFromJSXElement(element, expectedElementName, propName
     return null
   }
 
-  // Handle string literals (Literal in JSX) and StringLiteral
   if (attr.value.type === 'Literal' || attr.value.type === 'StringLiteral') {
     return attr.value.value
-  }
-  // Handle expression containers
-  else if (attr.value.type === 'JSXExpressionContainer') {
+  } else if (attr.value.type === 'JSXExpressionContainer') {
     return attr.value.expression
   }
 
@@ -65,7 +62,6 @@ export function extractSimpleChild(children, j, options = {}) {
     allowedExpressionTypes = ['Identifier', 'CallExpression', 'MemberExpression', 'StringLiteral'],
   } = options
 
-  // Filter out whitespace-only text nodes
   const significantChildren = children.filter((child) => {
     if (child.type === 'JSXText') {
       return child.value.trim().length > 0
@@ -73,41 +69,33 @@ export function extractSimpleChild(children, j, options = {}) {
     return true
   })
 
-  // No children
   if (significantChildren.length === 0) {
     return { value: null, isComplex: false }
   }
 
-  // Multiple children = complex
   if (significantChildren.length > 1) {
     return { value: null, isComplex: true }
   }
 
   const child = significantChildren[0]
 
-  // Simple string literal
   if (child.type === 'JSXText') {
     return { value: j.stringLiteral(child.value.trim()), isComplex: false }
   }
 
-  // Expression container with simple expression
   if (child.type === 'JSXExpressionContainer') {
     const expr = child.expression
 
-    // Check if expression type is allowed
     if (allowedExpressionTypes.includes(expr.type)) {
       return { value: expr, isComplex: false }
     }
 
-    // Disallowed expression type = complex
     return { value: null, isComplex: true }
   }
 
-  // JSX elements are complex
   if (child.type === 'JSXElement') {
     return { value: null, isComplex: true }
   }
 
-  // Unknown child type
   return { value: null, isComplex: false }
 }

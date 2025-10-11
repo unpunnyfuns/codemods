@@ -1,6 +1,18 @@
 /**
- * Common NativeBase style prop mappings
- * These are reusable across most NativeBase components
+ * NativeBase → Nordlys Style Prop Mappings
+ *
+ * Complete mappings derived from:
+ * - SOURCE: nativebase-styled-props.js (NativeBase model)
+ * - TARGET: nordlys-props.js (Nordlys model)
+ *
+ * Mapping format:
+ * - String: Direct map (e.g., 'flex' → style.flex)
+ * - { styleName: 'x' }: Rename prop (e.g., bg → style.backgroundColor)
+ * - { styleName: 'x', tokenHelper: 'space' }: Use token (e.g., p → style.padding with space.md)
+ * - { styleName: 'x', valueMap: {...} }: Transform values (e.g., full → 100%)
+ * - { properties: ['x', 'y'] }: Expand to multiple (e.g., mx → marginLeft, marginRight)
+ *
+ * Used by: categorizeProps() in props.js
  */
 
 export const spacing = {
@@ -43,6 +55,9 @@ export const spacing = {
   // Padding - NativeBase long-form shortcuts (map to RN native shorthands)
   paddingX: { styleName: 'paddingHorizontal', tokenHelper: 'space' },
   paddingY: { styleName: 'paddingVertical', tokenHelper: 'space' },
+
+  // Gap (flexbox gap)
+  gap: { styleName: 'gap', tokenHelper: 'space' },
 }
 
 // Value mapping for dimension values
@@ -80,39 +95,28 @@ export const color = {
 }
 
 export const border = {
-  // Simple borders
-  borderColor: 'borderColor',
+  // Base border properties
   borderWidth: 'borderWidth',
+  borderStyle: 'borderStyle',
+  borderColor: { styleName: 'borderColor', tokenHelper: 'color' },
 
-  // Single radius (with token helper)
-  borderRadius: {
-    styleName: 'borderRadius',
-    tokenHelper: 'radius',
-  },
-  rounded: {
-    styleName: 'borderRadius',
-    tokenHelper: 'radius',
-  },
+  // Border radius - single
+  borderRadius: { styleName: 'borderRadius', tokenHelper: 'radius' },
+  rounded: { styleName: 'borderRadius', tokenHelper: 'radius' },
 
-  // Specific corner radius
-  borderTopLeftRadius: {
-    styleName: 'borderTopLeftRadius',
-    tokenHelper: 'radius',
-  },
-  borderTopRightRadius: {
-    styleName: 'borderTopRightRadius',
-    tokenHelper: 'radius',
-  },
-  borderBottomLeftRadius: {
-    styleName: 'borderBottomLeftRadius',
-    tokenHelper: 'radius',
-  },
-  borderBottomRightRadius: {
-    styleName: 'borderBottomRightRadius',
-    tokenHelper: 'radius',
-  },
+  // Border radius - specific corners
+  borderTopLeftRadius: { styleName: 'borderTopLeftRadius', tokenHelper: 'radius' },
+  borderTopRightRadius: { styleName: 'borderTopRightRadius', tokenHelper: 'radius' },
+  borderBottomLeftRadius: { styleName: 'borderBottomLeftRadius', tokenHelper: 'radius' },
+  borderBottomRightRadius: { styleName: 'borderBottomRightRadius', tokenHelper: 'radius' },
 
-  // Multi-corner radius (expand to multiple)
+  // Border radius - rounded* shortcuts (specific corners)
+  roundedTopLeft: { styleName: 'borderTopLeftRadius', tokenHelper: 'radius' },
+  roundedTopRight: { styleName: 'borderTopRightRadius', tokenHelper: 'radius' },
+  roundedBottomLeft: { styleName: 'borderBottomLeftRadius', tokenHelper: 'radius' },
+  roundedBottomRight: { styleName: 'borderBottomRightRadius', tokenHelper: 'radius' },
+
+  // Border radius - multi-corner (expand to multiple)
   borderTopRadius: {
     properties: ['borderTopLeftRadius', 'borderTopRightRadius'],
     tokenHelper: 'radius',
@@ -145,49 +149,77 @@ export const border = {
     properties: ['borderTopRightRadius', 'borderBottomRightRadius'],
     tokenHelper: 'radius',
   },
+
+  // Side-specific borders (width, color, style)
+  borderTopWidth: 'borderTopWidth',
+  borderTopColor: { styleName: 'borderTopColor', tokenHelper: 'color' },
+  borderTopStyle: 'borderTopStyle',
+  borderBottomWidth: 'borderBottomWidth',
+  borderBottomColor: { styleName: 'borderBottomColor', tokenHelper: 'color' },
+  borderBottomStyle: 'borderBottomStyle',
+  borderLeftWidth: 'borderLeftWidth',
+  borderLeftColor: { styleName: 'borderLeftColor', tokenHelper: 'color' },
+  borderLeftStyle: 'borderLeftStyle',
+  borderRightWidth: 'borderRightWidth',
+  borderRightColor: { styleName: 'borderRightColor', tokenHelper: 'color' },
+  borderRightStyle: 'borderRightStyle',
 }
 
 export const layout = {
-  space: 'gap',
+  // Display and overflow
+  display: 'display',
+  overflow: 'overflow',
+
+  // TEXT_ONLY - Only works on Text components
+  textAlign: 'textAlign',
 }
 
 export const flexbox = {
   alignItems: 'alignItems',
   alignContent: 'alignContent',
   alignSelf: 'alignSelf',
+  justifyItems: 'justifyItems',
   justifyContent: 'justifyContent',
+  justifySelf: 'justifySelf',
   flex: 'flex',
   flexGrow: 'flexGrow',
   flexShrink: 'flexShrink',
   flexBasis: 'flexBasis',
   flexDirection: 'flexDirection',
+  flexDir: 'flexDirection',
   flexWrap: 'flexWrap',
   order: 'order',
-  display: 'display',
 }
 
 export const position = {
   position: 'position',
-  top: 'top',
-  right: 'right',
-  bottom: 'bottom',
-  left: 'left',
+  top: { styleName: 'top', tokenHelper: 'space' },
+  right: { styleName: 'right', tokenHelper: 'space' },
+  bottom: { styleName: 'bottom', tokenHelper: 'space' },
+  left: { styleName: 'left', tokenHelper: 'space' },
   zIndex: 'zIndex',
 }
 
 export const text = {
+  // TEXT_ONLY - All text props only work on Text components, not View
+  color: { styleName: 'color', tokenHelper: 'color' },
+  fontFamily: 'fontFamily',
+  fontSize: 'fontSize',
+  fontStyle: 'fontStyle',
+  fontWeight: 'fontWeight',
+  letterSpacing: 'letterSpacing',
+  lineHeight: 'lineHeight',
   textAlign: 'textAlign',
   textDecorationLine: 'textDecorationLine',
+  textDecoration: 'textDecorationLine',
+  txtDecor: 'textDecorationLine',
+  textDecorationColor: { styleName: 'textDecorationColor', tokenHelper: 'color' },
   textTransform: 'textTransform',
-  fontWeight: 'fontWeight',
-  fontStyle: 'fontStyle',
-  fontSize: 'fontSize',
-  fontFamily: 'fontFamily',
-  lineHeight: 'lineHeight',
-  letterSpacing: 'letterSpacing',
 }
 
 export const extra = {
-  overflow: 'overflow',
   opacity: 'opacity',
+
+  // IMAGE_ONLY - Only works on Image components
+  tintColor: { styleName: 'tintColor', tokenHelper: 'color' },
 }

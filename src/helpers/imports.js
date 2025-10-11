@@ -57,10 +57,8 @@ export function removeNamedImport(imports, importName, j) {
     )
 
     if (otherSpecifiers.length > 0) {
-      // Keep the import with remaining specifiers
       path.node.specifiers = otherSpecifiers
     } else {
-      // Remove the entire import
       j(path).remove()
     }
   })
@@ -78,7 +76,6 @@ export function addNamedImport(root, modulePath, importName, j) {
   })
 
   if (existingImport.length > 0) {
-    // Add to existing import if not already there
     existingImport.forEach((path) => {
       const alreadyImported = (path.node.specifiers || []).some(
         (spec) => spec.type === 'ImportSpecifier' && spec.imported.name === importName,
@@ -89,7 +86,6 @@ export function addNamedImport(root, modulePath, importName, j) {
       }
     })
   } else {
-    // Create new import
     const newImport = j.importDeclaration(
       [j.importSpecifier(j.identifier(importName))],
       j.literal(modulePath),

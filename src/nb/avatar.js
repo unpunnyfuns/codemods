@@ -3,6 +3,8 @@
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
+import { accessibility } from './mappings/props-direct.js'
+import { allPseudoProps } from './mappings/props-drop.js'
 import {
   border,
   color,
@@ -34,9 +36,11 @@ delete styleProps.size
 
 const transformProps = {}
 
-const directPropsList = ['size', 'testID', 'accessibilityLabel']
+const directPropsList = ['size', ...accessibility]
 
 const dropPropsList = [
+  ...allPseudoProps,
+  // Avatar-specific props (transformed via custom logic)
   'iconName',
   'imageUri',
   'imageSource',
@@ -46,9 +50,6 @@ const dropPropsList = [
   'placeholder',
   'resizeMode',
   'source',
-  '_hover',
-  '_pressed',
-  '_focus',
 ]
 
 function main(fileInfo, api, options = {}) {
@@ -62,13 +63,11 @@ function main(fileInfo, api, options = {}) {
   // Default: true (wrap in View when style props exist)
   const wrap = options.wrap ?? true
 
-  // Find imports
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
   if (!imports.length || !hasNamedImport(imports, 'Avatar')) {
     return fileInfo.source
   }
 
-  // Find all Avatar elements (excluding Avatar.Badge and Avatar.Group)
   const avatarElements = root.find(j.JSXElement, {
     openingElement: {
       name: {
@@ -92,11 +91,9 @@ function main(fileInfo, api, options = {}) {
     dropProps: dropPropsList,
   }
 
-  // Transform each Avatar element
   avatarElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
 
-    // Extract custom Avatar props
     let iconNameValue = null
     let imageUriValue = null
     let imageSourceValue = null
@@ -136,7 +133,6 @@ function main(fileInfo, api, options = {}) {
       return
     }
 
-    // Categorize props using standard mappings
     const {
       styleProps,
       inlineStyles,
@@ -149,24 +145,18 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers.add(h)
     }
 
-    // Store dropped props for this element
-
-    // Build Avatar props - start with direct props that pass through
     const avatarAttributes = attributes.filter((attr) => {
       if (attr.type !== 'JSXAttribute' || !attr.name) {
         return false
       }
       const propName = attr.name.name
-      // Keep direct props that weren't removed
       return directPropsList.includes(propName) && !propsToRemove.includes(propName)
     })
 
-    // Add transformed props
     for (const [name, value] of Object.entries(transformedProps)) {
       avatarAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
     }
 
-    // Add custom transformed props
     if (iconNameValue) {
       // iconName → icon={{ name: "...", fill: "blue" }}
       const nameValue =
@@ -215,16 +205,13 @@ function main(fileInfo, api, options = {}) {
       avatarAttributes.push(imageProp)
     }
 
-    // Update element attributes
     path.node.openingElement.attributes = avatarAttributes
 
-    // Check if we need to wrap in View
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
     if (wrap && hasStyleProps) {
       const styleName = `avatar${index}`
 
-      // Clone the Avatar element
       const avatarElement = j.jsxElement(
         path.node.openingElement,
         path.node.closingElement,
@@ -232,14 +219,12 @@ function main(fileInfo, api, options = {}) {
         path.node.selfClosing,
       )
 
-      // Build style value and create View wrapper
       const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
       const viewElement = createViewWrapper(avatarElement, styleValue, j)
       j(path).replaceWith(viewElement)
     }
   })
 
-  // Print warnings
   if (warnings.length > 0) {
     console.warn('⚠️  Avatar migration warnings:')
     for (const w of warnings) {
@@ -247,11 +232,9 @@ function main(fileInfo, api, options = {}) {
     }
   }
 
-  // Update imports
   removeNamedImport(imports, 'Avatar', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  // Add View and StyleSheet imports if we have wrapped elements
   if (wrap && elementStyles.length > 0) {
     addNamedImport(root, 'react-native', 'View', j)
     addNamedImport(root, 'react-native', 'StyleSheet', j)
@@ -260,7 +243,6 @@ function main(fileInfo, api, options = {}) {
     }
   }
 
-  // Add StyleSheet
   if (wrap && elementStyles.length > 0) {
     addOrExtendStyleSheet(root, elementStyles, j)
   }

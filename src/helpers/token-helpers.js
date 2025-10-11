@@ -19,19 +19,16 @@
 export function buildNestedMemberExpression(j, tokenHelper, tokenPath) {
   const parts = tokenPath.split('.')
 
-  // Start with the token helper identifier
   let expression = j.identifier(tokenHelper)
 
-  // Build nested member expressions for each part
   for (const part of parts) {
-    // Check if part requires bracket notation (starts with digit, dash, or contains special chars)
     const needsBracketNotation = /^[\d-]/.test(part) || !/^[a-zA-Z_$][\w$]*$/.test(part)
 
     if (needsBracketNotation) {
-      // Use computed member expression: obj['-1'] or obj['900']
+      // obj['-1'] or obj['900']
       expression = j.memberExpression(expression, j.stringLiteral(part), true)
     } else {
-      // Use dot notation: obj.prop
+      // obj.prop
       expression = j.memberExpression(expression, j.identifier(part))
     }
   }

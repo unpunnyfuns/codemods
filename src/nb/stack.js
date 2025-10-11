@@ -104,7 +104,7 @@ function main(fileInfo, api, options = {}) {
   const targetName = options.targetName ?? 'Stack'
   const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
 
-  // Find imports
+  // import { HStack, VStack } from 'native-base'
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
   if (!imports.length) {
     return fileInfo.source
@@ -134,11 +134,9 @@ function main(fileInfo, api, options = {}) {
       continue
     }
 
-    // Transform each element
     stackElements.forEach((path, index) => {
       const attributes = path.node.openingElement.attributes || []
 
-      // Categorize props
       const {
         styleProps,
         inlineStyles,
@@ -154,7 +152,7 @@ function main(fileInfo, api, options = {}) {
         usedTokenHelpers.add(h)
       }
 
-      // Validate gap prop (must be a valid space token name)
+      // gap prop must be a valid space token name
       if (transformedProps.gap) {
         const gapValue = transformedProps.gap
         const validation = validateTokenValue(gapValue, validSpaceTokens, false)
@@ -166,11 +164,9 @@ function main(fileInfo, api, options = {}) {
         }
       }
 
-      // Transform element
       removePropsFromElement(attributes, propsToRemove)
       updateElementName(path, targetName)
 
-      // Add direction prop
       const directionProp = j.jsxAttribute(j.jsxIdentifier('direction'), j.stringLiteral(direction))
       attributes.push(directionProp)
 
@@ -186,7 +182,6 @@ function main(fileInfo, api, options = {}) {
       )
       addStyleProp(attributes, styleValue, j)
 
-      // Add comment for dropped props and invalid styles
       addElementComment(path, droppedProps, invalidStyles, j)
     })
 
@@ -198,13 +193,11 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  // Update imports
   addNamedImport(root, targetImport, targetName, j)
   for (const h of usedTokenHelpers) {
     addNamedImport(root, tokenImport, h, j)
   }
 
-  // Add StyleSheet
   addOrExtendStyleSheet(root, elementStyles, j)
 
   return root.toSource({

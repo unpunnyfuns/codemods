@@ -81,7 +81,7 @@ function main(fileInfo, api, options = {}) {
   const targetName = options.targetName ?? 'Pressable'
   const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
 
-  // Find imports
+  // import { Pressable } from '@hb-frontend/common/src/components'
   const imports = root.find(j.ImportDeclaration, {
     source: { value: sourceImport },
   })
@@ -89,7 +89,6 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  // Find all Pressable elements
   const pressableElements = root.find(j.JSXElement, {
     openingElement: { name: { name: 'Pressable' } },
   })
@@ -107,11 +106,9 @@ function main(fileInfo, api, options = {}) {
     dropProps: dropPropsList,
   }
 
-  // Transform each Pressable element
   pressableElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
 
-    // Categorize props
     const {
       styleProps,
       inlineStyles,
@@ -127,9 +124,6 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers.add(h)
     }
 
-    // Store dropped props for this element
-
-    // Transform element
     removePropsFromElement(attributes, propsToRemove)
 
     // Preserve wrapper's default accessibilityRole="button" if not explicitly set
@@ -154,18 +148,15 @@ function main(fileInfo, api, options = {}) {
     )
     addStyleProp(attributes, styleValue, j)
 
-    // Validate styles and add comment if there are issues
     addElementComment(path, droppedProps, invalidStyles, j)
   })
 
-  // Update imports
   removeNamedImport(imports, 'Pressable', j)
   addNamedImport(root, targetImport, targetName, j)
   for (const h of usedTokenHelpers) {
     addNamedImport(root, tokenImport, h, j)
   }
 
-  // Add StyleSheet
   if (elementStyles.length > 0) {
     addNamedImport(root, targetImport, 'StyleSheet', j)
   }

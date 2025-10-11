@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     backgroundColor: color.blue['500'],
     borderRadius: radius.xl,
     borderWidth: 2,
-    borderColor: "gray.200"
+    borderColor: color.gray['200']
   },
 
   vstack3: {

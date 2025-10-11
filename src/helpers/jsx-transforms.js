@@ -74,7 +74,6 @@ export function buildStyleValue(
     styleArray.push(inlineObject)
   }
 
-  // Build final style value
   if (styleArray.length === 0) {
     return null
   } else if (styleArray.length === 1) {

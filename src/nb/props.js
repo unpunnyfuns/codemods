@@ -1,11 +1,21 @@
 /**
  * NativeBase-specific prop categorization and transformation utilities
  * Handles prop mapping, StyleSheet extraction, and NativeBase→Nordlys token remapping
+ *
+ * Validation derives from:
+ * - nordlys-props.js: Target model (what's valid in Nordlys output)
+ * - nativebase-styled-props.js: Source model (NativeBase props documentation)
  */
 
 import { addNamedImport } from '../helpers/imports.js'
 import { buildNestedMemberExpression } from '../helpers/token-helpers.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
+import {
+  DIMENSION_PROPS,
+  NUMERIC_ONLY_PROPS,
+  RADIUS_TOKENS,
+  SPACE_TOKENS,
+} from './mappings/nordlys-props.js'
 
 /**
  * Check if a value can be extracted to StyleSheet (literal or token helper reference)
@@ -15,7 +25,6 @@ export function shouldExtractToStyleSheet(value, isTokenHelper = false) {
     return false
   }
 
-  // Literals can be extracted
   if (
     value.type === 'Literal' ||
     value.type === 'StringLiteral' ||
@@ -36,58 +45,29 @@ export function shouldExtractToStyleSheet(value, isTokenHelper = false) {
 }
 
 /**
- * Validation helpers
+ * Validation constants from Nordlys model
+ * Re-exported for backward compatibility with existing tests/code
  */
-export const validSpaceTokens = ['zero', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']
-export const validRadiusTokens = ['xs', 'sm', 'md', 'lg', 'xl', '2xl']
-const dimensionProps = [
-  'width',
-  'height',
-  'minWidth',
-  'minHeight',
-  'maxWidth',
-  'maxHeight',
-  'top',
-  'right',
-  'bottom',
-  'left',
-  'margin',
-  'marginTop',
-  'marginRight',
-  'marginBottom',
-  'marginLeft',
-  'marginHorizontal',
-  'marginVertical',
-  'padding',
-  'paddingTop',
-  'paddingRight',
-  'paddingBottom',
-  'paddingLeft',
-  'paddingHorizontal',
-  'paddingVertical',
-]
-const numericProps = ['flex', 'flexGrow', 'flexShrink', 'borderWidth', 'zIndex', 'opacity']
+export const validSpaceTokens = SPACE_TOKENS
+export const validRadiusTokens = RADIUS_TOKENS
+const dimensionProps = DIMENSION_PROPS
+const numericProps = NUMERIC_ONLY_PROPS
 
 /**
  * Validate a value against a list of valid token names
  * Returns { isValid: boolean, reason?: string }
  */
 export function validateTokenValue(value, validTokens, allowNumeric = false) {
-  // Check if it's a string literal with invalid value
   if (value.type === 'StringLiteral' || value.type === 'Literal') {
     const val = String(value.value)
     if (!validTokens.includes(val)) {
       return { isValid: false, reason: `"${val}"` }
     }
-  }
-  // Check if it's a numeric literal
-  else if (value.type === 'NumericLiteral') {
+  } else if (value.type === 'NumericLiteral') {
     if (!allowNumeric) {
       return { isValid: false, reason: `{${value.value}}` }
     }
-  }
-  // Check if it's a JSXExpressionContainer
-  else if (value.type === 'JSXExpressionContainer') {
+  } else if (value.type === 'JSXExpressionContainer') {
     const expr = value.expression
     if (expr.type === 'NumericLiteral') {
       if (!allowNumeric) {
@@ -115,38 +95,34 @@ function validateStyleValue(styleName, value) {
     return { isValid: false, reason: displayValue }
   }
 
-  // Check for string numbers and px suffixes
   if (value.type === 'StringLiteral' || value.type === 'Literal') {
     const val = String(value.value)
 
-    // Flag "0", "1", "2px", "230px", etc. (but allow percentages)
+    // Flag "0", "1", "2px", "230px" but allow percentages
     if (/^\d+px$/.test(val) || (/^\d+$/.test(val) && !val.endsWith('%'))) {
       return { isValid: false, reason: `"${val}"` }
     }
 
-    // Check for semantic tokens used where numbers expected (dimension props)
+    // Semantic tokens like "sm" aren't valid for dimension props that expect numbers
     if (dimensionProps.includes(styleName) && validSpaceTokens.includes(val)) {
       return { isValid: false, reason: `"${val}"` }
     }
 
-    // Check numeric props that shouldn't be strings
+    // Numeric props shouldn't be strings
     if (numericProps.includes(styleName) && /^\d+(\.\d+)?$/.test(val)) {
       return { isValid: false, reason: `"${val}"` }
     }
   }
 
-  // Check for invalid token references
   if (value.type === 'MemberExpression') {
     const tokenName = value.object?.name
     let property = value.property?.name
 
-    // Handle bracket notation: space['4']
     if (!property && value.computed && value.property?.type === 'StringLiteral') {
       property = value.property.value
     }
 
     if (tokenName === 'space') {
-      // Check if it's a numeric string in bracket notation
       if (/^\d+$/.test(property)) {
         return { isValid: false, reason: `${tokenName}['${property}']` }
       }
@@ -159,7 +135,6 @@ function validateStyleValue(styleName, value) {
     }
 
     if (tokenName === 'radius' && (styleName.includes('radius') || styleName.includes('Radius'))) {
-      // Check if it's a numeric string in bracket notation
       if (/^\d+$/.test(property)) {
         return { isValid: false, reason: `${tokenName}['${property}']` }
       }
@@ -181,7 +156,6 @@ function validateStyleValue(styleName, value) {
  * Also transforms dimension string values: "full" → "100%"
  */
 function transformNumericTokenAccess(value, j) {
-  // Transform dimension string literals
   if ((value.type === 'StringLiteral' || value.type === 'Literal') && value.value === 'full') {
     return j.stringLiteral('100%')
   }
@@ -195,7 +169,6 @@ function transformNumericTokenAccess(value, j) {
     return value
   }
 
-  // Check for bracket notation with numeric string
   if (value.computed && value.property?.type === 'StringLiteral') {
     const propertyValue = value.property.value
     if (/^\d+$/.test(propertyValue)) {
@@ -217,18 +190,16 @@ export function processTokenHelper(value, tokenHelper, j, usedTokenHelpers) {
 
   let tokenPath = value.value
 
-  // Ensure tokenPath is a string
   if (typeof tokenPath !== 'string') {
     return { value, isTokenHelper: false }
   }
 
-  // If token path is a numeric string, convert to number literal
   if (/^\d+$/.test(tokenPath)) {
     const numericValue = Number.parseInt(tokenPath, 10)
     return { value: j.numericLiteral(numericValue), isTokenHelper: false }
   }
 
-  // NativeBase→Nordlys color token remapping
+  // NativeBase to Nordlys color token remapping
   if (tokenHelper === 'color') {
     tokenPath = getNordlysColorPath(tokenPath)
   }
@@ -247,7 +218,6 @@ export function applyValueMapping(value, valueMap, j) {
     return value
   }
 
-  // For string literals
   if (value.type === 'StringLiteral' || value.type === 'Literal') {
     const mappedValue = valueMap[value.value]
     if (mappedValue !== undefined) {
@@ -255,9 +225,7 @@ export function applyValueMapping(value, valueMap, j) {
         ? j.numericLiteral(mappedValue)
         : j.stringLiteral(mappedValue)
     }
-  }
-  // For numeric literals
-  else if (value.type === 'NumericLiteral') {
+  } else if (value.type === 'NumericLiteral') {
     const mappedValue = valueMap[value.value]
     if (mappedValue !== undefined) {
       return typeof mappedValue === 'number'
@@ -294,7 +262,6 @@ export function categorizeProps(attributes, mappings, j) {
   const propsToRemove = []
   const usedTokenHelpers = new Set()
   const droppedProps = []
-  // Invalid style values that should be dropped
   const invalidStyles = []
   // StyleSheet references like styles.foo
   const existingStyleReferences = []
@@ -309,30 +276,26 @@ export function categorizeProps(attributes, mappings, j) {
 
     const propName = attr.name.name
 
-    // Handle existing style prop
     if (propName === 'style') {
       if (attr.value?.type === 'JSXExpressionContainer') {
         const expr = attr.value.expression
 
-        // Handle array of styles: [styles.foo, { bar: 'baz' }]
+        // [styles.foo, { bar: 'baz' }]
         if (expr.type === 'ArrayExpression') {
           for (const element of expr.elements) {
             if (element.type === 'ObjectExpression') {
-              // Extract object literal to styleProps or inlineStyles
               for (const prop of element.properties) {
                 if (prop.type === 'Property' && prop.key.type === 'Identifier') {
                   const styleName = prop.key.name
-                  // Transform numeric token access like space['4'] → 4
+                  // space['4'] → 4
                   const transformedValue = transformNumericTokenAccess(prop.value, j)
 
-                  // Validate style value
                   const validation = validateStyleValue(styleName, transformedValue)
                   if (!validation.isValid) {
                     invalidStyles.push({ styleName, value: validation.reason })
                     continue
                   }
 
-                  // Decide whether to extract to StyleSheet or keep inline
                   const targetStyles = shouldExtractToStyleSheet(transformedValue, false)
                     ? styleProps
                     : inlineStyles
@@ -340,27 +303,25 @@ export function categorizeProps(attributes, mappings, j) {
                 }
               }
             } else if (element.type === 'MemberExpression') {
-              // Keep StyleSheet reference (styles.foo)
+              // styles.foo
               existingStyleReferences.push(element)
             }
           }
         }
-        // Handle single object: { bar: 'baz' }
+        // { bar: 'baz' }
         else if (expr.type === 'ObjectExpression') {
           for (const prop of expr.properties) {
             if (prop.type === 'Property' && prop.key.type === 'Identifier') {
               const styleName = prop.key.name
-              // Transform numeric token access like space['4'] → 4
+              // space['4'] → 4
               const transformedValue = transformNumericTokenAccess(prop.value, j)
 
-              // Validate style value
               const validation = validateStyleValue(styleName, transformedValue)
               if (!validation.isValid) {
                 invalidStyles.push({ styleName, value: validation.reason })
                 continue
               }
 
-              // Decide whether to extract to StyleSheet or keep inline
               const targetStyles = shouldExtractToStyleSheet(transformedValue, false)
                 ? styleProps
                 : inlineStyles
@@ -368,16 +329,14 @@ export function categorizeProps(attributes, mappings, j) {
             }
           }
         }
-        // Handle StyleSheet reference: styles.foo
+        // styles.foo
         else if (expr.type === 'MemberExpression') {
           existingStyleReferences.push(expr)
         }
       }
 
       propsToRemove.push(attr)
-    }
-    // Check if it should be extracted to stylesheet
-    else if (stylePropMappings[propName]) {
+    } else if (stylePropMappings[propName]) {
       const config = stylePropMappings[propName]
       let styleName, properties, valueMap, tokenHelper
 
@@ -405,25 +364,18 @@ export function categorizeProps(attributes, mappings, j) {
         let processedValue = value
         let isTokenHelperCall = false
 
-        // Apply tokenHelper transformation for string literals
         if (tokenHelper && (value.type === 'StringLiteral' || value.type === 'Literal')) {
           const result = processTokenHelper(value, tokenHelper, j, usedTokenHelpers)
           processedValue = result.value
           isTokenHelperCall = result.isTokenHelper
-        }
-        // Apply value mapping if configured
-        else if (valueMap) {
+        } else if (valueMap) {
           processedValue = applyValueMapping(value, valueMap, j)
         }
 
-        // Decide whether to extract to StyleSheet or keep inline
         const shouldExtract = shouldExtractToStyleSheet(processedValue, isTokenHelperCall)
 
-        // Handle multi-property expansion or single property
         if (properties) {
-          // Expand to multiple properties with same value
           for (const prop of properties) {
-            // Validate each property
             const validation = validateStyleValue(prop, processedValue)
             if (!validation.isValid) {
               invalidStyles.push({ styleName: prop, value: validation.reason })
@@ -434,7 +386,6 @@ export function categorizeProps(attributes, mappings, j) {
             targetStyles[prop] = processedValue
           }
         } else {
-          // Validate single property
           const validation = validateStyleValue(styleName, processedValue)
           if (validation.isValid) {
             const targetStyles = shouldExtract ? styleProps : inlineStyles
@@ -446,9 +397,7 @@ export function categorizeProps(attributes, mappings, j) {
 
         propsToRemove.push(attr)
       }
-    }
-    // Check if it should be transformed on element
-    else if (transformPropMappings[propName]) {
+    } else if (transformPropMappings[propName]) {
       const config = transformPropMappings[propName]
       let newPropName, valueMap, tokenHelper
 
@@ -465,18 +414,14 @@ export function categorizeProps(attributes, mappings, j) {
 
       let value = attr.value
 
-      // Extract actual value from JSXExpressionContainer or StringLiteral
       if (value?.type === 'JSXExpressionContainer') {
         value = value.expression
       }
 
-      // Apply tokenHelper transformation for string literals
       if (tokenHelper && value?.type === 'StringLiteral') {
         const result = processTokenHelper(value, tokenHelper, j, usedTokenHelpers)
         value = j.jsxExpressionContainer(result.value)
-      }
-      // Apply value mapping if configured and value is a string literal
-      else if (valueMap && value?.type === 'StringLiteral') {
+      } else if (valueMap && value?.type === 'StringLiteral') {
         const mappedValue = valueMap[value.value]
         if (mappedValue !== undefined) {
           value = j.jsxExpressionContainer(j.stringLiteral(mappedValue))
@@ -493,11 +438,8 @@ export function categorizeProps(attributes, mappings, j) {
 
       transformedProps[newPropName] = value
       propsToRemove.push(attr)
-    }
-    // Check if it should be dropped
-    else if (dropPropList.includes(propName)) {
+    } else if (dropPropList.includes(propName)) {
       propsToRemove.push(attr)
-      // Store prop name and value for reporting
       droppedProps.push({ name: propName, attr })
     }
     // Everything else (DIRECT_PROPS) stays on element as-is
@@ -610,7 +552,6 @@ export function addElementComment(path, droppedProps, invalidStyles, j) {
     const children = parent.children
     const index = children.indexOf(path.node)
     if (index !== -1) {
-      // Add newline before comment, comment, then newline before element
       children.splice(index, 0, j.jsxText('\n      '), jsxComment, j.jsxText('\n      '))
     }
   }
@@ -624,7 +565,6 @@ export function addOrExtendStyleSheet(root, elementStyles, j) {
     return
   }
 
-  // Build the new style properties
   const newStyleProperties = elementStyles.map(({ name, styles }) => {
     const properties = buildStyleSheetProperties(styles, j)
     return j.property('init', j.identifier(name), j.objectExpression(properties))
@@ -644,7 +584,6 @@ export function addOrExtendStyleSheet(root, elementStyles, j) {
   })
 
   if (existingStyleSheet.length > 0) {
-    // Extend existing StyleSheet.create()
     existingStyleSheet.forEach((path) => {
       const createCallArgs = path.node.init.arguments
       if (createCallArgs.length > 0 && createCallArgs[0].type === 'ObjectExpression') {
@@ -652,7 +591,6 @@ export function addOrExtendStyleSheet(root, elementStyles, j) {
       }
     })
   } else {
-    // Create new StyleSheet.create()
     const styleSheetCall = j.variableDeclaration('const', [
       j.variableDeclarator(
         j.identifier('styles'),
@@ -662,12 +600,10 @@ export function addOrExtendStyleSheet(root, elementStyles, j) {
       ),
     ])
 
-    // Add to the end of the file
     root.find(j.Program).forEach((path) => {
       path.node.body.push(styleSheetCall)
     })
   }
 
-  // Add StyleSheet import from react-native
   addNamedImport(root, 'react-native', 'StyleSheet', j)
 }

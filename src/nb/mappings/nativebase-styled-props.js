@@ -1,27 +1,40 @@
 /**
- * Complete NativeBase StyledProps extracted from styled-system.ts
+ * Complete NativeBase StyledProps Model
  *
- * REFERENCE DOCUMENTATION ONLY - Not currently used by codemods
+ * SOURCE OF TRUTH for NativeBase styled-system props.
+ * Extracted from: NativeBase/src/theme/styled-system.ts
  *
- * This is the definitive list of all props that NativeBase's styled system supports.
- * Extracted verbatim from: NativeBase/src/theme/styled-system.ts
+ * Use this to ensure complete coverage when building prop-style.js mappings.
  *
- * Use this as a reference when creating new component-specific prop mappings.
- *
- * Format:
+ * ## Format:
  * - `true` means pass through the prop name as-is to RN style
  * - `{ property: 'x' }` means rename to 'x'
  * - `{ properties: ['x', 'y'] }` means expand to multiple properties
  * - `scale: 'x'` indicates it uses theme scale (colors, space, sizes, etc.)
  *
+ * ## React Native Compatibility:
+ * - RN_COMPATIBLE: Works in React Native
+ * - WEB_ONLY: CSS-only, drop for RN migrations
+ * - TEXT_ONLY: Only works on Text components, not View
+ * - RN_LIMITED: Partial support in RN
+ * - IMAGE_ONLY: Only works on Image components
+ *
+ * ## Nordlys Mapping Strategy:
+ * - DIRECT: Map directly to RN prop (e.g., p → padding)
+ * - TOKEN: Use Nordlys token helper (e.g., bg → backgroundColor with color token)
+ * - VALUE_MAP: Transform string values (e.g., align: start → flex-start)
+ * - DROP: Remove (web-only, unsupported, handled differently in Nordlys)
+ *
  * NOTE: Our codemods differ from NativeBase's behavior for mx/my/px/py:
  * - NativeBase expands: mx → ['marginLeft', 'marginRight']
  * - Our codemods map: mx → marginHorizontal (uses RN native shorthand)
- * This is intentional - React Native supports these properties natively,
- * so we use them instead of expanding to multiple properties.
+ * This is intentional - React Native supports these properties natively.
  */
 
 // SPACING PROPS
+// RN_COMPATIBLE - All work in React Native
+// TOKEN - Use Nordlys space tokens (space.md, space.lg, etc.)
+// NOTE: mx/my/px/py map to marginHorizontal/marginVertical/paddingHorizontal/paddingVertical in our codemods
 export const SPACING = {
   // Margin
   margin: { property: 'margin', scale: 'space' },
@@ -60,6 +73,10 @@ export const SPACING = {
 }
 
 // LAYOUT PROPS
+// RN_COMPATIBLE - width, height, min/max, overflow, display work in RN
+// TEXT_ONLY - textAlign only works on Text components
+// WEB_ONLY - overflowX, overflowY (RN only supports 'overflow')
+// DIRECT - Most map directly, dimensions accept numbers/percentages (not semantic tokens)
 export const LAYOUT = {
   width: { property: 'width', scale: 'sizes' },
   w: { property: 'width', scale: 'sizes' },
@@ -83,6 +100,9 @@ export const LAYOUT = {
 }
 
 // FLEXBOX PROPS
+// RN_COMPATIBLE - All work in React Native
+// DIRECT - Map directly, no tokens needed
+// VALUE_MAP - Some values need transformation (e.g., start → flex-start)
 export const FLEXBOX = {
   alignItems: true,
   alignContent: true,
@@ -101,6 +121,9 @@ export const FLEXBOX = {
 }
 
 // POSITION PROPS
+// RN_COMPATIBLE - All work in React Native
+// TOKEN - top/right/bottom/left can use space tokens
+// DIRECT - position, zIndex are direct
 export const POSITION = {
   position: true,
   zIndex: { property: 'zIndex' },
@@ -111,6 +134,11 @@ export const POSITION = {
 }
 
 // COLOR PROPS
+// RN_COMPATIBLE - backgroundColor, opacity work on View
+// TEXT_ONLY - color, textDecorationColor only work on Text
+// IMAGE_ONLY - tintColor only works on Image
+// TOKEN - All color props use Nordlys color tokens (color.background.primary, color.blue[500])
+// NOTE: NativeBase color paths require remapping to Nordlys (see maps-color.js)
 export const COLOR = {
   color: { property: 'color', scale: 'colors' },
   tintColor: { property: 'tintColor', scale: 'colors' },
@@ -123,6 +151,12 @@ export const COLOR = {
 }
 
 // BORDER PROPS
+// RN_COMPATIBLE - All work in React Native
+// TOKEN - borderRadius uses radius tokens (radius.md, radius.lg)
+// TOKEN - borderColor uses color tokens (color.background.primary)
+// DIRECT - borderWidth accepts numbers, borderStyle accepts 'solid' | 'dotted' | 'dashed'
+// WEB_ONLY - borderTop/borderRight/borderBottom/borderLeft/borderX/borderY (shorthand properties)
+// NOTE: RN requires separate borderWidth, borderColor, borderStyle props
 export const BORDER = {
   borderWidth: { property: 'borderWidth', scale: 'borderWidths' },
   borderStyle: { property: 'borderStyle', scale: 'borderStyles' },
@@ -183,6 +217,8 @@ export const BORDER = {
 }
 
 // BACKGROUND PROPS (mostly web-only)
+// WEB_ONLY - All background image/position/repeat props are CSS-only
+// DROP - Remove these entirely for React Native migrations
 export const BACKGROUND = {
   backgroundSize: true,
   backgroundPosition: true,
@@ -200,6 +236,10 @@ export const BACKGROUND = {
 }
 
 // TYPOGRAPHY PROPS
+// TEXT_ONLY - All typography props only work on Text components, not View
+// RN_COMPATIBLE - fontFamily, fontSize, fontWeight, lineHeight, letterSpacing, textAlign, fontStyle, textTransform, textDecorationLine
+// WEB_ONLY - wordBreak, overflowWrap, textOverflow, whiteSpace
+// DROP - Web-only text props should be removed for RN
 export const TYPOGRAPHY = {
   fontFamily: { property: 'fontFamily', scale: 'fonts' },
   fontSize: { property: 'fontSize', scale: 'fontSizes' },
@@ -221,6 +261,10 @@ export const TYPOGRAPHY = {
 }
 
 // EXTRA PROPS (mostly web-only)
+// WEB_ONLY - outline, outlineWidth, outlineColor, outlineStyle, cursor, userSelect
+// RN_COMPATIBLE - shadow (but handle differently - RN uses shadowColor/shadowOffset/shadowOpacity/shadowRadius/elevation)
+// RN_COMPATIBLE - overflow
+// DROP - Web-only outline and cursor props
 export const EXTRA = {
   outline: true,
   outlineWidth: true,

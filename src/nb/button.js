@@ -74,13 +74,12 @@ function main(fileInfo, api, options = {}) {
   // Default: true (wrap in View when style props exist)
   const wrap = options.wrap ?? true
 
-  // Find imports
+  // import { Button } from '@hb-frontend/common/src/components'
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
   if (!imports.length || !hasNamedImport(imports, 'Button')) {
     return fileInfo.source
   }
 
-  // Find all Button elements
   const buttonElements = root.find(j.JSXElement, {
     openingElement: {
       name: {
@@ -106,7 +105,6 @@ function main(fileInfo, api, options = {}) {
     dropProps: dropPropsList,
   }
 
-  // Transform each Button element
   buttonElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
     const children = path.node.children || []
@@ -114,7 +112,6 @@ function main(fileInfo, api, options = {}) {
     let iconValue = null
     let textValue = null
 
-    // Extract leftIcon
     const leftIconAttr = attributes.find(
       (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'leftIcon',
     )
@@ -126,7 +123,6 @@ function main(fileInfo, api, options = {}) {
       }
     }
 
-    // Extract text from children
     const { value: extractedText, isComplex } = extractSimpleChild(children, j)
     if (isComplex) {
       warnings.push(
@@ -137,7 +133,6 @@ function main(fileInfo, api, options = {}) {
     }
     textValue = extractedText
 
-    // Check if we have neither icon nor text (icon-only buttons)
     if (!iconValue && !textValue) {
       warnings.push(
         'Button without text or icon cannot be migrated (icon-only requires manual setup)',
@@ -146,7 +141,6 @@ function main(fileInfo, api, options = {}) {
       return
     }
 
-    // Categorize props (handles style/transform/direct/drop)
     const {
       styleProps,
       inlineStyles,
@@ -159,45 +153,36 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers.add(h)
     }
 
-    // Store dropped props for this element
-
-    // Check for rightIcon warning
     if (
       attributes.some((attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'rightIcon')
     ) {
       warnings.push('Button rightIcon not supported in Nordlys - dropped')
     }
 
-    // Build Button props - start with direct props that pass through
     const buttonAttributes = attributes.filter((attr) => {
       if (attr.type !== 'JSXAttribute' || !attr.name) {
         return false
       }
       const propName = attr.name.name
-      // Keep direct props that weren't removed
       return directPropsList.includes(propName) && !propsToRemove.includes(propName)
     })
 
-    // Add transformed props
     for (const [name, value] of Object.entries(transformedProps)) {
       buttonAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
     }
 
-    // Add icon prop if extracted
     if (iconValue) {
       buttonAttributes.push(
         j.jsxAttribute(j.jsxIdentifier('icon'), j.jsxExpressionContainer(iconValue)),
       )
     }
 
-    // Add text prop if extracted
     if (textValue) {
       buttonAttributes.push(
         j.jsxAttribute(j.jsxIdentifier('text'), j.jsxExpressionContainer(textValue)),
       )
     }
 
-    // Add required type prop if not present
     const hasType = buttonAttributes.some(
       (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'type',
     )
@@ -205,32 +190,27 @@ function main(fileInfo, api, options = {}) {
       buttonAttributes.push(j.jsxAttribute(j.jsxIdentifier('type'), j.stringLiteral(defaultType)))
     }
 
-    // Create Button element
     const buttonElement = j.jsxElement(
       j.jsxOpeningElement(j.jsxIdentifier(targetName), buttonAttributes, true),
       null,
       [],
     )
 
-    // Check if we need to wrap in View
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
     if (wrap && hasStyleProps) {
       const styleName = `button${index}`
 
-      // Build style value and create View wrapper
       const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
       const viewElement = createViewWrapper(buttonElement, styleValue, j)
       path.replace(viewElement)
     } else {
-      // No wrapping needed or disabled
       path.replace(buttonElement)
     }
 
     migrated++
   })
 
-  // Print warnings
   if (warnings.length > 0) {
     console.warn(`⚠️  Button migration: ${migrated} migrated, ${skipped} skipped`)
     const uniqueWarnings = [...new Set(warnings)]
@@ -239,11 +219,9 @@ function main(fileInfo, api, options = {}) {
     }
   }
 
-  // Update imports
   removeNamedImport(imports, 'Button', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  // Add View and StyleSheet imports if we have wrapped elements
   if (wrap && elementStyles.length > 0) {
     addNamedImport(root, 'react-native', 'View', j)
     addNamedImport(root, 'react-native', 'StyleSheet', j)
@@ -252,7 +230,6 @@ function main(fileInfo, api, options = {}) {
     }
   }
 
-  // Add StyleSheet
   if (wrap && elementStyles.length > 0) {
     addOrExtendStyleSheet(root, elementStyles, j)
   }

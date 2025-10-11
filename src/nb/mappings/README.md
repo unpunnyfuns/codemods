@@ -1,242 +1,253 @@
 # Mappings
 
-Prop mapping configurations for NativeBase → Nordlys/Nordlys migrations.
+Prop mapping configurations for NativeBase → Nordlys migrations.
 
-Defines which props to extract to StyleSheet, transform, pass through, or drop during component migrations.
+Model-based system: formal models define both SOURCE (NativeBase) and TARGET (Nordlys), then complete mappings derive systematically from these models.
+
+## Architecture
+
+```
+Models (source of truth) → Mappings (derived) → Validation (enforced)
+```
 
 ## Structure
 
-| File                       | Purpose                                                       |
-| -------------------------- | ------------------------------------------------------------- |
-| **Common Modules** (`common/`) |                                                       |
-| `common/style-props.js`    | Reusable style prop mappings (spacing, sizing, colors, etc.)  |
-| `common/direct-props.js`   | Props passed through unchanged (events, accessibility)        |
-| `common/drop-props.js`     | Props to remove (pseudo-props, theme overrides)               |
-| `common/value-maps.js`     | Value transformations (align, justify)                        |
-| `common/pseudo-props.js`   | NativeBase pseudo-prop definitions (\_hover, \_pressed, etc.) |
-| `common/theme-props.js`    | NativeBase theme system props (colorScheme, variant)          |
-| **Component Mappings**          |                                                               |
-| `box-props.js`                  | Box component prop mappings                                   |
-| `stack-props.js`                | Stack (HStack/VStack) component prop mappings                 |
-| `pressable-props.js`            | Pressable component prop mappings                             |
-| `button-props.js`               | Button component prop mappings                                |
-| `switch-props.js`               | Switch component prop mappings                                |
-| `avatar-props.js`               | Avatar component prop mappings                                |
-| **Reference**                   |                                                               |
-| `color-mappings.js`             | NativeBase → Nordlys color token mappings                     |
-| `nativebase-styled-props.js`    | Complete NativeBase styled-system reference                   |
+| File                           | Purpose                                                              |
+| ------------------------------ | -------------------------------------------------------------------- |
+| **Models**                     |                                                                      |
+| `nativebase-styled-props.js`   | SOURCE model - Complete NativeBase styled-system documentation       |
+| `nordlys-props.js`             | TARGET model - Nordlys component capabilities and constraints        |
+| **Mappings**                   |                                                                      |
+| `props-style.js`               | NativeBase → Nordlys style prop mappings (extracted to StyleSheet)   |
+| `props-direct.js`              | Props that pass through unchanged (events, accessibility)            |
+| `props-drop.js`                | Props to remove (pseudo-props, platform overrides)                   |
+| `props-pseudo.js`              | NativeBase pseudo-prop definitions (\_hover, \_pressed, etc.)        |
+| `props-theme.js`               | NativeBase theme system props (colorScheme, variant, size)           |
+| **Value Transformations**      |                                                                      |
+| `maps-color.js`                | NativeBase → Nordlys color token remapping                           |
+| `maps-values.js`               | String value transformations (align, justify)                        |
 
-## Mapping Format
+## Models
 
-Each component mapping file exports four constants used by `categorizeProps()`:
+### nativebase-styled-props.js
+
+**SOURCE MODEL** - Complete NativeBase styled-system reference.
+
+Documents all NativeBase styled-props with categorization:
 
 ```javascript
-export const STYLE_PROPS = {
-  // Extract to StyleSheet
-};
+// React Native Compatibility:
+// - RN_COMPATIBLE: Works in React Native
+// - WEB_ONLY: CSS-only, drop for RN migrations
+// - TEXT_ONLY: Only works on Text components, not View
+// - RN_LIMITED: Partial support in RN
+// - IMAGE_ONLY: Only works on Image components
 
-export const TRANSFORM_PROPS = {
-  // Rename/transform on element
-};
-
-export const DIRECT_PROPS = [
-  // Pass through unchanged
-];
-
-export const DROP_PROPS = [
-  // Remove from element
-];
+// Nordlys Mapping Strategy:
+// - DIRECT: Map directly to RN prop (e.g., p → padding)
+// - TOKEN: Use Nordlys token helper (e.g., bg → backgroundColor with color token)
+// - VALUE_MAP: Transform string values (e.g., align: start → flex-start)
+// - DROP: Remove (web-only, unsupported, handled differently in Nordlys)
 ```
-
-## Common Modules
-
-### common/style-props.js
-
-Reusable style prop mappings organized by category.
 
 **Exports:**
 
 ```javascript
-SPACING; // m, mt, mb, ml, mr, mx, my, p, pt, pb, pl, pr, px, py
-SIZING; // w, h, minW, maxW, minH, maxH, width, height
-COLOR; // bg, bgColor, backgroundColor, borderColor
-BORDER; // borderWidth, borderRadius, borderTopWidth, etc.
-LAYOUT; // flex, flexDirection, alignItems, justifyContent, position, etc.
+SPACING      // margin, padding, gap - all with space scale
+LAYOUT       // width, height, min/max, overflow, display, textAlign
+FLEXBOX      // alignItems, justifyContent, flex, etc.
+POSITION     // position, top, right, bottom, left, zIndex
+COLOR        // color, backgroundColor, opacity, tintColor, textDecorationColor
+BORDER       // borderWidth, borderRadius, borderColor, borderStyle + all variants
+BACKGROUND   // backgroundImage, backgroundSize, etc. (WEB_ONLY)
+TYPOGRAPHY   // fontFamily, fontSize, textAlign, etc. (TEXT_ONLY)
+EXTRA        // outline, cursor, shadow, userSelect (mostly WEB_ONLY)
+ALL_STYLED_PROPS  // Combined
+WEB_ONLY_PROPS    // List of props to drop for RN
 ```
 
-**Format options:**
+**Note:** Our codemods use React Native native shorthands:
 
-1. **Simple string mapping:**
+- `mx` → `marginHorizontal` (not `['marginLeft', 'marginRight']` like NativeBase)
+- `my` → `marginVertical` (not `['marginTop', 'marginBottom']`)
+- Same for `px`/`py`
+
+### nordlys-props.js
+
+**TARGET MODEL** - Nordlys component capabilities and constraints.
+
+Documents what's valid in Nordlys output:
+
+**Exports:**
 
 ```javascript
-SPACING = {
-  p: "padding",
-  m: "margin",
-  mt: "marginTop",
+// Design Tokens
+SPACE_TOKENS           // ['zero', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']
+RADIUS_TOKENS          // ['xs', 'sm', 'md', 'lg', 'xl', '2xl']
+COLOR_SYSTEM           // { tokenHelper: 'color', supportsNestedPaths: true, ... }
+
+// React Native View Style Props
+LAYOUT_PROPS           // display, width, height, min/max, overflow, aspectRatio, direction
+FLEXBOX_PROPS          // flex, flexDirection, alignItems, justifyContent, gap, etc.
+SPACING_PROPS          // margin*, padding* (including Horizontal/Vertical)
+POSITION_PROPS         // position, top, right, bottom, left, start, end, zIndex
+BORDER_PROPS           // borderWidth, borderRadius, borderColor, borderStyle + all variants
+COLOR_PROPS            // backgroundColor, opacity
+TRANSFORM_PROPS        // transform, rotation, scaleX, scaleY, translateX, translateY
+SHADOW_PROPS           // shadowColor, shadowOffset, shadowOpacity, shadowRadius, elevation
+ALL_VIEW_STYLE_PROPS   // Combined
+
+// Props That Expect Nordlys Tokens
+PROPS_USING_SPACE_TOKENS   // gap, margin*, padding*, top, right, bottom, left, etc.
+PROPS_USING_RADIUS_TOKENS  // borderRadius, borderTopLeftRadius, etc.
+PROPS_USING_COLOR_TOKENS   // backgroundColor, borderColor, shadowColor, etc.
+
+// Constraints
+NUMERIC_ONLY_PROPS     // flex, zIndex, opacity, borderWidth, etc. (no tokens)
+DIMENSION_PROPS        // width, height, margin, padding (numbers/percentages, not semantic tokens)
+UNSUPPORTED_ON_VIEW    // textAlign, fontSize, fontFamily - Text only
+TEXT_STYLE_PROPS       // color, fontFamily, fontSize, textAlign, etc.
+
+// Component Constraints
+BUTTON_NO_STYLE_PROPS         // true (must wrap in View if style props needed)
+SWITCH_NO_STYLE_PROPS         // true
+AVATAR_NO_STYLE_PROPS         // true
+TYPOGRAPHY_RESTRICTED_PROPS   // { managed: [...], allowed: [...], wrapForLayout: true }
+```
+
+## Mappings
+
+### props-style.js
+
+**NativeBase → Nordlys style prop mappings** (extracted to StyleSheet).
+
+Complete mappings derived from both models. Used by `categorizeProps()` in `../props.js`.
+
+**Format:**
+
+```javascript
+// Simple direct mapping
+export const flexbox = {
+  flex: 'flex',
+  alignItems: 'alignItems',
+  flexDir: 'flexDirection',  // Rename
 };
-```
 
-2. **Multi-property expansion:**
+// With token helper
+export const spacing = {
+  p: { styleName: 'padding', tokenHelper: 'space' },
+  m: { styleName: 'margin', tokenHelper: 'space' },
+  gap: { styleName: 'gap', tokenHelper: 'space' },
+};
 
-```javascript
-SPACING = {
-  px: {
-    styleName: null,
-    properties: ["paddingLeft", "paddingRight"],
+// With value mapping
+export const sizing = {
+  width: { styleName: 'width', valueMap: { full: '100%' } },
+};
+
+// Multi-property expansion
+export const border = {
+  roundedTop: {
+    properties: ['borderTopLeftRadius', 'borderTopRightRadius'],
+    tokenHelper: 'radius',
   },
 };
 ```
 
-3. **With token helper:**
+**Exports:**
 
 ```javascript
-COLOR = {
-  bg: {
-    styleName: "backgroundColor",
-    tokenHelper: "color",
-  },
-};
-// bg="blue.500" → backgroundColor: color.blue['500']
+spacing   // margin, padding, gap (with space tokens)
+sizing    // width, height, min/max (with dimension value maps)
+color     // backgroundColor (with color tokens)
+border    // borderRadius, borderColor, borderWidth (with tokens)
+layout    // display, overflow, textAlign
+flexbox   // alignItems, justifyContent, flex, etc.
+position  // position, top, right, bottom, left, zIndex (with space tokens)
+text      // color, fontFamily, fontSize, textAlign, etc. (TEXT_ONLY)
+extra     // opacity, tintColor (IMAGE_ONLY)
 ```
 
-4. **With value mapping:**
-
-```javascript
-BORDER = {
-  rounded: {
-    styleName: "borderRadius",
-    valueMap: {
-      none: 0,
-      sm: 2,
-      md: 4,
-      lg: 8,
-      full: 9999,
-    },
-  },
-};
-// rounded="md" → borderRadius: 4
-```
-
----
-
-### common/direct-props.js
+### props-direct.js
 
 Standard React Native props that pass through unchanged.
 
 **Exports:**
 
 ```javascript
-EVENT_HANDLERS; // onPress, onLongPress, onLayout, onFocus, onBlur
-ACCESSIBILITY; // testID, accessibilityLabel, accessibilityRole, etc.
-COMMON; // Combination of EVENT_HANDLERS + ACCESSIBILITY
+export const directProps = [
+  'testID',
+  'onPress',
+  'onLongPress',
+  'accessibilityLabel',
+  'accessibilityHint',
+  'accessibilityRole',
+  'accessible',
+  // ... more
+];
 ```
 
-**Usage:**
-
-```javascript
-import * as commonDirectProps from "./direct-props.js";
-
-export const DIRECT_PROPS = commonDirectProps.COMMON;
-```
-
----
-
-### common/drop-props.js
+### props-drop.js
 
 NativeBase-specific props to remove during migration.
 
 **Exports:**
 
 ```javascript
-PLATFORM_OVERRIDES; // _web, _ios, _android
-THEME_OVERRIDES; // _light, _dark
-COMPONENT_SPECIFIC; // shadow
-COMMON; // All drop props combined
+export const dropProps = [
+  // Pseudo-props (from props-pseudo.js)
+  ...pseudoProps,
+  // Theme props that don't map to Nordlys (from props-theme.js)
+  'colorScheme',
+  // Platform overrides
+  '_web',
+  '_ios',
+  '_android',
+  // Theme overrides
+  '_light',
+  '_dark',
+  // Web-only props (from nativebase-styled-props.js WEB_ONLY_PROPS)
+  'backgroundImage',
+  'cursor',
+  'outline',
+  // ... more
+];
 ```
 
-**Includes all pseudo-props and theme props:**
+### props-pseudo.js
 
-- Imported from `pseudo-props.js` (ALL_PSEUDO_PROPS)
-- Imported from `theme-props.js` (ALL_THEME_PROPS)
-
----
-
-### common/value-maps.js
-
-Value transformations for string literals.
+Complete list of NativeBase pseudo-props.
 
 **Exports:**
 
 ```javascript
-ALIGN_VALUES; // start → flex-start, end → flex-end, center, stretch, baseline
-JUSTIFY_VALUES; // start → flex-start, between → space-between, around, evenly
+INTERACTION_PSEUDO   // _hover, _pressed, _focus, _active, _disabled
+VALIDATION_PSEUDO    // _invalid, _valid, _checked, _indeterminate
+NESTED_PSEUDO        // _text, _icon, _stack, _input, _web, _ios, _android, etc.
+ALL_PSEUDO_PROPS     // Combined
 ```
 
-**Usage in TRANSFORM_PROPS:**
+All pseudo-props are dropped - Nordlys uses different patterns.
 
-```javascript
-import * as commonValueMaps from "./value-maps.js";
-
-export const TRANSFORM_PROPS = {
-  align: {
-    propName: "alignItems",
-    valueMap: commonValueMaps.ALIGN_VALUES,
-  },
-  justify: {
-    propName: "justifyContent",
-    valueMap: commonValueMaps.JUSTIFY_VALUES,
-  },
-};
-```
-
-**Notes:**
-
-- Only maps string literals (align="start")
-- Numeric values pass through unchanged
-- Semantic spacing tokens (sm, md, lg) are identical between NativeBase and Nordlys - no transformation needed
-
----
-
-### common/pseudo-props.js
-
-Complete list of NativeBase pseudo-props for interaction states, variants, and nested components.
-
-**Exports:**
-
-```javascript
-INTERACTION_PSEUDO; // _hover, _pressed, _focus, _active, _disabled
-VALIDATION_PSEUDO; // _invalid, _valid, _checked, _indeterminate
-NESTED_PSEUDO; // _text, _icon, _stack, _input, _web, _ios, _android, etc.
-ALL_PSEUDO_PROPS; // Combination of all pseudo-props
-```
-
-All pseudo-props are dropped during migration - Nordlys/Nordlys use different patterns.
-
----
-
-### common/theme-props.js
+### props-theme.js
 
 NativeBase theme system props.
 
 **Exports:**
 
 ```javascript
-THEME_VARIANTS; // variant, size, colorScheme
-THEME_CUSTOMIZATION; // isDisabled, isInvalid, isReadOnly, isRequired
-ALL_THEME_PROPS; // Combined
+THEME_VARIANTS          // variant, size, colorScheme
+THEME_CUSTOMIZATION     // isDisabled, isInvalid, isReadOnly, isRequired
+ALL_THEME_PROPS         // Combined
 ```
 
-These are typically dropped or transformed:
+These are typically dropped or transformed in TRANSFORM_PROPS.
 
-- `variant` → may map to Nordlys variant
-- `size` → may map to Nordlys size
-- `isDisabled` → often becomes `disabled` (TRANSFORM_PROPS)
+## Value Transformations
 
----
+### maps-color.js
 
-### color-mappings.js
-
-Maps NativeBase semantic color tokens to Nordlys system tokens.
+Maps NativeBase color tokens to Nordlys color system.
 
 **Exports:**
 
@@ -247,344 +258,110 @@ getNordlysColorPath(nativeBaseColor) → string
 **Example:**
 
 ```javascript
-getNordlysColorPath("blue.500");
-// Returns: 'blue.500' (or mapped equivalent)
+getNordlysColorPath('blue.500')        // → 'blue.500'
+getNordlysColorPath('primary.600')     // → 'background.primary' (or mapped equivalent)
 ```
 
-Used by `processTokenHelper()` when `tokenHelper: 'color'` is configured.
+Used by `processTokenHelper()` in `../props.js` when `tokenHelper: 'color'`.
 
----
+### maps-values.js
 
-### nativebase-styled-props.js
+String value transformations.
 
-**Reference only** - Complete list of NativeBase styled-system props for documentation.
-
-Not used directly in migrations. Serves as reference for building component-specific mappings.
-
-## Component Mappings
-
-### box-props.js
-
-Box component migration to React Native View.
-
-**Configuration:**
+**Exports:**
 
 ```javascript
-STYLE_PROPS = {
-  ...commonStyleProps.SPACING,
-  ...commonStyleProps.SIZING,
-  ...commonStyleProps.COLOR,
-  ...commonStyleProps.BORDER,
-  ...commonStyleProps.LAYOUT,
+ALIGN_VALUES      // start → flex-start, end → flex-end, center, stretch, baseline
+JUSTIFY_VALUES    // start → flex-start, between → space-between, around, evenly
+```
 
-  // Box-specific overrides
-  bg: { styleName: "backgroundColor", tokenHelper: "color" },
-  rounded: { styleName: "borderRadius", tokenHelper: "radius" },
+**Usage in component TRANSFORM_PROPS:**
+
+```javascript
+export const transformProps = {
+  align: { propName: 'alignItems', valueMap: ALIGN_VALUES },
+  justify: { propName: 'justifyContent', valueMap: JUSTIFY_VALUES },
 };
-
-TRANSFORM_PROPS = {}; // No prop renames for Box
-
-DIRECT_PROPS = commonDirectProps.COMMON;
-
-DROP_PROPS = [
-  ...commonDropProps.COMMON,
-  "shadow", // Use style-based shadows in Nordlys
-];
 ```
 
-**Result:**
+## Usage in Codemods
 
-- Style props → StyleSheet.create()
-- Direct props → passed through
-- Token helpers → auto-imported (color, radius, space)
-
----
-
-### stack-props.js
-
-Stack (HStack/VStack) component migration to Nordlys Stack.
-
-**Configuration:**
+Each codemod imports these mappings and passes to `categorizeProps()`:
 
 ```javascript
-STYLE_PROPS = {
-  space: { styleName: "gap", tokenHelper: "space" },
-  ...commonStyleProps.SPACING,
-  ...commonStyleProps.SIZING,
-};
+import { categorizeProps } from './props.js'
+import {
+  border,
+  color,
+  extra,
+  flexbox,
+  layout,
+  position,
+  sizing,
+  spacing,
+  text,
+} from './mappings/props-style.js'
 
-TRANSFORM_PROPS = {
-  align: { propName: "alignItems", valueMap: ALIGN_VALUES },
-  justify: { propName: "justifyContent", valueMap: JUSTIFY_VALUES },
-  reversed: "reverse",
-};
-
-DIRECT_PROPS = commonDirectProps.COMMON;
-
-DROP_PROPS = [
-  ...commonDropProps.COMMON,
-  "divider", // Nordlys Stack doesn't support divider
-  "_text",
-  "_stack",
-];
-```
-
-**Auto-added props:**
-
-- `direction` → 'row' (HStack) or 'column' (VStack)
-
----
-
-### pressable-props.js
-
-Pressable component migration (NativeBase → React Native).
-
-**Configuration:**
-
-```javascript
-STYLE_PROPS = {
-  ...commonStyleProps.SPACING,
-  ...commonStyleProps.SIZING,
-  bg: { styleName: "backgroundColor", tokenHelper: "color" },
-};
-
-TRANSFORM_PROPS = {
-  isDisabled: "disabled",
-};
-
-DIRECT_PROPS = [
-  ...commonDirectProps.COMMON,
-  "onPressIn",
-  "onPressOut",
-  "hitSlop",
-  "android_ripple",
-];
-
-DROP_PROPS = commonDropProps.COMMON;
-```
-
-**Auto-added props:**
-
-- `accessibilityRole="button"` (default if not present)
-
----
-
-### button-props.js
-
-Button component migration (NativeBase/Common → Nordlys).
-
-**Note:** Button has custom transformation logic for extracting icon from `leftIcon={<Icon name="..." />}` and converting children to `text` prop.
-
-**Configuration:**
-
-```javascript
-STYLE_PROPS = {}; // Button doesn't accept style props in Nordlys
-
-TRANSFORM_PROPS = {
-  isDisabled: "disabled",
-};
-
-DIRECT_PROPS = ["size", "variant", "onPress", "testID", "isLoading", "type"];
-
-DROP_PROPS = [
-  ...commonDropProps.COMMON,
-  "leftIcon", // Extracted to icon prop via custom logic
-  "rightIcon", // Not supported
-  "_text",
-  "_loading",
-  // All style props (margin, padding, width, height, bg, etc.)
-];
-```
-
-**Custom transformations:**
-
-- `leftIcon={<Icon name="Plus" />}` → `icon="Plus"`
-- `{children}` → `text={children}`
-- Auto-adds `type="solid"` if not present
-
----
-
-### switch-props.js
-
-Switch component migration (NativeBase/Common → Nordlys).
-
-**Note:** Switch has custom transformation logic for wrapping children in `<Switch.Label>` and converting `label` prop to `<Switch.Description>`.
-
-**Configuration:**
-
-```javascript
-STYLE_PROPS = {}; // Switch doesn't accept style props in Nordlys
-
-TRANSFORM_PROPS = {
-  isChecked: "value",
-  onToggle: "onValueChange",
-  isDisabled: "disabled",
-};
-
-DIRECT_PROPS = ["testID", "accessibilityLabel", "accessibilityHint"];
-
-DROP_PROPS = [
-  "label", // Extracted to Switch.Description via custom logic
-  "switchPosition",
-  "hStackProps",
-  "childrenProps",
-  "labelProps",
-  "LeftElement",
-  // Pseudo props
-];
-```
-
-**Custom transformations:**
-
-- `label="Label"` → `<Switch.Description>Label</Switch.Description>`
-- `{children}` → `<Switch.Label>{children}</Switch.Label>`
-
----
-
-### avatar-props.js
-
-Avatar component migration (NativeBase/Common → Nordlys).
-
-**Note:** Avatar has custom transformation logic for converting icon/image props to object expressions.
-
-**Configuration:**
-
-```javascript
-STYLE_PROPS = {}; // Avatar doesn't accept style props in Nordlys
-
-TRANSFORM_PROPS = {}; // No prop renames
-
-DIRECT_PROPS = ["size", "testID", "accessibilityLabel"];
-
-DROP_PROPS = [
-  // Avatar-specific props transformed via custom logic
-  "iconName", // → icon={{ name, fill }}
-  "imageUri", // → image={{ source: { uri } }}
-  "imageSource", // → image={{ source }}
-  "letters", // Not supported in Nordlys
-  // Color/style props
-  "lettersColor",
-  "bgColor",
-  "bg",
-  // Image props
-  "placeholder",
-  "resizeMode",
-  "source",
-  // Size props
-  "w",
-  "h",
-];
-```
-
-**Custom transformations:**
-
-- `iconName="user"` → `icon={{ name: "user", fill: "blue" }}`
-- `imageUri="url"` → `image={{ source: { uri: "url" } }}`
-- `imageSource={source}` → `image={{ source }}`
-- `letters="AB"` → Warning (not supported)
-
-## Creating New Component Mappings
-
-1. **Import common modules:**
-
-```javascript
-import * as commonStyleProps from "./common/style-props.js";
-import * as commonDirectProps from "./common/direct-props.js";
-import * as commonDropProps from "./common/drop-props.js";
-import * as commonValueMaps from "./common/value-maps.js";
-```
-
-2. **Define STYLE_PROPS:**
-
-```javascript
-export const STYLE_PROPS = {
-  // Reuse common mappings
-  ...commonStyleProps.SPACING,
-  ...commonStyleProps.SIZING,
-
-  // Component-specific overrides
-  iconSize: "fontSize",
-
-  // With token helper
-  iconColor: {
-    styleName: "color",
-    tokenHelper: "color",
+// Component-specific prop configuration
+const componentProps = {
+  styleProps: {
+    ...spacing,
+    ...sizing,
+    ...color,
+    ...border,
   },
-};
-```
-
-3. **Define TRANSFORM_PROPS:**
-
-```javascript
-export const TRANSFORM_PROPS = {
-  // Simple rename
-  isDisabled: "disabled",
-
-  // With value mapping
-  align: {
-    propName: "alignItems",
-    valueMap: commonValueMaps.ALIGN_VALUES,
+  transformProps: {
+    isDisabled: 'disabled',
+    onToggle: 'onValueChange',
   },
-};
+  directProps: ['testID', 'accessibilityLabel'],
+  dropProps: ['_hover', '_pressed', 'shadow'],
+}
+
+// Categorize props
+const {
+  styleProps,
+  inlineStyles,
+  transformedProps,
+  propsToRemove,
+  usedTokenHelpers,
+} = categorizeProps(attributes, componentProps, j)
 ```
 
-4. **Define DIRECT_PROPS:**
+## Validation
+
+Validation in `../props.js` derives from `nordlys-props.js`:
 
 ```javascript
-export const DIRECT_PROPS = [
-  ...commonDirectProps.COMMON,
-  "numberOfLines", // Component-specific
-  "ellipsizeMode",
-];
+import {
+  DIMENSION_PROPS,
+  NUMERIC_ONLY_PROPS,
+  RADIUS_TOKENS,
+  SPACE_TOKENS,
+} from './mappings/nordlys-props.js'
+
+// Validation functions use these constants
+export const validSpaceTokens = SPACE_TOKENS
+export const validRadiusTokens = RADIUS_TOKENS
 ```
 
-5. **Define DROP_PROPS:**
+**Validation rules:**
 
-```javascript
-export const DROP_PROPS = [
-  ...commonDropProps.COMMON,
-  "isTruncated", // NativeBase-specific
-  "_text", // Pseudo-prop
-];
-```
-
-## Value Mapping Priority
-
-1. **Token helpers** (if configured)
-
-   - `bg="blue.500"` with `tokenHelper: 'color'`
-   - Result: `backgroundColor: color.blue['500']`
-
-2. **Value mappings** (if configured)
-
-   - `align="start"` with `valueMap: { start: 'flex-start' }`
-   - Result: `alignItems: 'flex-start'`
-
-3. **Pass through** (no transformation)
-   - `m={4}` → `margin: 4`
-   - `p="xl"` → `padding: 'xl'` (semantic token)
-
-## StyleSheet vs Inline Styles
-
-**Extracted to StyleSheet:**
-
-- Literal values (strings, numbers, booleans)
-- Token helper references (`color.blue.500`, `space.md`)
-
-**Kept inline:**
-
-- Variables (`m={props.spacing}`)
-- Function calls (`bg={getColor()}`)
-- User member expressions (`p={config.padding}`)
+- Semantic space tokens ('sm', 'md', 'lg') are invalid for dimension props (width, height)
+- Dimension props accept numbers, percentages, or 'auto'
+- Numeric props (flex, zIndex, opacity) shouldn't be strings
+- Text-only props (textAlign, fontSize) are invalid for View components
 
 ## Design Principles
 
-**Reusability:** Common patterns extracted to reusable modules
+**Model-based:** Formal models define SOURCE (NativeBase) and TARGET (Nordlys)
 
-**Composability:** Mix and match common modules with component-specific overrides
+**Single source of truth:** Validation derives from models, not hardcoded lists
 
-**Clarity:** Each mapping file focuses on a single component or category
+**Systematic:** All NativeBase props documented and categorized for complete coverage
 
-**Documentation:** Comments explain non-obvious mappings and decisions
+**Composable:** Mix and match mapping modules with component-specific overrides
 
-**Type safety:** Structured formats validated by `categorizeProps()`
+**Type-safe:** Structured formats validated by `categorizeProps()`
+
+**Maintainable:** Update models, mappings derive automatically
