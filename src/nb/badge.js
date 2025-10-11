@@ -16,7 +16,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Badge prop mappings
 const styleProps = {
@@ -117,11 +117,15 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
+      droppedProps,
+      invalidStyles,
     } = categorizeProps(attributes, badgeProps, j)
 
     for (const h of newHelpers) {
       usedTokenHelpers.add(h)
     }
+
+    addElementComment(path, droppedProps, invalidStyles, j)
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 

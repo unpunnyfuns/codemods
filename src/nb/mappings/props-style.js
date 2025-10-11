@@ -1,225 +1,248 @@
 /**
  * NativeBase → Nordlys Style Prop Mappings
  *
- * Complete mappings derived from:
- * - SOURCE: nativebase-styled-props.js (NativeBase model)
- * - TARGET: nordlys-props.js (Nordlys model)
+ * Generated from models using transformation rules.
  *
- * Mapping format:
- * - String: Direct map (e.g., 'flex' → style.flex)
- * - { styleName: 'x' }: Rename prop (e.g., bg → style.backgroundColor)
- * - { styleName: 'x', tokenHelper: 'space' }: Use token (e.g., p → style.padding with space.md)
- * - { styleName: 'x', valueMap: {...} }: Transform values (e.g., full → 100%)
- * - { properties: ['x', 'y'] }: Expand to multiple (e.g., mx → marginLeft, marginRight)
+ * SOURCE: nativebase-props.js (NativeBase model)
+ * TARGET: nordlys-props.js (Nordlys model)
+ * CONVERSIONS: maps-tokens.js, maps-color.js, maps-values.js
+ *
+ * Value transformation priority (Option B):
+ * 1. valueMap (explicit string → value)
+ * 2. tokenHelper (named token conversion)
+ * 3. pass-through (numbers, expressions)
  *
  * Used by: categorizeProps() in props.js
  */
 
-export const spacing = {
-  // Margin - full names
-  margin: { styleName: 'margin', tokenHelper: 'space' },
-  marginTop: { styleName: 'marginTop', tokenHelper: 'space' },
-  marginBottom: { styleName: 'marginBottom', tokenHelper: 'space' },
-  marginLeft: { styleName: 'marginLeft', tokenHelper: 'space' },
-  marginRight: { styleName: 'marginRight', tokenHelper: 'space' },
-
-  // Margin - shortcuts
-  m: { styleName: 'margin', tokenHelper: 'space' },
-  mt: { styleName: 'marginTop', tokenHelper: 'space' },
-  mb: { styleName: 'marginBottom', tokenHelper: 'space' },
-  ml: { styleName: 'marginLeft', tokenHelper: 'space' },
-  mr: { styleName: 'marginRight', tokenHelper: 'space' },
-  mx: { styleName: 'marginHorizontal', tokenHelper: 'space' },
-  my: { styleName: 'marginVertical', tokenHelper: 'space' },
-
-  // Margin - NativeBase long-form shortcuts (map to RN native shorthands)
-  marginX: { styleName: 'marginHorizontal', tokenHelper: 'space' },
-  marginY: { styleName: 'marginVertical', tokenHelper: 'space' },
-
-  // Padding - full names
-  padding: { styleName: 'padding', tokenHelper: 'space' },
-  paddingTop: { styleName: 'paddingTop', tokenHelper: 'space' },
-  paddingBottom: { styleName: 'paddingBottom', tokenHelper: 'space' },
-  paddingLeft: { styleName: 'paddingLeft', tokenHelper: 'space' },
-  paddingRight: { styleName: 'paddingRight', tokenHelper: 'space' },
-
-  // Padding - shortcuts
-  p: { styleName: 'padding', tokenHelper: 'space' },
-  pt: { styleName: 'paddingTop', tokenHelper: 'space' },
-  pb: { styleName: 'paddingBottom', tokenHelper: 'space' },
-  pl: { styleName: 'paddingLeft', tokenHelper: 'space' },
-  pr: { styleName: 'paddingRight', tokenHelper: 'space' },
-  px: { styleName: 'paddingHorizontal', tokenHelper: 'space' },
-  py: { styleName: 'paddingVertical', tokenHelper: 'space' },
-
-  // Padding - NativeBase long-form shortcuts (map to RN native shorthands)
-  paddingX: { styleName: 'paddingHorizontal', tokenHelper: 'space' },
-  paddingY: { styleName: 'paddingVertical', tokenHelper: 'space' },
-
-  // Gap (flexbox gap)
-  gap: { styleName: 'gap', tokenHelper: 'space' },
-}
+import { generateMappings } from './generate-mappings.js'
+import { FLEXBOX_PROPS, SPACING_PROPS } from './nativebase-props.js'
 
 // Value mapping for dimension values
 const dimensionValues = {
   full: '100%',
 }
 
-export const sizing = {
-  // Full names
-  width: { styleName: 'width', valueMap: dimensionValues },
-  height: { styleName: 'height', valueMap: dimensionValues },
-  minWidth: { styleName: 'minWidth', valueMap: dimensionValues },
-  minHeight: { styleName: 'minHeight', valueMap: dimensionValues },
-  maxWidth: { styleName: 'maxWidth', valueMap: dimensionValues },
-  maxHeight: { styleName: 'maxHeight', valueMap: dimensionValues },
+/**
+ * Spacing Props (margin, padding, gap)
+ * Source: NativeBase SPACING_PROPS
+ * Token: space (with scale conversion via maps-tokens.js)
+ */
+export const spacing = generateMappings(SPACING_PROPS, {
+  tokenHelper: 'space',
+  shortcuts: {
+    m: 'margin',
+    mt: 'marginTop',
+    mb: 'marginBottom',
+    ml: 'marginLeft',
+    mr: 'marginRight',
+    mx: 'marginHorizontal',
+    my: 'marginVertical',
+    ms: 'marginStart',
+    me: 'marginEnd',
+    p: 'padding',
+    pt: 'paddingTop',
+    pb: 'paddingBottom',
+    pl: 'paddingLeft',
+    pr: 'paddingRight',
+    px: 'paddingHorizontal',
+    py: 'paddingVertical',
+    ps: 'paddingStart',
+    pe: 'paddingEnd',
+  },
+  renames: {
+    marginX: 'marginHorizontal',
+    marginY: 'marginVertical',
+    paddingX: 'paddingHorizontal',
+    paddingY: 'paddingVertical',
+  },
+})
 
-  // Shortcuts
-  w: { styleName: 'width', valueMap: dimensionValues },
-  h: { styleName: 'height', valueMap: dimensionValues },
-  minW: { styleName: 'minWidth', valueMap: dimensionValues },
-  minH: { styleName: 'minHeight', valueMap: dimensionValues },
-  maxW: { styleName: 'maxWidth', valueMap: dimensionValues },
-  maxH: { styleName: 'maxHeight', valueMap: dimensionValues },
+/**
+ * Sizing Props (width, height, min/max)
+ * Source: Subset of NativeBase LAYOUT_PROPS
+ * ValueMap: full → 100%
+ */
+const sizingProps = [
+  'width',
+  'height',
+  'minWidth',
+  'minHeight',
+  'maxWidth',
+  'maxHeight',
+  'size',
+  'boxSize',
+]
+export const sizing = generateMappings(sizingProps, {
+  valueMap: dimensionValues,
+  shortcuts: {
+    w: 'width',
+    h: 'height',
+    minW: 'minWidth',
+    minH: 'minHeight',
+    maxW: 'maxWidth',
+    maxH: 'maxHeight',
+  },
+  expansions: {
+    size: ['width', 'height'],
+    boxSize: ['width', 'height'],
+  },
+})
 
-  // Multi-property
-  size: { properties: ['width', 'height'], valueMap: dimensionValues },
-  boxSize: { properties: ['width', 'height'], valueMap: dimensionValues },
-}
+/**
+ * Color Props (background)
+ * Source: NativeBase COLOR_PROPS
+ * Token: color (with path remapping via maps-color.js)
+ */
+const colorProps = ['bg', 'bgColor', 'background', 'backgroundColor']
+export const color = generateMappings(colorProps, {
+  tokenHelper: 'color',
+  shortcuts: {
+    bg: 'backgroundColor',
+    bgColor: 'backgroundColor',
+    background: 'backgroundColor',
+  },
+})
 
-export const color = {
-  bg: { styleName: 'backgroundColor', tokenHelper: 'color' },
-  bgColor: { styleName: 'backgroundColor', tokenHelper: 'color' },
-  background: { styleName: 'backgroundColor', tokenHelper: 'color' },
-  backgroundColor: { styleName: 'backgroundColor', tokenHelper: 'color' },
-}
+/**
+ * Border Props
+ * Source: NativeBase BORDER_PROPS (subset - RN compatible)
+ * Tokens: color for borderColor, radius for borderRadius
+ */
+const borderColorProps = [
+  'borderColor',
+  'borderTopColor',
+  'borderBottomColor',
+  'borderLeftColor',
+  'borderRightColor',
+]
+const borderRadiusProps = [
+  'borderRadius',
+  'rounded',
+  'borderTopRadius',
+  'borderBottomRadius',
+  'borderLeftRadius',
+  'borderRightRadius',
+  'roundedTop',
+  'roundedBottom',
+  'roundedLeft',
+  'roundedRight',
+  'roundedTopLeft',
+  'roundedTopRight',
+  'roundedBottomLeft',
+  'roundedBottomRight',
+  'borderTopLeftRadius',
+  'borderTopRightRadius',
+  'borderBottomLeftRadius',
+  'borderBottomRightRadius',
+]
+const borderWidthStyleProps = [
+  'borderWidth',
+  'borderStyle',
+  'borderTopWidth',
+  'borderTopStyle',
+  'borderBottomWidth',
+  'borderBottomStyle',
+  'borderLeftWidth',
+  'borderLeftStyle',
+  'borderRightWidth',
+  'borderRightStyle',
+]
 
 export const border = {
-  // Base border properties
-  borderWidth: 'borderWidth',
-  borderStyle: 'borderStyle',
-  borderColor: { styleName: 'borderColor', tokenHelper: 'color' },
-
-  // Border radius - single
-  borderRadius: { styleName: 'borderRadius', tokenHelper: 'radius' },
-  rounded: { styleName: 'borderRadius', tokenHelper: 'radius' },
-
-  // Border radius - specific corners
-  borderTopLeftRadius: { styleName: 'borderTopLeftRadius', tokenHelper: 'radius' },
-  borderTopRightRadius: { styleName: 'borderTopRightRadius', tokenHelper: 'radius' },
-  borderBottomLeftRadius: { styleName: 'borderBottomLeftRadius', tokenHelper: 'radius' },
-  borderBottomRightRadius: { styleName: 'borderBottomRightRadius', tokenHelper: 'radius' },
-
-  // Border radius - rounded* shortcuts (specific corners)
-  roundedTopLeft: { styleName: 'borderTopLeftRadius', tokenHelper: 'radius' },
-  roundedTopRight: { styleName: 'borderTopRightRadius', tokenHelper: 'radius' },
-  roundedBottomLeft: { styleName: 'borderBottomLeftRadius', tokenHelper: 'radius' },
-  roundedBottomRight: { styleName: 'borderBottomRightRadius', tokenHelper: 'radius' },
-
-  // Border radius - multi-corner (expand to multiple)
-  borderTopRadius: {
-    properties: ['borderTopLeftRadius', 'borderTopRightRadius'],
+  ...generateMappings(borderWidthStyleProps, {}),
+  ...generateMappings(borderColorProps, { tokenHelper: 'color' }),
+  ...generateMappings(borderRadiusProps, {
     tokenHelper: 'radius',
-  },
-  borderBottomRadius: {
-    properties: ['borderBottomLeftRadius', 'borderBottomRightRadius'],
-    tokenHelper: 'radius',
-  },
-  borderLeftRadius: {
-    properties: ['borderTopLeftRadius', 'borderBottomLeftRadius'],
-    tokenHelper: 'radius',
-  },
-  borderRightRadius: {
-    properties: ['borderTopRightRadius', 'borderBottomRightRadius'],
-    tokenHelper: 'radius',
-  },
-  roundedTop: {
-    properties: ['borderTopLeftRadius', 'borderTopRightRadius'],
-    tokenHelper: 'radius',
-  },
-  roundedBottom: {
-    properties: ['borderBottomLeftRadius', 'borderBottomRightRadius'],
-    tokenHelper: 'radius',
-  },
-  roundedLeft: {
-    properties: ['borderTopLeftRadius', 'borderBottomLeftRadius'],
-    tokenHelper: 'radius',
-  },
-  roundedRight: {
-    properties: ['borderTopRightRadius', 'borderBottomRightRadius'],
-    tokenHelper: 'radius',
-  },
-
-  // Side-specific borders (width, color, style)
-  borderTopWidth: 'borderTopWidth',
-  borderTopColor: { styleName: 'borderTopColor', tokenHelper: 'color' },
-  borderTopStyle: 'borderTopStyle',
-  borderBottomWidth: 'borderBottomWidth',
-  borderBottomColor: { styleName: 'borderBottomColor', tokenHelper: 'color' },
-  borderBottomStyle: 'borderBottomStyle',
-  borderLeftWidth: 'borderLeftWidth',
-  borderLeftColor: { styleName: 'borderLeftColor', tokenHelper: 'color' },
-  borderLeftStyle: 'borderLeftStyle',
-  borderRightWidth: 'borderRightWidth',
-  borderRightColor: { styleName: 'borderRightColor', tokenHelper: 'color' },
-  borderRightStyle: 'borderRightStyle',
+    shortcuts: {
+      rounded: 'borderRadius',
+      roundedTop: 'borderTopRadius',
+      roundedBottom: 'borderBottomRadius',
+      roundedLeft: 'borderLeftRadius',
+      roundedRight: 'borderRightRadius',
+      roundedTopLeft: 'borderTopLeftRadius',
+      roundedTopRight: 'borderTopRightRadius',
+      roundedBottomLeft: 'borderBottomLeftRadius',
+      roundedBottomRight: 'borderBottomRightRadius',
+    },
+    expansions: {
+      borderTopRadius: ['borderTopLeftRadius', 'borderTopRightRadius'],
+      borderBottomRadius: ['borderBottomLeftRadius', 'borderBottomRightRadius'],
+      borderLeftRadius: ['borderTopLeftRadius', 'borderBottomLeftRadius'],
+      borderRightRadius: ['borderTopRightRadius', 'borderBottomRightRadius'],
+      roundedTop: ['borderTopLeftRadius', 'borderTopRightRadius'],
+      roundedBottom: ['borderBottomLeftRadius', 'borderBottomRightRadius'],
+      roundedLeft: ['borderTopLeftRadius', 'borderBottomLeftRadius'],
+      roundedRight: ['borderTopRightRadius', 'borderBottomRightRadius'],
+    },
+  }),
 }
 
-export const layout = {
-  // Display and overflow
-  display: 'display',
-  overflow: 'overflow',
+/**
+ * Layout Props (display, overflow)
+ * Source: NativeBase LAYOUT_PROPS (subset - non-sizing)
+ */
+const layoutProps = ['display', 'overflow', 'textAlign']
+export const layout = generateMappings(layoutProps, {})
 
-  // TEXT_ONLY - Only works on Text components
-  textAlign: 'textAlign',
-}
+/**
+ * Flexbox Props
+ * Source: NativeBase FLEXBOX_PROPS
+ */
+export const flexbox = generateMappings(FLEXBOX_PROPS, {
+  shortcuts: {
+    flexDir: 'flexDirection',
+  },
+})
 
-export const flexbox = {
-  alignItems: 'alignItems',
-  alignContent: 'alignContent',
-  alignSelf: 'alignSelf',
-  justifyItems: 'justifyItems',
-  justifyContent: 'justifyContent',
-  justifySelf: 'justifySelf',
-  flex: 'flex',
-  flexGrow: 'flexGrow',
-  flexShrink: 'flexShrink',
-  flexBasis: 'flexBasis',
-  flexDirection: 'flexDirection',
-  flexDir: 'flexDirection',
-  flexWrap: 'flexWrap',
-  order: 'order',
-}
-
+/**
+ * Position Props
+ * Source: NativeBase POSITION_PROPS
+ * Token: space for top/right/bottom/left
+ */
+const positionCoordinateProps = ['top', 'right', 'bottom', 'left', 'start', 'end']
+const positionOtherProps = ['position', 'zIndex']
 export const position = {
-  position: 'position',
-  top: { styleName: 'top', tokenHelper: 'space' },
-  right: { styleName: 'right', tokenHelper: 'space' },
-  bottom: { styleName: 'bottom', tokenHelper: 'space' },
-  left: { styleName: 'left', tokenHelper: 'space' },
-  zIndex: 'zIndex',
+  ...generateMappings(positionOtherProps, {}),
+  ...generateMappings(positionCoordinateProps, { tokenHelper: 'space' }),
 }
 
+/**
+ * Text Props (typography)
+ * Source: NativeBase TYPOGRAPHY_PROPS (TEXT_ONLY)
+ * Token: color for text color
+ */
+const textColorProps = ['color', 'textDecorationColor']
+const textOtherProps = [
+  'fontFamily',
+  'fontSize',
+  'fontStyle',
+  'fontWeight',
+  'letterSpacing',
+  'lineHeight',
+  'textAlign',
+  'textDecorationLine',
+  'textDecoration',
+  'txtDecor',
+  'textTransform',
+]
 export const text = {
-  // TEXT_ONLY - All text props only work on Text components, not View
-  color: { styleName: 'color', tokenHelper: 'color' },
-  fontFamily: 'fontFamily',
-  fontSize: 'fontSize',
-  fontStyle: 'fontStyle',
-  fontWeight: 'fontWeight',
-  letterSpacing: 'letterSpacing',
-  lineHeight: 'lineHeight',
-  textAlign: 'textAlign',
-  textDecorationLine: 'textDecorationLine',
-  textDecoration: 'textDecorationLine',
-  txtDecor: 'textDecorationLine',
-  textDecorationColor: { styleName: 'textDecorationColor', tokenHelper: 'color' },
-  textTransform: 'textTransform',
+  ...generateMappings(textOtherProps, {
+    shortcuts: {
+      textDecoration: 'textDecorationLine',
+      txtDecor: 'textDecorationLine',
+    },
+  }),
+  ...generateMappings(textColorProps, { tokenHelper: 'color' }),
 }
 
-export const extra = {
-  opacity: 'opacity',
-
-  // IMAGE_ONLY - Only works on Image components
-  tintColor: { styleName: 'tintColor', tokenHelper: 'color' },
-}
+/**
+ * Extra Props (opacity, tintColor)
+ * Source: Remaining props
+ */
+const extraProps = ['opacity', 'tintColor']
+export const extra = generateMappings(extraProps, {
+  renames: {
+    tintColor: 'tintColor', // IMAGE_ONLY
+  },
+})

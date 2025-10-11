@@ -15,8 +15,15 @@ export function Example() {
       {/* Badge with colorScheme (maps to state) */}
       <Badge state="success" text='Success' size='md' />
       {/* Badge with size and transparent */}
+
+      {/* width: "lg"
+        height: "lg" */
+      }
       <Badge size="lg" transparent text='Large' />
       {/* Indicator dot pattern (no text, just styles) */}
+
+      {/* borderRadius: radius.full */
+      }
       <View style={styles.badge4} />
       {/* Badge with testID */}
       <Badge testID="status-badge" text='Active' size='md' />

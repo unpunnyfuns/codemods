@@ -16,7 +16,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Avatar prop mappings
 const styleProps = {
@@ -139,6 +139,8 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
+      droppedProps,
+      invalidStyles,
     } = categorizeProps(attributes, avatarProps, j)
 
     for (const h of newHelpers) {
@@ -206,6 +208,8 @@ function main(fileInfo, api, options = {}) {
     }
 
     path.node.openingElement.attributes = avatarAttributes
+
+    addElementComment(path, droppedProps, invalidStyles, j)
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 

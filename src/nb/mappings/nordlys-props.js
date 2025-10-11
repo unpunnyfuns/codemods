@@ -16,8 +16,31 @@
 // Space tokens (spacing, gap, margin, padding)
 export const SPACE_TOKENS = ['zero', '2xs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl']
 
+// Space token numeric values (for runtime conversion)
+export const SPACE_TOKEN_VALUES = {
+  zero: 0,
+  '2xs': 2,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 24,
+  '2xl': 32,
+  '3xl': 48,
+}
+
 // Radius tokens (borderRadius)
 export const RADIUS_TOKENS = ['xs', 'sm', 'md', 'lg', 'xl', '2xl']
+
+// Radius token numeric values (for runtime conversion)
+export const RADIUS_TOKEN_VALUES = {
+  xs: 2,
+  sm: 4,
+  md: 8,
+  lg: 12,
+  xl: 16,
+  '2xl': 20,
+}
 
 // Color tokens - semantic paths in color system
 // Examples: color.background.primary, color.blue[500], color.feedback.error.default

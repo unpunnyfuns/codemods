@@ -21,7 +21,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Button prop mappings
 const styleProps = {
@@ -147,6 +147,8 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
+      droppedProps,
+      invalidStyles,
     } = categorizeProps(attributes, buttonProps, j)
 
     for (const h of newHelpers) {
@@ -189,6 +191,8 @@ function main(fileInfo, api, options = {}) {
     if (!hasType) {
       buttonAttributes.push(j.jsxAttribute(j.jsxIdentifier('type'), j.stringLiteral(defaultType)))
     }
+
+    addElementComment(path, droppedProps, invalidStyles, j)
 
     const buttonElement = j.jsxElement(
       j.jsxOpeningElement(j.jsxIdentifier(targetName), buttonAttributes, true),

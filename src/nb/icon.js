@@ -3,21 +3,7 @@
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
-
-// NativeBase space scale (tokens to pixels)
-const SPACE_SCALE = {
-  0: 0,
-  1: 4,
-  2: 8,
-  3: 12,
-  4: 16,
-  5: 20,
-  6: 24,
-  7: 28,
-  8: 32,
-  9: 36,
-  10: 40,
-}
+import { NB_SPACE_SCALE_NUMERIC } from './mappings/nativebase-props.js'
 
 function convertSizeToNumber(value, j) {
   if (!value) {
@@ -32,8 +18,8 @@ function convertSizeToNumber(value, j) {
   // String literal - try to convert
   if (value.type === 'StringLiteral') {
     const token = value.value
-    if (SPACE_SCALE[token] !== undefined) {
-      return j.numericLiteral(SPACE_SCALE[token])
+    if (NB_SPACE_SCALE_NUMERIC[token] !== undefined) {
+      return j.numericLiteral(NB_SPACE_SCALE_NUMERIC[token])
     }
   }
 

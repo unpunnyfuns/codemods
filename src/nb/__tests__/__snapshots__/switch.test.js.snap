@@ -8,6 +8,11 @@ import { Switch } from '@hb-frontend/app/src/components/nordlys/Switch';
 export function MyComponent() {
   return (
     <>
+
+      {/* switchPosition="right"
+        hStackProps={...}
+        label="Additional info" */
+      }
       <Switch testID="switch1" value={true} onValueChange={(val) => console.log(val)}>
         <Switch.Label>
           <Typography type="heading" size="sm">

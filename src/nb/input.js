@@ -16,7 +16,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Input prop mappings
 const styleProps = {
@@ -114,11 +114,15 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
+      droppedProps,
+      invalidStyles,
     } = categorizeProps(attributes, inputProps, j)
 
     for (const h of newHelpers) {
       usedTokenHelpers.add(h)
     }
+
+    addElementComment(path, droppedProps, invalidStyles, j)
 
     const inputAttributes = attributes.filter((attr) => {
       if (attr.type !== 'JSXAttribute' || !attr.name) {

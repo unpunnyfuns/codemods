@@ -3,10 +3,10 @@
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'
-import { buildNestedMemberExpression } from '../helpers/token-helpers.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { TYPOGRAPHY_RESTRICTED_PROPS } from './mappings/nordlys-props.js'
 import { accessibility, eventHandlers } from './mappings/props-direct.js'
+import { allPseudoProps } from './mappings/props-drop.js'
 import {
   border,
   color,
@@ -17,27 +17,39 @@ import {
   sizing,
   spacing,
 } from './mappings/props-style.js'
+import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
-// Style props that get extracted to View wrapper
-const stylePropsConfig = {
-  ...spacing,
-  ...sizing,
-  ...color,
-  ...border,
-  ...layout,
-  ...flexbox,
-  ...position,
-  ...extra,
+// Typography prop mappings (component-specific config)
+const typographyPropConfig = {
+  styleProps: {
+    // Style props get extracted to View wrapper
+    ...spacing,
+    ...sizing,
+    ...color,
+    ...border,
+    ...layout,
+    ...flexbox,
+    ...position,
+    ...extra,
+  },
+  transformProps: {},
+  // Props that stay on Typography element + text props + managed font props
+  directProps: [
+    'type',
+    'size',
+    'color',
+    'align',
+    'numberOfLines',
+    'textDecorationLine',
+    ...accessibility,
+    ...eventHandlers,
+  ],
+  dropProps: [
+    ...allPseudoProps,
+    // Font props managed internally by Nordlys Typography
+    ...TYPOGRAPHY_RESTRICTED_PROPS.managed,
+  ],
 }
-
-// Props that stay on Typography element (Nordlys Typography API)
-const typographyProps = ['type', 'size', 'color', 'align', 'numberOfLines', 'textDecorationLine']
-
-// React Native Text props that pass through
-const textProps = [...accessibility, ...eventHandlers]
-
-// Font props that are managed internally by Typography (drop with warning)
-const fontProps = TYPOGRAPHY_RESTRICTED_PROPS.managed
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
@@ -50,7 +62,6 @@ function main(fileInfo, api, options = {}) {
   // Default: true (wrap in View when style props exist)
   const wrap = options.wrap ?? true
 
-  // import { Typography } from '@hb-frontend/common/src/components'
   const imports = root.find(j.ImportDeclaration, {
     source: { value: sourceImport },
   })
@@ -75,83 +86,56 @@ function main(fileInfo, api, options = {}) {
 
   typographyElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
-    const styleProps = {}
-    const propsToKeep = []
-    const propsToRemove = []
 
-    attributes.forEach((attr) => {
-      if (attr.type !== 'JSXAttribute') {
-        propsToKeep.push(attr)
-        return
-      }
-      if (!attr.name || attr.name.type !== 'JSXIdentifier') {
-        propsToKeep.push(attr)
-        return
-      }
+    // Use layered categorizeProps
+    const {
+      styleProps,
+      transformedProps,
+      propsToRemove,
+      usedTokenHelpers: newHelpers,
+      droppedProps,
+      invalidStyles,
+    } = categorizeProps(attributes, typographyPropConfig, j)
 
+    for (const h of newHelpers) {
+      usedTokenHelpers.add(h)
+    }
+
+    // Warn about dropped font props
+    for (const { name } of droppedProps) {
+      if (TYPOGRAPHY_RESTRICTED_PROPS.managed.includes(name)) {
+        warnings.push(`Typography: Dropped ${name} prop (managed internally by Nordlys Typography)`)
+      }
+    }
+
+    // Handle color prop special case - Typography resolves color internally as string
+    const typographyAttributes = attributes.filter((attr) => {
+      if (attr.type !== 'JSXAttribute' || !attr.name) {
+        return true
+      }
       const propName = attr.name.name
 
-      if (typographyProps.includes(propName)) {
-        // Handle color - remap path but keep as string literal (Typography resolves internally)
+      // Keep directProps that aren't being removed
+      if (typographyPropConfig.directProps.includes(propName) && !propsToRemove.includes(attr)) {
+        // Remap color path but keep as string literal
         if (propName === 'color' && attr.value?.type === 'StringLiteral') {
           const colorPath = getNordlysColorPath(attr.value.value)
           attr.value.value = colorPath
         }
-        propsToKeep.push(attr)
-        return
+        return true
       }
 
-      if (textProps.includes(propName)) {
-        propsToKeep.push(attr)
-        return
-      }
-
-      if (stylePropsConfig[propName]) {
-        const config = stylePropsConfig[propName]
-        let styleName, tokenHelper
-
-        if (typeof config === 'string') {
-          styleName = config
-          tokenHelper = null
-        } else {
-          styleName = config.styleName
-          tokenHelper = config.tokenHelper
-        }
-
-        let value = null
-        if (attr.value?.type === 'JSXExpressionContainer') {
-          value = attr.value.expression
-        } else if (attr.value?.type === 'StringLiteral') {
-          value = attr.value
-        }
-
-        if (value && (value.type === 'StringLiteral' || value.type === 'NumericLiteral')) {
-          let processedValue = value
-
-          // Apply token helper for string literals
-          if (tokenHelper && value.type === 'StringLiteral') {
-            processedValue = buildNestedMemberExpression(j, tokenHelper, value.value)
-            usedTokenHelpers.add(tokenHelper)
-          }
-
-          styleProps[styleName] = processedValue
-          propsToRemove.push(propName)
-        }
-        return
-      }
-
-      if (fontProps.includes(propName)) {
-        warnings.push(
-          `Typography: Dropped ${propName} prop (managed internally by Nordlys Typography)`,
-        )
-        propsToRemove.push(propName)
-        return
-      }
-
-      propsToKeep.push(attr)
+      return false
     })
 
-    path.node.openingElement.attributes = propsToKeep
+    // Add transformed props
+    for (const [name, value] of Object.entries(transformedProps)) {
+      typographyAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
+    }
+
+    path.node.openingElement.attributes = typographyAttributes
+
+    addElementComment(path, droppedProps, invalidStyles, j)
 
     const hasStyleProps = Object.keys(styleProps).length > 0
 
@@ -159,7 +143,7 @@ function main(fileInfo, api, options = {}) {
       const styleName = `typography${index}`
       elementStyles.push({ name: styleName, styles: styleProps })
 
-      // Clone the Typography element (not the node itself, to avoid mutations)
+      // Clone the Typography element
       const typographyElement = j.jsxElement(
         path.node.openingElement,
         path.node.closingElement,
@@ -187,55 +171,13 @@ function main(fileInfo, api, options = {}) {
   if (wrap && elementStyles.length > 0) {
     addNamedImport(root, 'react-native', 'View', j)
     addNamedImport(root, 'react-native', 'StyleSheet', j)
-  }
-
-  for (const helper of usedTokenHelpers) {
-    addNamedImport(root, tokenImport, helper, j)
+    for (const h of usedTokenHelpers) {
+      addNamedImport(root, tokenImport, h, j)
+    }
   }
 
   if (wrap && elementStyles.length > 0) {
-    const styleProperties = []
-    for (const { name, styles } of elementStyles) {
-      const props = []
-      for (const [key, value] of Object.entries(styles)) {
-        props.push(j.property('init', j.identifier(key), value))
-      }
-      styleProperties.push(j.property('init', j.identifier(name), j.objectExpression(props)))
-    }
-
-    const existingStyleSheet = root.find(j.VariableDeclarator, {
-      id: { name: 'styles' },
-      init: {
-        type: 'CallExpression',
-        callee: {
-          type: 'MemberExpression',
-          object: { name: 'StyleSheet' },
-          property: { name: 'create' },
-        },
-      },
-    })
-
-    if (existingStyleSheet.length > 0) {
-      existingStyleSheet.forEach((path) => {
-        const createCallArgs = path.node.init.arguments
-        if (createCallArgs.length > 0 && createCallArgs[0].type === 'ObjectExpression') {
-          createCallArgs[0].properties.push(...styleProperties)
-        }
-      })
-    } else {
-      const styleSheetCall = j.variableDeclaration('const', [
-        j.variableDeclarator(
-          j.identifier('styles'),
-          j.callExpression(j.memberExpression(j.identifier('StyleSheet'), j.identifier('create')), [
-            j.objectExpression(styleProperties),
-          ]),
-        ),
-      ])
-
-      root.find(j.Program).forEach((path) => {
-        path.node.body.push(styleSheetCall)
-      })
-    }
+    addOrExtendStyleSheet(root, elementStyles, j)
   }
 
   return root.toSource({

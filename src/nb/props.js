@@ -10,6 +10,7 @@
 import { addNamedImport } from '../helpers/imports.js'
 import { buildNestedMemberExpression } from '../helpers/token-helpers.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
+import { convertRadiusToken, convertSpaceToken } from './mappings/maps-tokens.js'
 import {
   DIMENSION_PROPS,
   NUMERIC_ONLY_PROPS,
@@ -180,37 +181,6 @@ function transformNumericTokenAccess(value, j) {
 }
 
 /**
- * Process a prop value with token helper transformation
- * NativeBase-specific: remaps color tokens from NativeBase to Nordlys
- */
-export function processTokenHelper(value, tokenHelper, j, usedTokenHelpers) {
-  if (!tokenHelper || (value.type !== 'StringLiteral' && value.type !== 'Literal')) {
-    return { value, isTokenHelper: false }
-  }
-
-  let tokenPath = value.value
-
-  if (typeof tokenPath !== 'string') {
-    return { value, isTokenHelper: false }
-  }
-
-  if (/^\d+$/.test(tokenPath)) {
-    const numericValue = Number.parseInt(tokenPath, 10)
-    return { value: j.numericLiteral(numericValue), isTokenHelper: false }
-  }
-
-  // NativeBase to Nordlys color token remapping
-  if (tokenHelper === 'color') {
-    tokenPath = getNordlysColorPath(tokenPath)
-  }
-
-  const transformedValue = buildNestedMemberExpression(j, tokenHelper, tokenPath)
-  usedTokenHelpers.add(tokenHelper)
-
-  return { value: transformedValue, isTokenHelper: true }
-}
-
-/**
  * Apply value mapping to a prop value
  */
 export function applyValueMapping(value, valueMap, j) {
@@ -235,6 +205,68 @@ export function applyValueMapping(value, valueMap, j) {
   }
 
   return value
+}
+
+/**
+ * Transform a prop value using priority chain (Option B)
+ *
+ * Priority order:
+ * 1. valueMap - explicit string → value transformations (e.g., full → 100%)
+ * 2. tokenHelper - named token conversion with scale remapping (e.g., NB space.xl → Nordlys space.2xl)
+ * 3. pass-through - numbers, expressions, unknown strings
+ *
+ * @param {object} value - AST node for the value
+ * @param {object} config - Mapping config { styleName, tokenHelper, valueMap, properties }
+ * @param {object} j - jscodeshift API
+ * @param {Set} usedTokenHelpers - Set to track which token helpers are used
+ * @returns {object} { value, isTokenHelper }
+ */
+export function transformPropValue(value, config, j, usedTokenHelpers) {
+  if (!value) {
+    return { value, isTokenHelper: false }
+  }
+
+  const { tokenHelper, valueMap } = config
+  let processedValue = value
+  let isTokenHelper = false
+
+  // Priority 1: valueMap (explicit transformations)
+  if (valueMap) {
+    processedValue = applyValueMapping(processedValue, valueMap, j)
+  }
+
+  // Priority 2: tokenHelper (named token conversion)
+  if (
+    tokenHelper &&
+    (processedValue.type === 'StringLiteral' || processedValue.type === 'Literal')
+  ) {
+    let tokenPath = processedValue.value
+
+    if (typeof tokenPath === 'string') {
+      // Convert numeric strings to numeric literals
+      if (/^\d+$/.test(tokenPath)) {
+        const numericValue = Number.parseInt(tokenPath, 10)
+        return { value: j.numericLiteral(numericValue), isTokenHelper: false }
+      }
+
+      // Apply token-specific conversions
+      if (tokenHelper === 'space') {
+        tokenPath = convertSpaceToken(tokenPath)
+      } else if (tokenHelper === 'radius') {
+        tokenPath = convertRadiusToken(tokenPath)
+      } else if (tokenHelper === 'color') {
+        tokenPath = getNordlysColorPath(tokenPath)
+      }
+
+      // Build token helper expression (e.g., space.md, color.icon.brand)
+      processedValue = buildNestedMemberExpression(j, tokenHelper, tokenPath)
+      isTokenHelper = true
+      usedTokenHelpers.add(tokenHelper)
+    }
+  }
+
+  // Priority 3: pass-through (numbers, expressions, unknown strings)
+  return { value: processedValue, isTokenHelper }
 }
 
 /**
@@ -338,19 +370,15 @@ export function categorizeProps(attributes, mappings, j) {
       propsToRemove.push(attr)
     } else if (stylePropMappings[propName]) {
       const config = stylePropMappings[propName]
-      let styleName, properties, valueMap, tokenHelper
+      let styleName, properties
 
       // Support both string (simple mapping) and object (with options)
       if (typeof config === 'string') {
         styleName = config
         properties = null
-        valueMap = null
-        tokenHelper = null
       } else {
         styleName = config.styleName
         properties = config.properties
-        valueMap = config.valueMap
-        tokenHelper = config.tokenHelper
       }
 
       let value = null
@@ -361,16 +389,10 @@ export function categorizeProps(attributes, mappings, j) {
       }
 
       if (value) {
-        let processedValue = value
-        let isTokenHelperCall = false
-
-        if (tokenHelper && (value.type === 'StringLiteral' || value.type === 'Literal')) {
-          const result = processTokenHelper(value, tokenHelper, j, usedTokenHelpers)
-          processedValue = result.value
-          isTokenHelperCall = result.isTokenHelper
-        } else if (valueMap) {
-          processedValue = applyValueMapping(value, valueMap, j)
-        }
+        // Use priority chain transformation (valueMap → tokenHelper → pass-through)
+        const result = transformPropValue(value, config, j, usedTokenHelpers)
+        const processedValue = result.value
+        const isTokenHelperCall = result.isTokenHelper
 
         const shouldExtract = shouldExtractToStyleSheet(processedValue, isTokenHelperCall)
 
@@ -399,17 +421,13 @@ export function categorizeProps(attributes, mappings, j) {
       }
     } else if (transformPropMappings[propName]) {
       const config = transformPropMappings[propName]
-      let newPropName, valueMap, tokenHelper
+      let newPropName
 
       // Support both string (simple rename) and object (with options)
       if (typeof config === 'string') {
         newPropName = config
-        valueMap = null
-        tokenHelper = null
       } else {
         newPropName = config.propName
-        valueMap = config.valueMap
-        tokenHelper = config.tokenHelper
       }
 
       let value = attr.value
@@ -418,14 +436,10 @@ export function categorizeProps(attributes, mappings, j) {
         value = value.expression
       }
 
-      if (tokenHelper && value?.type === 'StringLiteral') {
-        const result = processTokenHelper(value, tokenHelper, j, usedTokenHelpers)
+      // Use priority chain transformation for transformed props too
+      if (value && typeof config !== 'string') {
+        const result = transformPropValue(value, config, j, usedTokenHelpers)
         value = j.jsxExpressionContainer(result.value)
-      } else if (valueMap && value?.type === 'StringLiteral') {
-        const mappedValue = valueMap[value.value]
-        if (mappedValue !== undefined) {
-          value = j.jsxExpressionContainer(j.stringLiteral(mappedValue))
-        }
       }
       // Wrap other expression types back in JSXExpressionContainer
       else if (

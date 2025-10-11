@@ -14,6 +14,9 @@ export function MyComponent() {
 
   return (
     <>
+
+      {/* leftIcon={...} */
+      }
       <View style={styles.button0}>
         <Button
           testID="button1"
@@ -38,7 +41,7 @@ export function MyComponent() {
 
 const styles = StyleSheet.create({
   button0: {
-    marginTop: space.xl
+    marginTop: space['2xl']
   }
 });
 "

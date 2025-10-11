@@ -16,7 +16,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Alert prop mappings
 const styleProps = {
@@ -168,6 +168,8 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
+      droppedProps,
+      invalidStyles,
     } = categorizeProps(attributes, alertProps, j)
 
     for (const h of newHelpers) {
@@ -206,6 +208,8 @@ function main(fileInfo, api, options = {}) {
     if (!description) {
       warnings.push('Alert: No description found - description is required in Nordlys Alert')
     }
+
+    addElementComment(path, droppedProps, invalidStyles, j)
 
     // Create new self-closing Alert element
     const alertElement = j.jsxElement(

@@ -8,6 +8,9 @@ import { color } from '@hb-frontend/nordlys';
 export function MyComponent() {
   return (
     <>
+
+      {/* iconName="user" */
+      }
       <View style={styles.avatar0}>
         <Avatar
           size="md"
@@ -16,6 +19,10 @@ export function MyComponent() {
             fill: 'blue'
           }} />
       </View>
+
+      {/* imageUri="https://example.com/avatar.jpg"
+        isSecondaryColor={true} */
+      }
       <Avatar
         size="lg"
         image={{
@@ -23,6 +30,10 @@ export function MyComponent() {
             uri: "https://example.com/avatar.jpg"
           }
         }} />
+
+      {/* imageSource={...}
+        placeholder={true} */
+      }
       <Avatar
         size="sm"
         image={{

@@ -16,7 +16,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
 
 // Switch prop mappings
 const styleProps = {
@@ -100,6 +100,8 @@ function main(fileInfo, api, options = {}) {
       transformedProps,
       propsToRemove,
       usedTokenHelpers: newHelpers,
+      droppedProps,
+      invalidStyles,
     } = categorizeProps(attributes, switchProps, j)
 
     for (const h of newHelpers) {
@@ -119,6 +121,8 @@ function main(fileInfo, api, options = {}) {
     }
 
     path.node.openingElement.attributes = switchAttributes
+
+    addElementComment(path, droppedProps, invalidStyles, j)
 
     // Wrap children in <Switch.Label>
     const labelElement = j.jsxElement(
