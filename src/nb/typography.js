@@ -2,6 +2,7 @@
 // See typography.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import { cloneElement } from '../helpers/jsx-clone.js'
 import { findJSXElements } from '../helpers/jsx-elements.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
@@ -140,13 +141,7 @@ function main(fileInfo, api, options = {}) {
       const styleName = `typography${index}`
       elementStyles.push({ name: styleName, styles: styleProps })
 
-      // Clone the Typography element
-      const typographyElement = j.jsxElement(
-        path.node.openingElement,
-        path.node.closingElement,
-        path.node.children,
-        path.node.selfClosing,
-      )
+      const typographyElement = cloneElement(path.node, j)
 
       const styleValue = j.memberExpression(j.identifier('styles'), j.identifier(styleName))
       const viewElement = createViewWrapper(typographyElement, styleValue, j)

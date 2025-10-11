@@ -2,8 +2,9 @@
 // See switch.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { filterAttributes, findAttribute } from '../helpers/jsx-attributes.js'
-import { findJSXElements } from '../helpers/jsx-elements.js'
+import { addTransformedProps, filterAttributes, findAttribute } from '../helpers/jsx-attributes.js'
+import { cloneElement } from '../helpers/jsx-clone.js'
+import { createMemberElement, findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -109,25 +110,13 @@ function main(fileInfo, api, options = {}) {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    for (const [name, value] of Object.entries(transformedProps)) {
-      switchAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
-    }
+    addTransformedProps(switchAttributes, transformedProps, j)
 
     path.node.openingElement.attributes = switchAttributes
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
-    // Wrap children in <Switch.Label>
-    const labelElement = j.jsxElement(
-      j.jsxOpeningElement(
-        j.jsxMemberExpression(j.jsxIdentifier('Switch'), j.jsxIdentifier('Label')),
-        [],
-      ),
-      j.jsxClosingElement(
-        j.jsxMemberExpression(j.jsxIdentifier('Switch'), j.jsxIdentifier('Label')),
-      ),
-      children,
-    )
+    const labelElement = createMemberElement('Switch', 'Label', [], children, j)
 
     const newChildren = [j.jsxText('\n  '), labelElement]
 
@@ -138,15 +127,12 @@ function main(fileInfo, api, options = {}) {
           ? [j.jsxExpressionContainer(labelValue.expression)]
           : [j.jsxText(labelValue.value)]
 
-      const descriptionElement = j.jsxElement(
-        j.jsxOpeningElement(
-          j.jsxMemberExpression(j.jsxIdentifier('Switch'), j.jsxIdentifier('Description')),
-          [],
-        ),
-        j.jsxClosingElement(
-          j.jsxMemberExpression(j.jsxIdentifier('Switch'), j.jsxIdentifier('Description')),
-        ),
+      const descriptionElement = createMemberElement(
+        'Switch',
+        'Description',
+        [],
         descriptionChildren,
+        j,
       )
       newChildren.push(j.jsxText('\n  '), descriptionElement)
     }
@@ -159,12 +145,7 @@ function main(fileInfo, api, options = {}) {
     if (wrap && hasStyleProps) {
       const styleName = `switch${index}`
 
-      const switchElement = j.jsxElement(
-        path.node.openingElement,
-        path.node.closingElement,
-        path.node.children,
-        path.node.selfClosing,
-      )
+      const switchElement = cloneElement(path.node, j)
 
       const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
       const viewElement = createViewWrapper(switchElement, styleValue, j)

@@ -3,12 +3,13 @@
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import {
+  addTransformedProps,
   createAttribute,
   createStringAttribute,
   filterAttributes,
   hasAttribute,
 } from '../helpers/jsx-attributes.js'
-import { findJSXElements } from '../helpers/jsx-elements.js'
+import { createSelfClosingElement, findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -140,15 +141,10 @@ function main(fileInfo, api, options = {}) {
       const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
 
       // Create self-closing View with style
-      const viewElement = j.jsxElement(
-        j.jsxOpeningElement(
-          j.jsxIdentifier('View'),
-          [j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(styleValue))],
-          true,
-        ),
-        null,
-        [],
-        true,
+      const viewElement = createSelfClosingElement(
+        'View',
+        [j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(styleValue))],
+        j,
       )
 
       // Replace Badge with View
@@ -167,9 +163,7 @@ function main(fileInfo, api, options = {}) {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    for (const [name, value] of Object.entries(transformedProps)) {
-      badgeAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
-    }
+    addTransformedProps(badgeAttributes, transformedProps, j)
 
     // Add text prop with extracted content
     badgeAttributes.push(createAttribute('text', textContent, j))
@@ -179,13 +173,7 @@ function main(fileInfo, api, options = {}) {
       badgeAttributes.push(createStringAttribute('size', 'md', j))
     }
 
-    // Create new self-closing Badge element
-    const badgeElement = j.jsxElement(
-      j.jsxOpeningElement(j.jsxIdentifier('Badge'), badgeAttributes, true),
-      null,
-      [],
-      true,
-    )
+    const badgeElement = createSelfClosingElement('Badge', badgeAttributes, j)
 
     // Wrap in View if style props exist
     if (wrap && hasStyleProps) {

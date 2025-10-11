@@ -2,8 +2,8 @@
 // See input.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { filterAttributes, hasAttribute } from '../helpers/jsx-attributes.js'
-import { findJSXElements } from '../helpers/jsx-elements.js'
+import { addTransformedProps, filterAttributes, hasAttribute } from '../helpers/jsx-attributes.js'
+import { createSelfClosingElement, findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -124,9 +124,7 @@ function main(fileInfo, api, options = {}) {
     )
     const inputAttributes = filterAttributes(attributes, { allow: allowList })
 
-    for (const [name, value] of Object.entries(transformedProps)) {
-      inputAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
-    }
+    addTransformedProps(inputAttributes, transformedProps, j)
 
     // Check if label prop exists
     if (!hasAttribute(inputAttributes, 'label')) {
@@ -138,13 +136,7 @@ function main(fileInfo, api, options = {}) {
       warnings.push('Input: Missing required "onChange" prop (transformed from "onChangeText")')
     }
 
-    // Create new self-closing Input element
-    const inputElement = j.jsxElement(
-      j.jsxOpeningElement(j.jsxIdentifier('Input'), inputAttributes, true),
-      null,
-      [],
-      true,
-    )
+    const inputElement = createSelfClosingElement('Input', inputAttributes, j)
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 

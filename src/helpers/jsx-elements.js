@@ -146,3 +146,22 @@ export function getNonEmptyChildren(element) {
     return true
   })
 }
+
+/**
+ * Create JSX member element (e.g., <Switch.Label>children</Switch.Label>)
+ * @param {string} object - Object name (e.g., 'Switch')
+ * @param {string} property - Property name (e.g., 'Label')
+ * @param {Array} attributes - Element attributes
+ * @param {Array} children - Element children
+ * @param {Object} j - jscodeshift API
+ * @returns {Object} - JSXElement node
+ */
+export function createMemberElement(object, property, attributes, children, j) {
+  const memberExpr = createMemberExpression(object, property, j)
+
+  return j.jsxElement(
+    j.jsxOpeningElement(memberExpr, attributes),
+    j.jsxClosingElement(memberExpr),
+    children,
+  )
+}

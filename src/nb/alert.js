@@ -2,8 +2,12 @@
 // See alert.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { createAttribute, filterAttributes } from '../helpers/jsx-attributes.js'
-import { findJSXElements } from '../helpers/jsx-elements.js'
+import {
+  addTransformedProps,
+  createAttribute,
+  filterAttributes,
+} from '../helpers/jsx-attributes.js'
+import { createSelfClosingElement, findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -175,9 +179,7 @@ function main(fileInfo, api, options = {}) {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    for (const [name, value] of Object.entries(transformedProps)) {
-      alertAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
-    }
+    addTransformedProps(alertAttributes, transformedProps, j)
 
     // Add title prop if found
     if (title) {
@@ -196,13 +198,7 @@ function main(fileInfo, api, options = {}) {
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
-    // Create new self-closing Alert element
-    const alertElement = j.jsxElement(
-      j.jsxOpeningElement(j.jsxIdentifier('Alert'), alertAttributes, true),
-      null,
-      [],
-      true,
-    )
+    const alertElement = createSelfClosingElement('Alert', alertAttributes, j)
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 

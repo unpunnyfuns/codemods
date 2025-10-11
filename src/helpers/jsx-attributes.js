@@ -202,3 +202,15 @@ export function removeAttributes(attributes, names) {
     }
   }
 }
+
+/**
+ * Add transformed props from object to attributes array
+ * @param {Array} attributes - Attributes array to add to
+ * @param {Object} transformedProps - Map of prop name to value
+ * @param {Object} j - jscodeshift API
+ */
+export function addTransformedProps(attributes, transformedProps, j) {
+  for (const [name, value] of Object.entries(transformedProps)) {
+    attributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
+  }
+}

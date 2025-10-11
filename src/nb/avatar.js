@@ -3,7 +3,13 @@
 
 import { createNestedObject } from '../helpers/ast-builders.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { createAttribute, filterAttributes, getAttributeValue } from '../helpers/jsx-attributes.js'
+import {
+  addTransformedProps,
+  createAttribute,
+  filterAttributes,
+  getAttributeValue,
+} from '../helpers/jsx-attributes.js'
+import { cloneElement } from '../helpers/jsx-clone.js'
 import { findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import { accessibility } from './mappings/props-direct.js'
@@ -119,9 +125,7 @@ function main(fileInfo, api, options = {}) {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    for (const [name, value] of Object.entries(transformedProps)) {
-      avatarAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
-    }
+    addTransformedProps(avatarAttributes, transformedProps, j)
 
     if (iconNameValue) {
       // iconName → icon={{ name: "...", fill: "blue" }}
@@ -157,12 +161,7 @@ function main(fileInfo, api, options = {}) {
     if (wrap && hasStyleProps) {
       const styleName = `avatar${index}`
 
-      const avatarElement = j.jsxElement(
-        path.node.openingElement,
-        path.node.closingElement,
-        path.node.children,
-        path.node.selfClosing,
-      )
+      const avatarElement = cloneElement(path.node, j)
 
       const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
       const viewElement = createViewWrapper(avatarElement, styleValue, j)

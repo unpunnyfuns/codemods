@@ -3,13 +3,14 @@
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
 import {
+  addTransformedProps,
   createAttribute,
   createStringAttribute,
   filterAttributes,
   getAttributeValue,
   hasAttribute,
 } from '../helpers/jsx-attributes.js'
-import { findJSXElements } from '../helpers/jsx-elements.js'
+import { createSelfClosingElement, findJSXElements } from '../helpers/jsx-elements.js'
 import { extractPropFromJSXElement, extractSimpleChild } from '../helpers/jsx-extraction.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import {
@@ -162,9 +163,7 @@ function main(fileInfo, api, options = {}) {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    for (const [name, value] of Object.entries(transformedProps)) {
-      buttonAttributes.push(j.jsxAttribute(j.jsxIdentifier(name), value))
-    }
+    addTransformedProps(buttonAttributes, transformedProps, j)
 
     if (iconValue) {
       buttonAttributes.push(createAttribute('icon', iconValue, j))
@@ -180,11 +179,7 @@ function main(fileInfo, api, options = {}) {
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
-    const buttonElement = j.jsxElement(
-      j.jsxOpeningElement(j.jsxIdentifier(targetName), buttonAttributes, true),
-      null,
-      [],
-    )
+    const buttonElement = createSelfClosingElement(targetName, buttonAttributes, j)
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
