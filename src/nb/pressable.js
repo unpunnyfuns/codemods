@@ -2,6 +2,8 @@
 // See pressable.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import { createStringAttribute, hasAttribute } from '../helpers/jsx-attributes.js'
+import { findJSXElements } from '../helpers/jsx-elements.js'
 import {
   addPropsToElement,
   addStyleProp,
@@ -89,9 +91,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const pressableElements = root.find(j.JSXElement, {
-    openingElement: { name: { name: 'Pressable' } },
-  })
+  const pressableElements = findJSXElements(root, 'Pressable', j)
   if (pressableElements.length === 0) {
     return fileInfo.source
   }
@@ -127,13 +127,8 @@ function main(fileInfo, api, options = {}) {
     removePropsFromElement(attributes, propsToRemove)
 
     // Preserve wrapper's default accessibilityRole="button" if not explicitly set
-    const hasAccessibilityRole = attributes.some(
-      (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'accessibilityRole',
-    )
-    if (!hasAccessibilityRole) {
-      attributes.push(
-        j.jsxAttribute(j.jsxIdentifier('accessibilityRole'), j.stringLiteral('button')),
-      )
+    if (!hasAttribute(attributes, 'accessibilityRole')) {
+      attributes.push(createStringAttribute('accessibilityRole', 'button', j))
     }
 
     addPropsToElement(attributes, transformedProps, j)

@@ -2,6 +2,7 @@
 // See box.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import { findJSXElements } from '../helpers/jsx-elements.js'
 import {
   addPropsToElement,
   addStyleProp,
@@ -80,7 +81,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const boxElements = root.find(j.JSXElement, { openingElement: { name: { name: 'Box' } } })
+  const boxElements = findJSXElements(root, 'Box', j)
   if (boxElements.length === 0) {
     return fileInfo.source
   }

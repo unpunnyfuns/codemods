@@ -1,7 +1,10 @@
 // Migrate NativeBase/Common Avatar → Nordlys Avatar with object-based props
 // See avatar.md for documentation
 
+import { createNestedObject } from '../helpers/ast-builders.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import { createAttribute, filterAttributes, getAttributeValue } from '../helpers/jsx-attributes.js'
+import { findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -68,14 +71,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const avatarElements = root.find(j.JSXElement, {
-    openingElement: {
-      name: {
-        type: 'JSXIdentifier',
-        name: 'Avatar',
-      },
-    },
-  })
+  const avatarElements = findJSXElements(root, 'Avatar', j)
 
   if (avatarElements.length === 0) {
     return fileInfo.source
@@ -94,38 +90,10 @@ function main(fileInfo, api, options = {}) {
   avatarElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
 
-    let iconNameValue = null
-    let imageUriValue = null
-    let imageSourceValue = null
-    let lettersValue = null
-
-    const iconNameAttr = attributes.find(
-      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'iconName',
-    )
-    if (iconNameAttr) {
-      iconNameValue = iconNameAttr.value
-    }
-
-    const imageUriAttr = attributes.find(
-      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'imageUri',
-    )
-    if (imageUriAttr) {
-      imageUriValue = imageUriAttr.value
-    }
-
-    const imageSourceAttr = attributes.find(
-      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'imageSource',
-    )
-    if (imageSourceAttr) {
-      imageSourceValue = imageSourceAttr.value
-    }
-
-    const lettersAttr = attributes.find(
-      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'letters',
-    )
-    if (lettersAttr) {
-      lettersValue = lettersAttr.value
-    }
+    const iconNameValue = getAttributeValue(attributes, 'iconName')
+    const imageUriValue = getAttributeValue(attributes, 'imageUri')
+    const imageSourceValue = getAttributeValue(attributes, 'imageSource')
+    const lettersValue = getAttributeValue(attributes, 'letters')
 
     // Warn and skip if letters prop is used (not supported)
     if (lettersValue) {
@@ -147,12 +115,8 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers.add(h)
     }
 
-    const avatarAttributes = attributes.filter((attr) => {
-      if (attr.type !== 'JSXAttribute' || !attr.name) {
-        return false
-      }
-      const propName = attr.name.name
-      return directPropsList.includes(propName) && !propsToRemove.includes(propName)
+    const avatarAttributes = filterAttributes(attributes, {
+      allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
     for (const [name, value] of Object.entries(transformedProps)) {
@@ -161,50 +125,27 @@ function main(fileInfo, api, options = {}) {
 
     if (iconNameValue) {
       // iconName → icon={{ name: "...", fill: "blue" }}
-      const nameValue =
-        iconNameValue.type === 'JSXExpressionContainer' ? iconNameValue.expression : iconNameValue
-
-      const iconObject = j.objectExpression([
-        j.property('init', j.identifier('name'), nameValue),
-        j.property('init', j.identifier('fill'), j.stringLiteral('blue')),
-      ])
-
-      const iconProp = j.jsxAttribute(j.jsxIdentifier('icon'), j.jsxExpressionContainer(iconObject))
-      avatarAttributes.push(iconProp)
+      const iconObject = createNestedObject(
+        {
+          name: iconNameValue,
+          fill: 'blue',
+        },
+        j,
+      )
+      avatarAttributes.push(createAttribute('icon', iconObject, j))
     } else if (imageUriValue) {
       // imageUri → image={{ source: { uri: "..." } }}
-      const uriValue =
-        imageUriValue.type === 'JSXExpressionContainer' ? imageUriValue.expression : imageUriValue
-
-      const imageObject = j.objectExpression([
-        j.property(
-          'init',
-          j.identifier('source'),
-          j.objectExpression([j.property('init', j.identifier('uri'), uriValue)]),
-        ),
-      ])
-
-      const imageProp = j.jsxAttribute(
-        j.jsxIdentifier('image'),
-        j.jsxExpressionContainer(imageObject),
+      const imageObject = createNestedObject(
+        {
+          source: { uri: imageUriValue },
+        },
+        j,
       )
-      avatarAttributes.push(imageProp)
+      avatarAttributes.push(createAttribute('image', imageObject, j))
     } else if (imageSourceValue) {
       // imageSource → image={{ source }}
-      const sourceValue =
-        imageSourceValue.type === 'JSXExpressionContainer'
-          ? imageSourceValue.expression
-          : imageSourceValue
-
-      const imageObject = j.objectExpression([
-        j.property('init', j.identifier('source'), sourceValue),
-      ])
-
-      const imageProp = j.jsxAttribute(
-        j.jsxIdentifier('image'),
-        j.jsxExpressionContainer(imageObject),
-      )
-      avatarAttributes.push(imageProp)
+      const imageObject = createNestedObject({ source: imageSourceValue }, j)
+      avatarAttributes.push(createAttribute('image', imageObject, j))
     }
 
     path.node.openingElement.attributes = avatarAttributes

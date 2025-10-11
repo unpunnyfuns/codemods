@@ -2,6 +2,8 @@
 // See switch.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import { filterAttributes, findAttribute } from '../helpers/jsx-attributes.js'
+import { findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -67,7 +69,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const switchElements = root.find(j.JSXElement, { openingElement: { name: { name: 'Switch' } } })
+  const switchElements = findJSXElements(root, 'Switch', j)
   if (switchElements.length === 0) {
     return fileInfo.source
   }
@@ -86,13 +88,8 @@ function main(fileInfo, api, options = {}) {
     const children = path.node.children || []
 
     // Extract label prop to transform into <Switch.Description>
-    let labelValue = null
-    const labelAttr = attributes.find(
-      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'label',
-    )
-    if (labelAttr) {
-      labelValue = labelAttr.value
-    }
+    const labelAttr = findAttribute(attributes, 'label')
+    const labelValue = labelAttr ? labelAttr.value : null
 
     const {
       styleProps,
@@ -108,12 +105,8 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers.add(h)
     }
 
-    const switchAttributes = attributes.filter((attr) => {
-      if (attr.type !== 'JSXAttribute' || !attr.name) {
-        return false
-      }
-      const propName = attr.name.name
-      return directPropsList.includes(propName) && !propsToRemove.includes(propName)
+    const switchAttributes = filterAttributes(attributes, {
+      allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
     for (const [name, value] of Object.entries(transformedProps)) {

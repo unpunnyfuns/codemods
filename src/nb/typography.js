@@ -2,6 +2,7 @@
 // See typography.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import { findJSXElements } from '../helpers/jsx-elements.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { TYPOGRAPHY_RESTRICTED_PROPS } from './mappings/nordlys-props.js'
@@ -70,11 +71,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const typographyElements = root.find(j.JSXElement, {
-    openingElement: {
-      name: { name: 'Typography' },
-    },
-  })
+  const typographyElements = findJSXElements(root, 'Typography', j)
 
   if (typographyElements.length === 0) {
     return fileInfo.source

@@ -2,6 +2,8 @@
 // See alert.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import { createAttribute, filterAttributes } from '../helpers/jsx-attributes.js'
+import { findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -128,14 +130,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const alertElements = root.find(j.JSXElement, {
-    openingElement: {
-      name: {
-        type: 'JSXIdentifier',
-        name: 'Alert',
-      },
-    },
-  })
+  const alertElements = findJSXElements(root, 'Alert', j)
 
   if (alertElements.length === 0) {
     return fileInfo.source
@@ -176,12 +171,8 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers.add(h)
     }
 
-    const alertAttributes = attributes.filter((attr) => {
-      if (attr.type !== 'JSXAttribute' || !attr.name) {
-        return false
-      }
-      const propName = attr.name.name
-      return directPropsList.includes(propName) && !propsToRemove.includes(propName)
+    const alertAttributes = filterAttributes(attributes, {
+      allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
     for (const [name, value] of Object.entries(transformedProps)) {
@@ -190,18 +181,12 @@ function main(fileInfo, api, options = {}) {
 
     // Add title prop if found
     if (title) {
-      const titleValue =
-        typeof title === 'string' ? j.stringLiteral(title) : j.jsxExpressionContainer(title)
-      alertAttributes.push(j.jsxAttribute(j.jsxIdentifier('title'), titleValue))
+      alertAttributes.push(createAttribute('title', title, j))
     }
 
     // Add description prop if found
     if (description) {
-      const descValue =
-        typeof description === 'string'
-          ? j.stringLiteral(description)
-          : j.jsxExpressionContainer(description)
-      alertAttributes.push(j.jsxAttribute(j.jsxIdentifier('description'), descValue))
+      alertAttributes.push(createAttribute('description', description, j))
     }
 
     // Warn if no description

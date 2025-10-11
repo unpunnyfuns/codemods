@@ -2,6 +2,13 @@
 // See badge.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import {
+  createAttribute,
+  createStringAttribute,
+  filterAttributes,
+  hasAttribute,
+} from '../helpers/jsx-attributes.js'
+import { findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -81,14 +88,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const badgeElements = root.find(j.JSXElement, {
-    openingElement: {
-      name: {
-        type: 'JSXIdentifier',
-        name: 'Badge',
-      },
-    },
-  })
+  const badgeElements = findJSXElements(root, 'Badge', j)
 
   if (badgeElements.length === 0) {
     return fileInfo.source
@@ -163,12 +163,8 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Has text content → migrate to Nordlys Badge
-    const badgeAttributes = attributes.filter((attr) => {
-      if (attr.type !== 'JSXAttribute' || !attr.name) {
-        return false
-      }
-      const propName = attr.name.name
-      return directPropsList.includes(propName) && !propsToRemove.includes(propName)
+    const badgeAttributes = filterAttributes(attributes, {
+      allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
     for (const [name, value] of Object.entries(transformedProps)) {
@@ -176,18 +172,11 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Add text prop with extracted content
-    const textValue =
-      typeof textContent === 'string'
-        ? j.stringLiteral(textContent)
-        : j.jsxExpressionContainer(textContent)
-    badgeAttributes.push(j.jsxAttribute(j.jsxIdentifier('text'), textValue))
+    badgeAttributes.push(createAttribute('text', textContent, j))
 
     // Add default size if not specified
-    const hasSize = badgeAttributes.some(
-      (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'size',
-    )
-    if (!hasSize) {
-      badgeAttributes.push(j.jsxAttribute(j.jsxIdentifier('size'), j.stringLiteral('md')))
+    if (!hasAttribute(badgeAttributes, 'size')) {
+      badgeAttributes.push(createStringAttribute('size', 'md', j))
     }
 
     // Create new self-closing Badge element

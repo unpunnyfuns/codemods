@@ -2,6 +2,7 @@
 // See stack.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import { findJSXElements } from '../helpers/jsx-elements.js'
 import {
   addPropsToElement,
   addStyleProp,
@@ -127,9 +128,7 @@ function main(fileInfo, api, options = {}) {
       continue
     }
 
-    const stackElements = root.find(j.JSXElement, {
-      openingElement: { name: { name: componentName } },
-    })
+    const stackElements = findJSXElements(root, componentName, j)
     if (stackElements.length === 0) {
       continue
     }

@@ -2,6 +2,14 @@
 // See button.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import {
+  createAttribute,
+  createStringAttribute,
+  filterAttributes,
+  getAttributeValue,
+  hasAttribute,
+} from '../helpers/jsx-attributes.js'
+import { findJSXElements } from '../helpers/jsx-elements.js'
 import { extractPropFromJSXElement, extractSimpleChild } from '../helpers/jsx-extraction.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
 import {
@@ -80,14 +88,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const buttonElements = root.find(j.JSXElement, {
-    openingElement: {
-      name: {
-        type: 'JSXIdentifier',
-        name: 'Button',
-      },
-    },
-  })
+  const buttonElements = findJSXElements(root, 'Button', j)
 
   if (buttonElements.length === 0) {
     return fileInfo.source
@@ -112,12 +113,10 @@ function main(fileInfo, api, options = {}) {
     let iconValue = null
     let textValue = null
 
-    const leftIconAttr = attributes.find(
-      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'leftIcon',
-    )
+    const leftIconValue = getAttributeValue(attributes, 'leftIcon')
 
-    if (leftIconAttr?.value && leftIconAttr.value.type === 'JSXExpressionContainer') {
-      const iconName = extractPropFromJSXElement(leftIconAttr.value.expression, 'Icon', 'name')
+    if (leftIconValue) {
+      const iconName = extractPropFromJSXElement(leftIconValue, 'Icon', 'name')
       if (iconName) {
         iconValue = typeof iconName === 'string' ? j.stringLiteral(iconName) : iconName
       }
@@ -155,18 +154,12 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers.add(h)
     }
 
-    if (
-      attributes.some((attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'rightIcon')
-    ) {
+    if (hasAttribute(attributes, 'rightIcon')) {
       warnings.push('Button rightIcon not supported in Nordlys - dropped')
     }
 
-    const buttonAttributes = attributes.filter((attr) => {
-      if (attr.type !== 'JSXAttribute' || !attr.name) {
-        return false
-      }
-      const propName = attr.name.name
-      return directPropsList.includes(propName) && !propsToRemove.includes(propName)
+    const buttonAttributes = filterAttributes(attributes, {
+      allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
     for (const [name, value] of Object.entries(transformedProps)) {
@@ -174,22 +167,15 @@ function main(fileInfo, api, options = {}) {
     }
 
     if (iconValue) {
-      buttonAttributes.push(
-        j.jsxAttribute(j.jsxIdentifier('icon'), j.jsxExpressionContainer(iconValue)),
-      )
+      buttonAttributes.push(createAttribute('icon', iconValue, j))
     }
 
     if (textValue) {
-      buttonAttributes.push(
-        j.jsxAttribute(j.jsxIdentifier('text'), j.jsxExpressionContainer(textValue)),
-      )
+      buttonAttributes.push(createAttribute('text', textValue, j))
     }
 
-    const hasType = buttonAttributes.some(
-      (attr) => attr.type === 'JSXAttribute' && attr.name && attr.name.name === 'type',
-    )
-    if (!hasType) {
-      buttonAttributes.push(j.jsxAttribute(j.jsxIdentifier('type'), j.stringLiteral(defaultType)))
+    if (!hasAttribute(buttonAttributes, 'type')) {
+      buttonAttributes.push(createStringAttribute('type', defaultType, j))
     }
 
     addElementComment(path, droppedProps, invalidStyles, j)
