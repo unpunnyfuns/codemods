@@ -1,15 +1,10 @@
 // Migrate NativeBase Pressable → React Native Pressable with StyleSheet
 // See pressable.md for documentation
 
+import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { createStringAttribute, hasAttribute } from '../helpers/jsx-attributes.js'
-import { findJSXElements } from '../helpers/jsx-elements.js'
-import {
-  addPropsToElement,
-  addStyleProp,
-  buildStyleValue,
-  removePropsFromElement,
-} from '../helpers/jsx-transforms.js'
+import { buildStyleValue } from '../helpers/jsx-transforms.js'
+import { createStyleContext } from '../helpers/style-context.js'
 import { directProps } from './mappings/props-direct.js'
 import {
   allPseudoProps,
@@ -28,7 +23,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, categorizeProps } from './props.js'
 
 // Pressable prop mappings
 const styleProps = {
@@ -74,8 +69,16 @@ const dropPropsList = [
   'isDisabled',
 ]
 
+const pressableProps = {
+  styleProps,
+  transformProps,
+  directProps: directPropsList,
+  dropProps: dropPropsList,
+}
+
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
+  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -91,20 +94,12 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const pressableElements = findJSXElements(root, 'Pressable', j)
+  const pressableElements = $.findElements(root, 'Pressable')
   if (pressableElements.length === 0) {
     return fileInfo.source
   }
 
-  const elementStyles = []
-  const usedTokenHelpers = new Set()
-
-  const pressableProps = {
-    styleProps,
-    transformProps,
-    directProps: directPropsList,
-    dropProps: dropPropsList,
-  }
+  const styles = createStyleContext()
 
   pressableElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -120,42 +115,51 @@ function main(fileInfo, api, options = {}) {
       existingStyleReferences,
     } = categorizeProps(attributes, pressableProps, j)
 
-    for (const h of newHelpers) {
-      usedTokenHelpers.add(h)
-    }
+    styles.addHelpers(newHelpers)
 
-    removePropsFromElement(attributes, propsToRemove)
+    // Remove props that need to be removed
+    path.node.openingElement.attributes = attributes.filter((attr) => !propsToRemove.includes(attr))
 
     // Preserve wrapper's default accessibilityRole="button" if not explicitly set
-    if (!hasAttribute(attributes, 'accessibilityRole')) {
-      attributes.push(createStringAttribute('accessibilityRole', 'button', j))
+    if (!$.hasAttribute(path.node.openingElement.attributes, 'accessibilityRole')) {
+      path.node.openingElement.attributes.push(
+        $.createStringAttribute('accessibilityRole', 'button'),
+      )
     }
 
-    addPropsToElement(attributes, transformedProps, j)
+    // Add transformed props
+    $.addTransformedProps(path.node.openingElement.attributes, transformedProps)
 
+    // Build and add style prop
+    const tempStyles = []
     const styleValue = buildStyleValue(
       styleProps,
       inlineStyles,
       `pressable${index}`,
-      elementStyles,
+      tempStyles,
       j,
       existingStyleReferences,
     )
-    addStyleProp(attributes, styleValue, j)
+    if (tempStyles.length > 0) {
+      styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
+    }
+
+    // Add style prop to element (only if styleValue is not null)
+    if (styleValue) {
+      const styleProp = j.jsxAttribute(
+        j.jsxIdentifier('style'),
+        j.jsxExpressionContainer(styleValue),
+      )
+      path.node.openingElement.attributes.push(styleProp)
+    }
 
     addElementComment(path, droppedProps, invalidStyles, j)
   })
 
   removeNamedImport(imports, 'Pressable', j)
   addNamedImport(root, targetImport, targetName, j)
-  for (const h of usedTokenHelpers) {
-    addNamedImport(root, tokenImport, h, j)
-  }
 
-  if (elementStyles.length > 0) {
-    addNamedImport(root, targetImport, 'StyleSheet', j)
-  }
-  addOrExtendStyleSheet(root, elementStyles, j)
+  styles.applyToRoot(root, { wrap: false, tokenImport }, j)
 
   return root.toSource({
     quote: 'single',

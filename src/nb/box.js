@@ -1,15 +1,10 @@
 // Migrate NativeBase Box → React Native View with StyleSheet
 // See box.md for documentation
 
+import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { findJSXElements } from '../helpers/jsx-elements.js'
-import {
-  addPropsToElement,
-  addStyleProp,
-  buildStyleValue,
-  removePropsFromElement,
-  updateElementName,
-} from '../helpers/jsx-transforms.js'
+import { buildStyleValue } from '../helpers/jsx-transforms.js'
+import { createStyleContext } from '../helpers/style-context.js'
 import { directProps } from './mappings/props-direct.js'
 import {
   allPseudoProps,
@@ -28,7 +23,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, categorizeProps } from './props.js'
 
 // Box to View prop mappings
 const styleProps = {
@@ -65,8 +60,16 @@ const dropPropsList = [
   'safeAreaTop',
 ]
 
+const boxProps = {
+  styleProps,
+  transformProps,
+  directProps: directPropsList,
+  dropProps: dropPropsList,
+}
+
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
+  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? 'native-base'
@@ -81,20 +84,12 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const boxElements = findJSXElements(root, 'Box', j)
+  const boxElements = $.findElements(root, 'Box')
   if (boxElements.length === 0) {
     return fileInfo.source
   }
 
-  const elementStyles = []
-  const usedTokenHelpers = new Set()
-
-  const boxProps = {
-    styleProps,
-    transformProps,
-    directProps: directPropsList,
-    dropProps: dropPropsList,
-  }
+  const styles = createStyleContext()
 
   boxElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -110,23 +105,42 @@ function main(fileInfo, api, options = {}) {
       existingStyleReferences,
     } = categorizeProps(attributes, boxProps, j)
 
-    for (const h of newHelpers) {
-      usedTokenHelpers.add(h)
+    styles.addHelpers(newHelpers)
+
+    // Remove props that need to be removed
+    path.node.openingElement.attributes = attributes.filter((attr) => !propsToRemove.includes(attr))
+
+    // Update element name
+    path.node.openingElement.name = j.jsxIdentifier(targetName)
+    if (path.node.closingElement) {
+      path.node.closingElement.name = j.jsxIdentifier(targetName)
     }
 
-    removePropsFromElement(attributes, propsToRemove)
-    updateElementName(path, targetName)
-    addPropsToElement(attributes, transformedProps, j)
+    // Add transformed props
+    $.addTransformedProps(path.node.openingElement.attributes, transformedProps)
 
+    // Build and add style prop
+    const tempStyles = []
     const styleValue = buildStyleValue(
       styleProps,
       inlineStyles,
       `box${index}`,
-      elementStyles,
+      tempStyles,
       j,
       existingStyleReferences,
     )
-    addStyleProp(attributes, styleValue, j)
+    if (tempStyles.length > 0) {
+      styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
+    }
+
+    // Add style prop to element (only if styleValue is not null)
+    if (styleValue) {
+      const styleProp = j.jsxAttribute(
+        j.jsxIdentifier('style'),
+        j.jsxExpressionContainer(styleValue),
+      )
+      path.node.openingElement.attributes.push(styleProp)
+    }
 
     addElementComment(path, droppedProps, invalidStyles, j)
   })
@@ -134,11 +148,7 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Box', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  for (const h of usedTokenHelpers) {
-    addNamedImport(root, tokenImport, h, j)
-  }
-
-  addOrExtendStyleSheet(root, elementStyles, j)
+  styles.applyToRoot(root, { wrap: false, tokenImport }, j)
 
   return root.toSource({
     quote: 'single',

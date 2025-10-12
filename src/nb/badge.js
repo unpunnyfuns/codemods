@@ -1,16 +1,10 @@
 // Migrate NativeBase Badge → Nordlys Badge (text badges) or View (indicator dots)
 // See badge.md for documentation
 
+import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import {
-  addTransformedProps,
-  createAttribute,
-  createStringAttribute,
-  filterAttributes,
-  hasAttribute,
-} from '../helpers/jsx-attributes.js'
-import { createSelfClosingElement, findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
+import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
 import {
@@ -24,7 +18,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, categorizeProps } from './props.js'
 
 // Badge prop mappings
 const styleProps = {
@@ -45,11 +39,14 @@ const transformProps = {
 
 const directPropsList = ['size', 'transparent', ...accessibility]
 
-const dropPropsList = [
-  ...allPseudoProps,
-  // Badge-specific NativeBase props
-  'variant',
-]
+const dropPropsList = [...allPseudoProps, 'variant']
+
+const badgeProps = {
+  styleProps,
+  transformProps,
+  directProps: directPropsList,
+  dropProps: dropPropsList,
+}
 
 // Extract text content from Badge children
 function extractTextContent(children) {
@@ -75,6 +72,7 @@ function extractTextContent(children) {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
+  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? 'native-base'
@@ -89,21 +87,14 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const badgeElements = findJSXElements(root, 'Badge', j)
+  const badgeElements = $.findElements(root, 'Badge')
 
   if (badgeElements.length === 0) {
     return fileInfo.source
   }
 
   const warnings = []
-  const elementStyles = []
-  const usedTokenHelpers = new Set()
-  const badgeProps = {
-    styleProps,
-    transformProps,
-    directProps: directPropsList,
-    dropProps: dropPropsList,
-  }
+  const styles = createStyleContext()
 
   badgeElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -122,9 +113,7 @@ function main(fileInfo, api, options = {}) {
       invalidStyles,
     } = categorizeProps(attributes, badgeProps, j)
 
-    for (const h of newHelpers) {
-      usedTokenHelpers.add(h)
-    }
+    styles.addHelpers(newHelpers)
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
@@ -138,14 +127,16 @@ function main(fileInfo, api, options = {}) {
 
       // Convert to View with styles
       const styleName = `badge${index}`
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
+      const tempStyles = []
+      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      if (tempStyles.length > 0) {
+        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
+      }
 
       // Create self-closing View with style
-      const viewElement = createSelfClosingElement(
-        'View',
-        [j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(styleValue))],
-        j,
-      )
+      const viewElement = $.createElement('View', [
+        j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(styleValue)),
+      ])
 
       // Replace Badge with View
       j(path).replaceWith(viewElement)
@@ -159,26 +150,30 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Has text content → migrate to Nordlys Badge
-    const badgeAttributes = filterAttributes(attributes, {
+    const badgeAttributes = $.filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    addTransformedProps(badgeAttributes, transformedProps, j)
+    $.addTransformedProps(badgeAttributes, transformedProps)
 
     // Add text prop with extracted content
-    badgeAttributes.push(createAttribute('text', textContent, j))
+    badgeAttributes.push($.createAttribute('text', textContent))
 
     // Add default size if not specified
-    if (!hasAttribute(badgeAttributes, 'size')) {
-      badgeAttributes.push(createStringAttribute('size', 'md', j))
+    if (!$.hasAttribute(badgeAttributes, 'size')) {
+      badgeAttributes.push($.createStringAttribute('size', 'md'))
     }
 
-    const badgeElement = createSelfClosingElement('Badge', badgeAttributes, j)
+    const badgeElement = $.createElement('Badge', badgeAttributes)
 
     // Wrap in View if style props exist
     if (wrap && hasStyleProps) {
       const styleName = `badge${index}`
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
+      const tempStyles = []
+      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      if (tempStyles.length > 0) {
+        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
+      }
       const viewElement = createViewWrapper(badgeElement, styleValue, j)
       j(path).replaceWith(viewElement)
     } else {
@@ -196,17 +191,7 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Badge', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  if (wrap && elementStyles.length > 0) {
-    addNamedImport(root, 'react-native', 'View', j)
-    addNamedImport(root, 'react-native', 'StyleSheet', j)
-    for (const h of usedTokenHelpers) {
-      addNamedImport(root, tokenImport, h, j)
-    }
-  }
-
-  if (wrap && elementStyles.length > 0) {
-    addOrExtendStyleSheet(root, elementStyles, j)
-  }
+  styles.applyToRoot(root, { wrap, tokenImport }, j)
 
   return root.toSource({
     quote: 'single',

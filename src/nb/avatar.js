@@ -1,17 +1,10 @@
 // Migrate NativeBase/Common Avatar → Nordlys Avatar with object-based props
 // See avatar.md for documentation
 
-import { createNestedObject } from '../helpers/ast-builders.js'
+import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import {
-  addTransformedProps,
-  createAttribute,
-  filterAttributes,
-  getAttributeValue,
-} from '../helpers/jsx-attributes.js'
-import { cloneElement } from '../helpers/jsx-clone.js'
-import { findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
+import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
 import {
@@ -25,7 +18,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, categorizeProps } from './props.js'
 
 // Avatar prop mappings
 const styleProps = {
@@ -39,9 +32,7 @@ const styleProps = {
   ...text,
   ...extra,
 }
-
-// Remove size from STYLE_PROPS - it's a semantic Avatar prop, not a style prop
-delete styleProps.size
+delete styleProps.size // It's a semantic Avatar prop, not a style prop
 
 const transformProps = {}
 
@@ -49,7 +40,6 @@ const directPropsList = ['size', ...accessibility]
 
 const dropPropsList = [
   ...allPseudoProps,
-  // Avatar-specific props (transformed via custom logic)
   'iconName',
   'imageUri',
   'imageSource',
@@ -61,8 +51,16 @@ const dropPropsList = [
   'source',
 ]
 
+const avatarProps = {
+  styleProps,
+  transformProps,
+  directProps: directPropsList,
+  dropProps: dropPropsList,
+}
+
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
+  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -77,29 +75,22 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const avatarElements = findJSXElements(root, 'Avatar', j)
+  const avatarElements = $.findElements(root, 'Avatar')
 
   if (avatarElements.length === 0) {
     return fileInfo.source
   }
 
   const warnings = []
-  const elementStyles = []
-  const usedTokenHelpers = new Set()
-  const avatarProps = {
-    styleProps,
-    transformProps,
-    directProps: directPropsList,
-    dropProps: dropPropsList,
-  }
+  const styles = createStyleContext()
 
   avatarElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
 
-    const iconNameValue = getAttributeValue(attributes, 'iconName')
-    const imageUriValue = getAttributeValue(attributes, 'imageUri')
-    const imageSourceValue = getAttributeValue(attributes, 'imageSource')
-    const lettersValue = getAttributeValue(attributes, 'letters')
+    const iconNameValue = $.getAttributeValue(attributes, 'iconName')
+    const imageUriValue = $.getAttributeValue(attributes, 'imageUri')
+    const imageSourceValue = $.getAttributeValue(attributes, 'imageSource')
+    const lettersValue = $.getAttributeValue(attributes, 'letters')
 
     // Warn and skip if letters prop is used (not supported)
     if (lettersValue) {
@@ -117,39 +108,31 @@ function main(fileInfo, api, options = {}) {
       invalidStyles,
     } = categorizeProps(attributes, avatarProps, j)
 
-    for (const h of newHelpers) {
-      usedTokenHelpers.add(h)
-    }
+    styles.addHelpers(newHelpers)
 
-    const avatarAttributes = filterAttributes(attributes, {
+    const avatarAttributes = $.filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    addTransformedProps(avatarAttributes, transformedProps, j)
+    $.addTransformedProps(avatarAttributes, transformedProps)
 
     if (iconNameValue) {
       // iconName → icon={{ name: "...", fill: "blue" }}
-      const iconObject = createNestedObject(
-        {
-          name: iconNameValue,
-          fill: 'blue',
-        },
-        j,
-      )
-      avatarAttributes.push(createAttribute('icon', iconObject, j))
+      const iconObject = $.createNestedObject({
+        name: iconNameValue,
+        fill: 'blue',
+      })
+      avatarAttributes.push($.createAttribute('icon', iconObject))
     } else if (imageUriValue) {
       // imageUri → image={{ source: { uri: "..." } }}
-      const imageObject = createNestedObject(
-        {
-          source: { uri: imageUriValue },
-        },
-        j,
-      )
-      avatarAttributes.push(createAttribute('image', imageObject, j))
+      const imageObject = $.createNestedObject({
+        source: { uri: imageUriValue },
+      })
+      avatarAttributes.push($.createAttribute('image', imageObject))
     } else if (imageSourceValue) {
       // imageSource → image={{ source }}
-      const imageObject = createNestedObject({ source: imageSourceValue }, j)
-      avatarAttributes.push(createAttribute('image', imageObject, j))
+      const imageObject = $.createNestedObject({ source: imageSourceValue })
+      avatarAttributes.push($.createAttribute('image', imageObject))
     }
 
     path.node.openingElement.attributes = avatarAttributes
@@ -161,9 +144,14 @@ function main(fileInfo, api, options = {}) {
     if (wrap && hasStyleProps) {
       const styleName = `avatar${index}`
 
-      const avatarElement = cloneElement(path.node, j)
+      const avatarElement = $.clone(path.node)
 
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
+      const tempStyles = []
+      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      if (tempStyles.length > 0) {
+        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
+      }
+
       const viewElement = createViewWrapper(avatarElement, styleValue, j)
       j(path).replaceWith(viewElement)
     }
@@ -179,17 +167,7 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Avatar', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  if (wrap && elementStyles.length > 0) {
-    addNamedImport(root, 'react-native', 'View', j)
-    addNamedImport(root, 'react-native', 'StyleSheet', j)
-    for (const h of usedTokenHelpers) {
-      addNamedImport(root, tokenImport, h, j)
-    }
-  }
-
-  if (wrap && elementStyles.length > 0) {
-    addOrExtendStyleSheet(root, elementStyles, j)
-  }
+  styles.applyToRoot(root, { wrap, tokenImport }, j)
 
   return root.toSource({
     quote: 'single',

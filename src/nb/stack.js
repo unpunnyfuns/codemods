@@ -1,15 +1,10 @@
 // Migrate NativeBase HStack/VStack → Stack with direction
 // See stack.md for documentation
 
+import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { findJSXElements } from '../helpers/jsx-elements.js'
-import {
-  addPropsToElement,
-  addStyleProp,
-  buildStyleValue,
-  removePropsFromElement,
-  updateElementName,
-} from '../helpers/jsx-transforms.js'
+import { buildStyleValue } from '../helpers/jsx-transforms.js'
+import { createStyleContext } from '../helpers/style-context.js'
 import { alignValues, justifyValues } from './mappings/maps-values.js'
 import { directProps } from './mappings/props-direct.js'
 import {
@@ -31,7 +26,6 @@ import {
 } from './mappings/props-style.js'
 import {
   addElementComment,
-  addOrExtendStyleSheet,
   categorizeProps,
   validateTokenValue,
   validSpaceTokens,
@@ -91,6 +85,13 @@ const dropPropsList = [
   '_stack',
 ]
 
+const stackProps = {
+  styleProps,
+  transformProps,
+  directProps: directPropsList,
+  dropProps: dropPropsList,
+}
+
 const STACK_COMPONENTS = [
   { name: 'HStack', direction: 'horizontal' },
   { name: 'VStack', direction: 'vertical' },
@@ -98,6 +99,7 @@ const STACK_COMPONENTS = [
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
+  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? 'native-base'
@@ -112,15 +114,7 @@ function main(fileInfo, api, options = {}) {
   }
 
   let transformed = false
-  const elementStyles = []
-  const usedTokenHelpers = new Set()
-
-  const stackProps = {
-    styleProps,
-    transformProps,
-    directProps: directPropsList,
-    dropProps: dropPropsList,
-  }
+  const styles = createStyleContext()
 
   // Process each stack component type
   for (const { name: componentName, direction } of STACK_COMPONENTS) {
@@ -128,7 +122,7 @@ function main(fileInfo, api, options = {}) {
       continue
     }
 
-    const stackElements = findJSXElements(root, componentName, j)
+    const stackElements = $.findElements(root, componentName)
     if (stackElements.length === 0) {
       continue
     }
@@ -147,9 +141,7 @@ function main(fileInfo, api, options = {}) {
         existingStyleReferences,
       } = categorizeProps(attributes, stackProps, j)
 
-      for (const h of newHelpers) {
-        usedTokenHelpers.add(h)
-      }
+      styles.addHelpers(newHelpers)
 
       // gap prop must be a valid space token name
       if (transformedProps.gap) {
@@ -163,23 +155,44 @@ function main(fileInfo, api, options = {}) {
         }
       }
 
-      removePropsFromElement(attributes, propsToRemove)
-      updateElementName(path, targetName)
+      // Remove props that need to be removed
+      path.node.openingElement.attributes = attributes.filter(
+        (attr) => !propsToRemove.includes(attr),
+      )
 
+      // Update element name
+      path.node.openingElement.name = j.jsxIdentifier(targetName)
+      if (path.node.closingElement) {
+        path.node.closingElement.name = j.jsxIdentifier(targetName)
+      }
+
+      // Add direction prop
       const directionProp = j.jsxAttribute(j.jsxIdentifier('direction'), j.stringLiteral(direction))
-      attributes.push(directionProp)
+      path.node.openingElement.attributes.push(directionProp)
 
-      addPropsToElement(attributes, transformedProps, j)
+      // Add transformed props
+      $.addTransformedProps(path.node.openingElement.attributes, transformedProps)
 
+      // Build and add style prop
+      const tempStyles = []
       const styleValue = buildStyleValue(
         styleProps,
         inlineStyles,
         `${componentName.toLowerCase()}${index}`,
-        elementStyles,
+        tempStyles,
         j,
         existingStyleReferences,
       )
-      addStyleProp(attributes, styleValue, j)
+      if (tempStyles.length > 0) {
+        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
+      }
+
+      // Add style prop to element
+      const styleProp = j.jsxAttribute(
+        j.jsxIdentifier('style'),
+        j.jsxExpressionContainer(styleValue),
+      )
+      path.node.openingElement.attributes.push(styleProp)
 
       addElementComment(path, droppedProps, invalidStyles, j)
     })
@@ -193,11 +206,8 @@ function main(fileInfo, api, options = {}) {
   }
 
   addNamedImport(root, targetImport, targetName, j)
-  for (const h of usedTokenHelpers) {
-    addNamedImport(root, tokenImport, h, j)
-  }
 
-  addOrExtendStyleSheet(root, elementStyles, j)
+  styles.applyToRoot(root, { wrap: false, tokenImport }, j)
 
   return root.toSource({
     quote: 'single',

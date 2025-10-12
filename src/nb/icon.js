@@ -1,9 +1,8 @@
 // Migrate NativeBase/Common Icon → Nordlys Icon
 // See icon.md for documentation
 
+import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { createAttribute, extractAttributeValue } from '../helpers/jsx-attributes.js'
-import { findJSXElements } from '../helpers/jsx-elements.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { NB_SPACE_SCALE_NUMERIC } from './mappings/nativebase-props.js'
 
@@ -31,6 +30,7 @@ function convertSizeToNumber(value, j) {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
+  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -42,7 +42,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const iconElements = findJSXElements(root, 'Icon', j)
+  const iconElements = $.findElements(root, 'Icon')
 
   if (iconElements.length === 0) {
     return fileInfo.source
@@ -89,11 +89,11 @@ function main(fileInfo, api, options = {}) {
           hasHeight = true
         }
 
-        const value = extractAttributeValue(attr.value)
+        const value = $.extractAttributeValue(attr.value)
         const converted = convertSizeToNumber(value, j)
 
         if (converted) {
-          newAttributes.push(createAttribute(propName, converted, j))
+          newAttributes.push($.createAttribute(propName, converted))
         } else {
           newAttributes.push(attr)
         }

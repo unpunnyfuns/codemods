@@ -1,10 +1,10 @@
 // Migrate NativeBase Input → Nordlys Input (simple cases only)
 // See input.md for documentation
 
+import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { addTransformedProps, filterAttributes, hasAttribute } from '../helpers/jsx-attributes.js'
-import { createSelfClosingElement, findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
+import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
 import {
@@ -18,7 +18,18 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, categorizeProps } from './props.js'
+
+// Props that need manual handling or warning
+const complexProps = [
+  'InputLeftElement',
+  'InputRightElement',
+  'multiline',
+  'numberOfLines',
+  'secureTextEntry',
+  'variant',
+  'size',
+]
 
 // Input prop mappings
 const styleProps = {
@@ -39,30 +50,20 @@ const transformProps = {
   isDisabled: 'disabled',
 }
 
-// Props that need manual handling or warning
-const complexProps = [
-  'InputLeftElement',
-  'InputRightElement',
-  'multiline',
-  'numberOfLines',
-  'secureTextEntry',
-  'variant',
-  'size',
-]
-
 const directPropsList = ['value', 'keyboardType', 'onBlur', 'error', ...accessibility]
 
-const dropPropsList = [
-  ...allPseudoProps,
-  // Input-specific NativeBase props
-  'variant',
-  'size',
-  '_focus',
-  '_input',
-]
+const dropPropsList = [...allPseudoProps, 'variant', 'size', '_focus', '_input']
+
+const inputProps = {
+  styleProps,
+  transformProps,
+  directProps: directPropsList,
+  dropProps: dropPropsList,
+}
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
+  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? 'native-base'
@@ -77,21 +78,14 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const inputElements = findJSXElements(root, 'Input', j)
+  const inputElements = $.findElements(root, 'Input')
 
   if (inputElements.length === 0) {
     return fileInfo.source
   }
 
   const warnings = []
-  const elementStyles = []
-  const usedTokenHelpers = new Set()
-  const inputProps = {
-    styleProps,
-    transformProps,
-    directProps: directPropsList,
-    dropProps: dropPropsList,
-  }
+  const styles = createStyleContext()
 
   inputElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -113,37 +107,39 @@ function main(fileInfo, api, options = {}) {
       invalidStyles,
     } = categorizeProps(attributes, inputProps, j)
 
-    for (const h of newHelpers) {
-      usedTokenHelpers.add(h)
-    }
+    styles.addHelpers(newHelpers)
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
     const allowList = [...directPropsList, ...complexProps].filter(
       (prop) => !propsToRemove.includes(prop),
     )
-    const inputAttributes = filterAttributes(attributes, { allow: allowList })
+    const inputAttributes = $.filterAttributes(attributes, { allow: allowList })
 
-    addTransformedProps(inputAttributes, transformedProps, j)
+    $.addTransformedProps(inputAttributes, transformedProps)
 
     // Check if label prop exists
-    if (!hasAttribute(inputAttributes, 'label')) {
+    if (!$.hasAttribute(inputAttributes, 'label')) {
       warnings.push('Input: Missing required "label" prop (transformed from "placeholder")')
     }
 
     // Check if onChange prop exists
-    if (!hasAttribute(inputAttributes, 'onChange')) {
+    if (!$.hasAttribute(inputAttributes, 'onChange')) {
       warnings.push('Input: Missing required "onChange" prop (transformed from "onChangeText")')
     }
 
-    const inputElement = createSelfClosingElement('Input', inputAttributes, j)
+    const inputElement = $.createElement('Input', inputAttributes)
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
     // Wrap in View if style props exist
     if (wrap && hasStyleProps) {
       const styleName = `input${index}`
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
+      const tempStyles = []
+      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      if (tempStyles.length > 0) {
+        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
+      }
       const viewElement = createViewWrapper(inputElement, styleValue, j)
       j(path).replaceWith(viewElement)
     } else {
@@ -161,17 +157,7 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Input', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  if (wrap && elementStyles.length > 0) {
-    addNamedImport(root, 'react-native', 'View', j)
-    addNamedImport(root, 'react-native', 'StyleSheet', j)
-    for (const h of usedTokenHelpers) {
-      addNamedImport(root, tokenImport, h, j)
-    }
-  }
-
-  if (wrap && elementStyles.length > 0) {
-    addOrExtendStyleSheet(root, elementStyles, j)
-  }
+  styles.applyToRoot(root, { wrap, tokenImport }, j)
 
   return root.toSource({
     quote: 'single',

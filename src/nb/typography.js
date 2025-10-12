@@ -1,10 +1,10 @@
 // Migrate NativeBase Typography → Nordlys Typography with wrapper View for style props
 // See typography.md for documentation
 
+import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { cloneElement } from '../helpers/jsx-clone.js'
-import { findJSXElements } from '../helpers/jsx-elements.js'
 import { createViewWrapper } from '../helpers/jsx-transforms.js'
+import { createStyleContext } from '../helpers/style-context.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { TYPOGRAPHY_RESTRICTED_PROPS } from './mappings/nordlys-props.js'
 import { accessibility, eventHandlers } from './mappings/props-direct.js'
@@ -19,7 +19,7 @@ import {
   sizing,
   spacing,
 } from './mappings/props-style.js'
-import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, categorizeProps } from './props.js'
 
 // Typography prop mappings (component-specific config)
 const typographyPropConfig = {
@@ -55,6 +55,7 @@ const typographyPropConfig = {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
+  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -72,14 +73,13 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const typographyElements = findJSXElements(root, 'Typography', j)
+  const typographyElements = $.findElements(root, 'Typography')
 
   if (typographyElements.length === 0) {
     return fileInfo.source
   }
 
-  const elementStyles = []
-  const usedTokenHelpers = new Set()
+  const styles = createStyleContext()
   const warnings = []
 
   typographyElements.forEach((path, index) => {
@@ -95,9 +95,7 @@ function main(fileInfo, api, options = {}) {
       invalidStyles,
     } = categorizeProps(attributes, typographyPropConfig, j)
 
-    for (const h of newHelpers) {
-      usedTokenHelpers.add(h)
-    }
+    styles.addHelpers(newHelpers)
 
     // Warn about dropped font props
     for (const { name } of droppedProps) {
@@ -139,9 +137,9 @@ function main(fileInfo, api, options = {}) {
 
     if (wrap && hasStyleProps) {
       const styleName = `typography${index}`
-      elementStyles.push({ name: styleName, styles: styleProps })
+      styles.addStyle(styleName, styleProps)
 
-      const typographyElement = cloneElement(path.node, j)
+      const typographyElement = $.clone(path.node)
 
       const styleValue = j.memberExpression(j.identifier('styles'), j.identifier(styleName))
       const viewElement = createViewWrapper(typographyElement, styleValue, j)
@@ -160,17 +158,7 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Typography', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  if (wrap && elementStyles.length > 0) {
-    addNamedImport(root, 'react-native', 'View', j)
-    addNamedImport(root, 'react-native', 'StyleSheet', j)
-    for (const h of usedTokenHelpers) {
-      addNamedImport(root, tokenImport, h, j)
-    }
-  }
-
-  if (wrap && elementStyles.length > 0) {
-    addOrExtendStyleSheet(root, elementStyles, j)
-  }
+  styles.applyToRoot(root, { wrap, tokenImport }, j)
 
   return root.toSource({
     quote: 'single',

@@ -1,24 +1,12 @@
 // Migrate NativeBase/Common Button → Nordlys Button with extracted icon and text props
 // See button.md for documentation
 
+import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import {
-  addTransformedProps,
-  createAttribute,
-  createStringAttribute,
-  filterAttributes,
-  getAttributeValue,
-  hasAttribute,
-} from '../helpers/jsx-attributes.js'
-import { createSelfClosingElement, findJSXElements } from '../helpers/jsx-elements.js'
 import { extractPropFromJSXElement, extractSimpleChild } from '../helpers/jsx-extraction.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
-import {
-  allPseudoProps,
-  componentAgnostic,
-  platformOverrides,
-  themeOverrides,
-} from './mappings/props-drop.js'
+import { createStyleContext } from '../helpers/style-context.js'
+import { componentAgnostic, platformOverrides, themeOverrides } from './mappings/props-drop.js'
 import {
   border,
   color,
@@ -30,7 +18,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, categorizeProps } from './props.js'
 
 // Button prop mappings
 const styleProps = {
@@ -44,26 +32,18 @@ const styleProps = {
   ...text,
   ...extra,
 }
-
-// Remove size from STYLE_PROPS - it's a semantic Button prop, not a style prop
-delete styleProps.size
+delete styleProps.size // It's a semantic Button prop, not a style prop
 
 const transformProps = {
   isDisabled: 'disabled',
 }
 
-// Direct props: 'size' and 'variant' pass through to Nordlys Button
 const directPropsList = ['size', 'variant', 'onPress', 'testID', 'isLoading', 'type']
 
-// Explicit drop list for Button
-// NOTE: Does NOT include themeProps because Button keeps 'size' and 'variant' as direct props
-// Only drops 'colorScheme' from themeProps
 const dropPropsList = [
-  ...allPseudoProps,
   ...platformOverrides,
   ...themeOverrides,
   ...componentAgnostic,
-  // From themeProps, but keep 'size' and 'variant'
   'colorScheme',
   'leftIcon',
   'rightIcon',
@@ -71,8 +51,16 @@ const dropPropsList = [
   '_loading',
 ]
 
+const buttonProps = {
+  styleProps,
+  transformProps,
+  directProps: directPropsList,
+  dropProps: dropPropsList,
+}
+
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
+  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -89,7 +77,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const buttonElements = findJSXElements(root, 'Button', j)
+  const buttonElements = $.findElements(root, 'Button')
 
   if (buttonElements.length === 0) {
     return fileInfo.source
@@ -98,14 +86,7 @@ function main(fileInfo, api, options = {}) {
   const warnings = []
   let migrated = 0
   let skipped = 0
-  const elementStyles = []
-  const usedTokenHelpers = new Set()
-  const buttonProps = {
-    styleProps,
-    transformProps,
-    directProps: directPropsList,
-    dropProps: dropPropsList,
-  }
+  const styles = createStyleContext()
 
   buttonElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -114,7 +95,7 @@ function main(fileInfo, api, options = {}) {
     let iconValue = null
     let textValue = null
 
-    const leftIconValue = getAttributeValue(attributes, 'leftIcon')
+    const leftIconValue = $.getAttributeValue(attributes, 'leftIcon')
 
     if (leftIconValue) {
       const iconName = extractPropFromJSXElement(leftIconValue, 'Icon', 'name')
@@ -151,42 +132,48 @@ function main(fileInfo, api, options = {}) {
       invalidStyles,
     } = categorizeProps(attributes, buttonProps, j)
 
-    for (const h of newHelpers) {
-      usedTokenHelpers.add(h)
-    }
+    styles.addHelpers(newHelpers)
 
-    if (hasAttribute(attributes, 'rightIcon')) {
+    if ($.hasAttribute(attributes, 'rightIcon')) {
       warnings.push('Button rightIcon not supported in Nordlys - dropped')
     }
 
-    const buttonAttributes = filterAttributes(attributes, {
+    const buttonAttributes = $.filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    addTransformedProps(buttonAttributes, transformedProps, j)
+    $.addTransformedProps(buttonAttributes, transformedProps)
 
     if (iconValue) {
-      buttonAttributes.push(createAttribute('icon', iconValue, j))
+      buttonAttributes.push($.createAttribute('icon', iconValue))
     }
 
     if (textValue) {
-      buttonAttributes.push(createAttribute('text', textValue, j))
+      buttonAttributes.push($.createAttribute('text', textValue))
     }
 
-    if (!hasAttribute(buttonAttributes, 'type')) {
-      buttonAttributes.push(createStringAttribute('type', defaultType, j))
+    if (!$.hasAttribute(buttonAttributes, 'type')) {
+      buttonAttributes.push($.createStringAttribute('type', defaultType))
     }
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
-    const buttonElement = createSelfClosingElement(targetName, buttonAttributes, j)
+    const buttonElement = $.createElement(targetName, buttonAttributes)
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
     if (wrap && hasStyleProps) {
       const styleName = `button${index}`
 
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
+      // buildStyleValue handles complex style processing and pushes to internal array
+      const tempStyles = []
+      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+
+      // Add the generated styles to our context
+      if (tempStyles.length > 0) {
+        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
+      }
+
       const viewElement = createViewWrapper(buttonElement, styleValue, j)
       path.replace(viewElement)
     } else {
@@ -207,17 +194,7 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Button', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  if (wrap && elementStyles.length > 0) {
-    addNamedImport(root, 'react-native', 'View', j)
-    addNamedImport(root, 'react-native', 'StyleSheet', j)
-    for (const h of usedTokenHelpers) {
-      addNamedImport(root, tokenImport, h, j)
-    }
-  }
-
-  if (wrap && elementStyles.length > 0) {
-    addOrExtendStyleSheet(root, elementStyles, j)
-  }
+  styles.applyToRoot(root, { wrap, tokenImport }, j)
 
   return root.toSource({
     quote: 'single',

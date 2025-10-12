@@ -1,14 +1,10 @@
 // Migrate NativeBase Alert → Nordlys Alert
 // See alert.md for documentation
 
+import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import {
-  addTransformedProps,
-  createAttribute,
-  filterAttributes,
-} from '../helpers/jsx-attributes.js'
-import { createSelfClosingElement, findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
+import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
 import {
@@ -22,7 +18,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, categorizeProps } from './props.js'
 
 // Alert prop mappings
 const styleProps = {
@@ -41,12 +37,14 @@ const transformProps = {}
 
 const directPropsList = ['status', ...accessibility]
 
-const dropPropsList = [
-  ...allPseudoProps,
-  // Alert-specific NativeBase props
-  'variant',
-  'colorScheme',
-]
+const dropPropsList = [...allPseudoProps, 'variant', 'colorScheme']
+
+const alertProps = {
+  styleProps,
+  transformProps,
+  directProps: directPropsList,
+  dropProps: dropPropsList,
+}
 
 // Extract Alert.Title and Alert.Description from children
 function extractAlertContent(children) {
@@ -120,6 +118,7 @@ function extractAlertContent(children) {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
+  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? 'native-base'
@@ -134,21 +133,14 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const alertElements = findJSXElements(root, 'Alert', j)
+  const alertElements = $.findElements(root, 'Alert')
 
   if (alertElements.length === 0) {
     return fileInfo.source
   }
 
   const warnings = []
-  const elementStyles = []
-  const usedTokenHelpers = new Set()
-  const alertProps = {
-    styleProps,
-    transformProps,
-    directProps: directPropsList,
-    dropProps: dropPropsList,
-  }
+  const styles = createStyleContext()
 
   alertElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -171,24 +163,22 @@ function main(fileInfo, api, options = {}) {
       invalidStyles,
     } = categorizeProps(attributes, alertProps, j)
 
-    for (const h of newHelpers) {
-      usedTokenHelpers.add(h)
-    }
+    styles.addHelpers(newHelpers)
 
-    const alertAttributes = filterAttributes(attributes, {
+    const alertAttributes = $.filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    addTransformedProps(alertAttributes, transformedProps, j)
+    $.addTransformedProps(alertAttributes, transformedProps)
 
     // Add title prop if found
     if (title) {
-      alertAttributes.push(createAttribute('title', title, j))
+      alertAttributes.push($.createAttribute('title', title))
     }
 
     // Add description prop if found
     if (description) {
-      alertAttributes.push(createAttribute('description', description, j))
+      alertAttributes.push($.createAttribute('description', description))
     }
 
     // Warn if no description
@@ -198,14 +188,20 @@ function main(fileInfo, api, options = {}) {
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
-    const alertElement = createSelfClosingElement('Alert', alertAttributes, j)
+    const alertElement = $.createElement('Alert', alertAttributes)
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
     // Wrap in View if style props exist
     if (wrap && hasStyleProps) {
       const styleName = `alert${index}`
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
+
+      const tempStyles = []
+      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      if (tempStyles.length > 0) {
+        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
+      }
+
       const viewElement = createViewWrapper(alertElement, styleValue, j)
       j(path).replaceWith(viewElement)
     } else {
@@ -223,17 +219,7 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Alert', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  if (wrap && elementStyles.length > 0) {
-    addNamedImport(root, 'react-native', 'View', j)
-    addNamedImport(root, 'react-native', 'StyleSheet', j)
-    for (const h of usedTokenHelpers) {
-      addNamedImport(root, tokenImport, h, j)
-    }
-  }
-
-  if (wrap && elementStyles.length > 0) {
-    addOrExtendStyleSheet(root, elementStyles, j)
-  }
+  styles.applyToRoot(root, { wrap, tokenImport }, j)
 
   return root.toSource({
     quote: 'single',

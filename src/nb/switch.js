@@ -1,11 +1,10 @@
 // Migrate NativeBase/Common Switch → Nordlys Switch with compound components
 // See switch.md for documentation
 
+import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { addTransformedProps, filterAttributes, findAttribute } from '../helpers/jsx-attributes.js'
-import { cloneElement } from '../helpers/jsx-clone.js'
-import { createMemberElement, findJSXElements } from '../helpers/jsx-elements.js'
 import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
+import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
 import {
@@ -19,7 +18,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, addOrExtendStyleSheet, categorizeProps } from './props.js'
+import { addElementComment, categorizeProps } from './props.js'
 
 // Switch prop mappings
 const styleProps = {
@@ -44,7 +43,6 @@ const directPropsList = accessibility
 
 const dropPropsList = [
   ...allPseudoProps,
-  // Switch-specific props
   'label',
   'switchPosition',
   'hStackProps',
@@ -53,8 +51,16 @@ const dropPropsList = [
   'LeftElement',
 ]
 
+const switchProps = {
+  styleProps,
+  transformProps,
+  directProps: directPropsList,
+  dropProps: dropPropsList,
+}
+
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
+  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -70,26 +76,19 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const switchElements = findJSXElements(root, 'Switch', j)
+  const switchElements = $.findElements(root, 'Switch')
   if (switchElements.length === 0) {
     return fileInfo.source
   }
 
-  const elementStyles = []
-  const usedTokenHelpers = new Set()
-  const switchProps = {
-    styleProps,
-    transformProps,
-    directProps: directPropsList,
-    dropProps: dropPropsList,
-  }
+  const styles = createStyleContext()
 
   switchElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
     const children = path.node.children || []
 
     // Extract label prop to transform into <Switch.Description>
-    const labelAttr = findAttribute(attributes, 'label')
+    const labelAttr = $.findAttribute(attributes, 'label')
     const labelValue = labelAttr ? labelAttr.value : null
 
     const {
@@ -102,21 +101,19 @@ function main(fileInfo, api, options = {}) {
       invalidStyles,
     } = categorizeProps(attributes, switchProps, j)
 
-    for (const h of newHelpers) {
-      usedTokenHelpers.add(h)
-    }
+    styles.addHelpers(newHelpers)
 
-    const switchAttributes = filterAttributes(attributes, {
+    const switchAttributes = $.filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    addTransformedProps(switchAttributes, transformedProps, j)
+    $.addTransformedProps(switchAttributes, transformedProps)
 
     path.node.openingElement.attributes = switchAttributes
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
-    const labelElement = createMemberElement('Switch', 'Label', [], children, j)
+    const labelElement = $.createMemberElement('Switch', 'Label', [], children)
 
     const newChildren = [j.jsxText('\n  '), labelElement]
 
@@ -127,12 +124,11 @@ function main(fileInfo, api, options = {}) {
           ? [j.jsxExpressionContainer(labelValue.expression)]
           : [j.jsxText(labelValue.value)]
 
-      const descriptionElement = createMemberElement(
+      const descriptionElement = $.createMemberElement(
         'Switch',
         'Description',
         [],
         descriptionChildren,
-        j,
       )
       newChildren.push(j.jsxText('\n  '), descriptionElement)
     }
@@ -145,9 +141,14 @@ function main(fileInfo, api, options = {}) {
     if (wrap && hasStyleProps) {
       const styleName = `switch${index}`
 
-      const switchElement = cloneElement(path.node, j)
+      const switchElement = $.clone(path.node)
 
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j, [])
+      const tempStyles = []
+      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      if (tempStyles.length > 0) {
+        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
+      }
+
       const viewElement = createViewWrapper(switchElement, styleValue, j)
       j(path).replaceWith(viewElement)
     }
@@ -156,17 +157,7 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Switch', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  if (wrap && elementStyles.length > 0) {
-    addNamedImport(root, 'react-native', 'View', j)
-    addNamedImport(root, 'react-native', 'StyleSheet', j)
-    for (const h of usedTokenHelpers) {
-      addNamedImport(root, tokenImport, h, j)
-    }
-  }
-
-  if (wrap && elementStyles.length > 0) {
-    addOrExtendStyleSheet(root, elementStyles, j)
-  }
+  styles.applyToRoot(root, { wrap, tokenImport }, j)
 
   return root.toSource({
     quote: 'single',
