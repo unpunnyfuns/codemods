@@ -2,7 +2,7 @@
 // See icon.md for documentation
 
 import { createJSXHelper } from '../helpers/factory.js'
-import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
+import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { NB_SPACE_SCALE_NUMERIC } from './mappings/nativebase-props.js'
 

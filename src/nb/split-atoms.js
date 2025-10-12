@@ -1,7 +1,7 @@
 // Split barrel imports into individual atom imports
 // See split-atoms.md for documentation
 
-import { insertImports, matchesImportPath } from '../helpers/imports.js'
+import { insertImports, matchesImportPath } from '@puns/shiftkit'
 
 const IMPORT_PATH = '@hb-frontend/common/src/components'
 const ATOM_PREFIX = '@hb-frontend/common/src/components/atoms/'

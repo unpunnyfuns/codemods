@@ -2,8 +2,8 @@
 // See switch.md for documentation
 
 import { createJSXHelper } from '../helpers/factory.js'
-import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
+import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
+import { buildStyleValue, createViewWrapper } from '@puns/shiftkit'
 import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'

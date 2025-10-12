@@ -2,9 +2,9 @@
 // See button.md for documentation
 
 import { createJSXHelper } from '../helpers/factory.js'
-import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { extractPropFromJSXElement, extractSimpleChild } from '../helpers/jsx-extraction.js'
-import { buildStyleValue, createViewWrapper } from '../helpers/jsx-transforms.js'
+import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
+import { extractPropFromJSXElement, extractSimpleChild } from '@puns/shiftkit'
+import { buildStyleValue, createViewWrapper } from '@puns/shiftkit'
 import { createStyleContext } from '../helpers/style-context.js'
 import { componentAgnostic, platformOverrides, themeOverrides } from './mappings/props-drop.js'
 import {

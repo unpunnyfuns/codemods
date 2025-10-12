@@ -2,8 +2,8 @@
 // See stack.md for documentation
 
 import { createJSXHelper } from '../helpers/factory.js'
-import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { buildStyleValue } from '../helpers/jsx-transforms.js'
+import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
+import { buildStyleValue } from '@puns/shiftkit'
 import { createStyleContext } from '../helpers/style-context.js'
 import { alignValues, justifyValues } from './mappings/maps-values.js'
 import { directProps } from './mappings/props-direct.js'

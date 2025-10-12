@@ -7,8 +7,8 @@
  * - nativebase-styled-props.js: Source model (NativeBase props documentation)
  */
 
-import { addNamedImport } from '../helpers/imports.js'
-import { buildNestedMemberExpression } from '../helpers/token-helpers.js'
+import { addNamedImport } from '@puns/shiftkit'
+import { buildNestedMemberExpression } from '@puns/shiftkit'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { convertRadiusToken, convertSpaceToken } from './mappings/maps-tokens.js'
 import {

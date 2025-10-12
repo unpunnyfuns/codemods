@@ -1,7 +1,7 @@
 // Redirect imports from one path to another, optionally renaming identifiers
 // See redirect-imports.md for documentation
 
-import { matchesImportPath } from './helpers/imports.js'
+import { matchesImportPath } from '@puns/shiftkit'
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift

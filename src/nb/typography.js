@@ -2,8 +2,8 @@
 // See typography.md for documentation
 
 import { createJSXHelper } from '../helpers/factory.js'
-import { addNamedImport, hasNamedImport, removeNamedImport } from '../helpers/imports.js'
-import { createViewWrapper } from '../helpers/jsx-transforms.js'
+import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
+import { createViewWrapper } from '@puns/shiftkit'
 import { createStyleContext } from '../helpers/style-context.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { TYPOGRAPHY_RESTRICTED_PROPS } from './mappings/nordlys-props.js'
