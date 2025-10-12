@@ -1,8 +1,8 @@
 // Migrate NativeBase/Common Icon → Nordlys Icon
 // See icon.md for documentation
 
-import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
+import { createJSXHelper } from '../helpers/factory.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { NB_SPACE_SCALE_NUMERIC } from './mappings/nativebase-props.js'
 

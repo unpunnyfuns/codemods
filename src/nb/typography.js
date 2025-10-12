@@ -1,9 +1,13 @@
 // Migrate NativeBase Typography → Nordlys Typography with wrapper View for style props
 // See typography.md for documentation
 
+import {
+  addNamedImport,
+  createViewWrapper,
+  hasNamedImport,
+  removeNamedImport,
+} from '@puns/shiftkit'
 import { createJSXHelper } from '../helpers/factory.js'
-import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { createViewWrapper } from '@puns/shiftkit'
 import { createStyleContext } from '../helpers/style-context.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { TYPOGRAPHY_RESTRICTED_PROPS } from './mappings/nordlys-props.js'

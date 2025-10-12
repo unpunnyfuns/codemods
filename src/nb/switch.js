@@ -1,9 +1,9 @@
 // Migrate NativeBase/Common Switch → Nordlys Switch with compound components
 // See switch.md for documentation
 
-import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { buildStyleValue, createViewWrapper } from '@puns/shiftkit'
+import { buildStyleValue, createViewWrapper } from '@puns/shiftkit/jsx'
+import { createJSXHelper } from '../helpers/factory.js'
 import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'

@@ -378,13 +378,14 @@ const style2 = addOrExtendStyleSheet(root, j, 'view', {
 
 Build nested member expressions for design tokens.
 
-### `buildNestedMemberExpression(j, path)`
+### `buildTokenPath(j, tokenHelper, tokenPath)`
 
 Builds nested member expression from dot-separated path, using bracket notation for numeric keys.
 
 **Parameters:**
 - `j` - jscodeshift instance
-- `path` - string - dot-separated path (e.g., `'color.blue.500'`)
+- `tokenHelper` - string - base token identifier (e.g., `'color'`, `'space'`)
+- `tokenPath` - string - dot-separated path (e.g., `'blue.500'`, `'md'`)
 
 **Returns:** AST node for nested member expression
 
@@ -395,14 +396,14 @@ Builds nested member expression from dot-separated path, using bracket notation 
 
 **Example:**
 ```javascript
-buildNestedMemberExpression(j, 'color.blue.500')
+buildTokenPath(j, 'color', 'blue.500')
 // Returns: color.blue['500']
 
-buildNestedMemberExpression(j, 'space.md')
+buildTokenPath(j, 'space', 'md')
 // Returns: space.md
 
-buildNestedMemberExpression(j, 'typography.heading.h1.size')
-// Returns: typography.heading.h1.size
+buildTokenPath(j, 'color', 'background.secondary')
+// Returns: color.background.secondary
 ```
 
 ## Usage Patterns

@@ -198,7 +198,7 @@ Build nested member expressions from dot-separated token paths.
 
 **Exports:**
 ```javascript
-buildNestedMemberExpression(j, tokenHelper, tokenPath) to MemberExpression
+buildTokenPath(j, tokenHelper, tokenPath) to MemberExpression
 ```
 
 **Handles:**
@@ -208,10 +208,10 @@ buildNestedMemberExpression(j, tokenHelper, tokenPath) to MemberExpression
 
 **Example:**
 ```javascript
-buildNestedMemberExpression(j, 'color', 'background.secondary')
+buildTokenPath(j, 'color', 'background.secondary')
 // Returns AST for: color.background.secondary
 
-buildNestedMemberExpression(j, 'color', 'white.900')
+buildTokenPath(j, 'color', 'white.900')
 // Returns AST for: color.white['900']
 ```
 

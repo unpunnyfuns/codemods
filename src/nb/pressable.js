@@ -1,9 +1,9 @@
 // Migrate NativeBase Pressable → React Native Pressable with StyleSheet
 // See pressable.md for documentation
 
-import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { buildStyleValue } from '@puns/shiftkit'
+import { buildStyleValue } from '@puns/shiftkit/jsx'
+import { createJSXHelper } from '../helpers/factory.js'
 import { createStyleContext } from '../helpers/style-context.js'
 import { directProps } from './mappings/props-direct.js'
 import {

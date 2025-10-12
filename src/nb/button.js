@@ -1,10 +1,14 @@
 // Migrate NativeBase/Common Button → Nordlys Button with extracted icon and text props
 // See button.md for documentation
 
-import { createJSXHelper } from '../helpers/factory.js'
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { extractPropFromJSXElement, extractSimpleChild } from '@puns/shiftkit'
-import { buildStyleValue, createViewWrapper } from '@puns/shiftkit'
+import {
+  buildStyleValue,
+  createViewWrapper,
+  extractPropFromJSXElement,
+  extractSimpleChild,
+} from '@puns/shiftkit/jsx'
+import { createJSXHelper } from '../helpers/factory.js'
 import { createStyleContext } from '../helpers/style-context.js'
 import { componentAgnostic, platformOverrides, themeOverrides } from './mappings/props-drop.js'
 import {

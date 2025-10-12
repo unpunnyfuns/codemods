@@ -7,8 +7,7 @@
  * - nativebase-styled-props.js: Source model (NativeBase props documentation)
  */
 
-import { addNamedImport } from '@puns/shiftkit'
-import { buildNestedMemberExpression } from '@puns/shiftkit'
+import { addNamedImport, buildTokenPath } from '@puns/shiftkit'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { convertRadiusToken, convertSpaceToken } from './mappings/maps-tokens.js'
 import {
@@ -264,7 +263,7 @@ export function transformPropValue(value, config, j, usedTokenHelpers) {
       }
 
       // Build token helper expression (e.g., space.md, color.icon.brand)
-      processedValue = buildNestedMemberExpression(j, tokenHelper, tokenPath)
+      processedValue = buildTokenPath(j, tokenHelper, tokenPath)
       isTokenHelper = true
       usedTokenHelpers.add(tokenHelper)
     }

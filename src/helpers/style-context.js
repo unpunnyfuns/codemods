@@ -2,8 +2,8 @@
  * Context for managing StyleSheet generation and related imports
  */
 
-import { addOrExtendStyleSheet } from '@puns/shiftkit/rn'
 import { addNamedImport } from '@puns/shiftkit'
+import { addOrExtendStyleSheet } from '@puns/shiftkit/rn'
 
 export function createStyleContext() {
   const elementStyles = []
