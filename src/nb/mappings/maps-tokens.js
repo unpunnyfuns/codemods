@@ -24,16 +24,16 @@
  * - NB numeric tokens (14, 18) -> closest Nordlys match
  */
 export const SPACE_TOKEN_MAP = {
-  '2xs': '2xs', // 2px -> 2
-  xs: 'xs', // 4px -> 4
-  sm: 'sm', // 8px -> 8
-  md: 'md', // 12px -> 12
-  lg: 'lg', // 16px -> 16
-  xl: '2xl', // 32px -> 32 (different name!)
-  '2xl': '3xl', // 64px -> 48 (closest match, loses precision)
-  '3xl': '3xl', // 128px -> 48 (no equivalent)
-  14: 'xl', // 56px -> 24 (closest)
-  18: '2xl', // 72px -> 32 (closest)
+  '2xs': '2xs',
+  xs: 'xs',
+  sm: 'sm',
+  md: 'md',
+  lg: 'lg',
+  xl: '2xl',
+  '2xl': '3xl',
+  '3xl': '3xl',
+  14: 'xl',
+  18: '2xl',
 }
 
 /**
@@ -47,9 +47,9 @@ export const SPACE_TOKEN_MAP = {
  * These map 1:1 for existing tokens.
  */
 export const RADIUS_TOKEN_MAP = {
-  sm: 'sm', // 4 -> 4
-  md: 'md', // 8 -> 8
-  lg: 'lg', // 12 -> 12
+  sm: 'sm',
+  md: 'md',
+  lg: 'lg',
 }
 
 /**

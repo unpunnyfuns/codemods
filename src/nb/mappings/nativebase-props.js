@@ -159,8 +159,8 @@ export const LAYOUT_PROPS = [
   'maxW',
   'maxHeight',
   'maxH',
-  'size', // Sets both width and height
-  'boxSize', // Alias for size
+  'size',
+  'boxSize',
   'overflow',
   'overflowX',
   'overflowY',
@@ -181,7 +181,7 @@ export const FLEXBOX_PROPS = [
   'justifyContent',
   'flexWrap',
   'flexDirection',
-  'flexDir', // Shortcut for flexDirection
+  'flexDir',
   'flex',
   'flexGrow',
   'flexShrink',
@@ -218,9 +218,9 @@ export const COLOR_PROPS = [
   'color',
   'tintColor',
   'backgroundColor',
-  'bg', // Shortcut for backgroundColor
-  'bgColor', // Alias for bg
-  'background', // Alias for bg
+  'bg',
+  'bgColor',
+  'background',
   'opacity',
   'textDecorationColor',
 ]
@@ -238,7 +238,7 @@ export const BORDER_PROPS = [
   'borderColor',
   'borderRadius',
   // Radius shortcuts
-  'rounded', // Alias for borderRadius
+  'rounded',
   'borderTopRadius',
   'borderBottomRadius',
   'borderLeftRadius',
@@ -289,8 +289,8 @@ export const BACKGROUND_PROPS = [
   'backgroundRepeat',
   'backgroundAttachment',
   'backgroundBlendMode',
-  'bgImage', // backgroundImage shortcut
-  'bgImg', // backgroundImage alias
+  'bgImage',
+  'bgImg',
   'bgBlendMode',
   'bgSize',
   'bgPosition',
@@ -314,8 +314,8 @@ export const TYPOGRAPHY_PROPS = [
   'textAlign',
   'fontStyle',
   'textTransform',
-  'textDecoration', // Maps to textDecorationLine
-  'txtDecor', // Shortcut for textDecoration
+  'textDecoration',
+  'txtDecor',
   'textDecorationLine',
   // Web-only
   'wordBreak',
@@ -334,7 +334,7 @@ export const EXTRA_PROPS = [
   'outlineWidth',
   'outlineColor',
   'outlineStyle',
-  'shadow', // NativeBase shadow shorthand
+  'shadow',
   'cursor',
   'overflow',
   'userSelect',

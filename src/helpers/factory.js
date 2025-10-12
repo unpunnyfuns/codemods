@@ -5,14 +5,14 @@
  * ```javascript
  * function transform(fileInfo, api) {
  *   const j = api.jscodeshift
- *   const $ = createJSXHelper(j)  // ← Curry j once
+ *   const $ = createJSXHelper(j)
  *   const root = j(fileInfo.source)
  *
  *   $.findElements(root, 'Button').forEach(path => {
  *     const attrs = $.filterAttributes(path.node.openingElement.attributes, {
  *       allow: ['variant']
  *     })
- *     attrs.push($.createAttribute('type', 'solid'))  // ← No j!
+ *     attrs.push($.createAttribute('type', 'solid'))
  *     const element = $.createElement('Button', attrs)
  *     $(path).replaceWith(element)
  *   })

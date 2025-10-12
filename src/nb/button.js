@@ -36,7 +36,7 @@ const styleProps = {
   ...text,
   ...extra,
 }
-delete styleProps.size // It's a semantic Button prop, not a style prop
+delete styleProps.size
 
 const transformProps = {
   isDisabled: 'disabled',

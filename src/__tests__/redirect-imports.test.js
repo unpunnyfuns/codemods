@@ -83,8 +83,8 @@ export function MyComponent() {
     expect(actual).toContain("from '@new/path'")
     expect(actual).toContain('Container')
     expect(actual).toContain('<Container>')
-    expect(actual).toContain('Button') // unchanged
-    expect(actual).toContain('<Button>') // unchanged
+    expect(actual).toContain('Button')
+    expect(actual).toContain('<Button>')
     expect(actual).not.toContain('<Box>')
   })
 

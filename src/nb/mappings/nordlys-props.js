@@ -52,7 +52,7 @@ export const COLOR_SYSTEM = {
   // - white.HW1, core.neutral.HN1
   tokenHelper: 'color',
   supportsNestedPaths: true,
-  supportsBracketNotation: true, // color.blue['500']
+  supportsBracketNotation: true,
 }
 
 /**
@@ -116,7 +116,7 @@ export const SPACING_PROPS = [
 
 // Position
 export const POSITION_PROPS = [
-  'position', // 'absolute' | 'relative'
+  'position',
   'top',
   'right',
   'bottom',
@@ -135,7 +135,7 @@ export const BORDER_PROPS = [
   'borderLeftWidth',
   'borderStartWidth',
   'borderEndWidth',
-  'borderStyle', // 'solid' | 'dotted' | 'dashed'
+  'borderStyle',
   'borderColor',
   'borderTopColor',
   'borderRightColor',
@@ -159,7 +159,7 @@ export const COLOR_PROPS = ['backgroundColor', 'opacity']
 
 // Transform (limited in RN compared to web)
 export const TRANSFORM_PROPS = [
-  'transform', // array of transform objects
+  'transform',
   'transformMatrix',
   'rotation',
   'scaleX',
@@ -327,25 +327,25 @@ export const DIMENSION_VALUES = {
  * Props Not Supported on React Native View (but exist in web CSS)
  */
 export const UNSUPPORTED_ON_VIEW = [
-  'textAlign', // Only works on Text components, not View
-  'textAlignVertical', // Android Text only
-  'textDecorationLine', // Text only
-  'textDecorationStyle', // Text only
-  'textDecorationColor', // Text only
-  'textShadowColor', // Text only
-  'textShadowOffset', // Text only
-  'textShadowRadius', // Text only
-  'textTransform', // Text only
-  'fontFamily', // Text only
-  'fontSize', // Text only
-  'fontStyle', // Text only
-  'fontWeight', // Text only
-  'fontVariant', // Text only
-  'letterSpacing', // Text only
-  'lineHeight', // Text only
-  'includeFontPadding', // Android Text only
-  'color', // Text only (for text color)
-  'tintColor', // Image only
+  'textAlign',
+  'textAlignVertical',
+  'textDecorationLine',
+  'textDecorationStyle',
+  'textDecorationColor',
+  'textShadowColor',
+  'textShadowOffset',
+  'textShadowRadius',
+  'textTransform',
+  'fontFamily',
+  'fontSize',
+  'fontStyle',
+  'fontWeight',
+  'fontVariant',
+  'letterSpacing',
+  'lineHeight',
+  'includeFontPadding',
+  'color',
+  'tintColor',
 ]
 
 /**

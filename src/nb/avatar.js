@@ -32,7 +32,7 @@ const styleProps = {
   ...text,
   ...extra,
 }
-delete styleProps.size // It's a semantic Avatar prop, not a style prop
+delete styleProps.size
 
 const transformProps = {}
 
@@ -117,20 +117,17 @@ function main(fileInfo, api, options = {}) {
     $.addTransformedProps(avatarAttributes, transformedProps)
 
     if (iconNameValue) {
-      // iconName -> icon={{ name: "...", fill: "blue" }}
       const iconObject = $.createNestedObject({
         name: iconNameValue,
         fill: 'blue',
       })
       avatarAttributes.push($.createAttribute('icon', iconObject))
     } else if (imageUriValue) {
-      // imageUri -> image={{ source: { uri: "..." } }}
       const imageObject = $.createNestedObject({
         source: { uri: imageUriValue },
       })
       avatarAttributes.push($.createAttribute('image', imageObject))
     } else if (imageSourceValue) {
-      // imageSource -> image={{ source }}
       const imageObject = $.createNestedObject({ source: imageSourceValue })
       avatarAttributes.push($.createAttribute('image', imageObject))
     }

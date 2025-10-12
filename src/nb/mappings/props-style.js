@@ -243,6 +243,6 @@ export const text = {
 const extraProps = ['opacity', 'tintColor']
 export const extra = generateMappings(extraProps, {
   renames: {
-    tintColor: 'tintColor', // IMAGE_ONLY
+    tintColor: 'tintColor',
   },
 })
