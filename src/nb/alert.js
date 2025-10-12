@@ -2,8 +2,15 @@
 // See alert.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { buildStyleValue, createViewWrapper } from '@puns/shiftkit/jsx'
-import { createJSXHelper } from '../helpers/factory.js'
+import {
+  addTransformedProps,
+  buildStyleValue,
+  createAttribute,
+  createSelfClosingElement,
+  createViewWrapper,
+  filterAttributes,
+  findJSXElements,
+} from '@puns/shiftkit/jsx'
 import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -118,14 +125,12 @@ function extractAlertContent(children) {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
-  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? 'native-base'
   const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/Alert'
   const targetName = options.targetName ?? 'Alert'
   const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
-  // Default: true (wrap in View when style props exist)
   const wrap = options.wrap ?? true
 
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
@@ -133,7 +138,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const alertElements = $.findElements(root, 'Alert')
+  const alertElements = findJSXElements(root, 'Alert', j)
 
   if (alertElements.length === 0) {
     return fileInfo.source
@@ -146,7 +151,6 @@ function main(fileInfo, api, options = {}) {
     const attributes = path.node.openingElement.attributes || []
     const children = path.node.children || []
 
-    // Extract title and description from children
     const { title, description, otherChildren } = extractAlertContent(children)
 
     if (otherChildren.length > 0) {
@@ -165,30 +169,27 @@ function main(fileInfo, api, options = {}) {
 
     styles.addHelpers(newHelpers)
 
-    const alertAttributes = $.filterAttributes(attributes, {
+    const alertAttributes = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    $.addTransformedProps(alertAttributes, transformedProps)
+    addTransformedProps(alertAttributes, transformedProps, j)
 
-    // Add title prop if found
     if (title) {
-      alertAttributes.push($.createAttribute('title', title))
+      alertAttributes.push(createAttribute('title', title, j))
     }
 
-    // Add description prop if found
     if (description) {
-      alertAttributes.push($.createAttribute('description', description))
+      alertAttributes.push(createAttribute('description', description, j))
     }
 
-    // Warn if no description
     if (!description) {
       warnings.push('Alert: No description found - description is required in Nordlys Alert')
     }
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
-    const alertElement = $.createElement('Alert', alertAttributes)
+    const alertElement = createSelfClosingElement('Alert', alertAttributes, j)
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 

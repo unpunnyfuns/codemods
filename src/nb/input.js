@@ -2,8 +2,15 @@
 // See input.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { buildStyleValue, createViewWrapper } from '@puns/shiftkit/jsx'
-import { createJSXHelper } from '../helpers/factory.js'
+import {
+  addTransformedProps,
+  buildStyleValue,
+  createSelfClosingElement,
+  createViewWrapper,
+  filterAttributes,
+  findJSXElements,
+  hasAttribute,
+} from '@puns/shiftkit/jsx'
 import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -63,7 +70,6 @@ const inputProps = {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
-  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? 'native-base'
@@ -78,7 +84,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const inputElements = $.findElements(root, 'Input')
+  const inputElements = findJSXElements(root, 'Input', j)
 
   if (inputElements.length === 0) {
     return fileInfo.source
@@ -114,21 +120,21 @@ function main(fileInfo, api, options = {}) {
     const allowList = [...directPropsList, ...complexProps].filter(
       (prop) => !propsToRemove.includes(prop),
     )
-    const inputAttributes = $.filterAttributes(attributes, { allow: allowList })
+    const inputAttributes = filterAttributes(attributes, { allow: allowList })
 
-    $.addTransformedProps(inputAttributes, transformedProps)
+    addTransformedProps(inputAttributes, transformedProps, j)
 
     // Check if label prop exists
-    if (!$.hasAttribute(inputAttributes, 'label')) {
+    if (!hasAttribute(inputAttributes, 'label')) {
       warnings.push('Input: Missing required "label" prop (transformed from "placeholder")')
     }
 
     // Check if onChange prop exists
-    if (!$.hasAttribute(inputAttributes, 'onChange')) {
+    if (!hasAttribute(inputAttributes, 'onChange')) {
       warnings.push('Input: Missing required "onChange" prop (transformed from "onChangeText")')
     }
 
-    const inputElement = $.createElement('Input', inputAttributes)
+    const inputElement = createSelfClosingElement('Input', inputAttributes, j)
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 

@@ -2,8 +2,16 @@
 // See switch.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { buildStyleValue, createViewWrapper } from '@puns/shiftkit/jsx'
-import { createJSXHelper } from '../helpers/factory.js'
+import {
+  addTransformedProps,
+  buildStyleValue,
+  cloneElement,
+  createMemberElement,
+  createViewWrapper,
+  filterAttributes,
+  findAttribute,
+  findJSXElements,
+} from '@puns/shiftkit/jsx'
 import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -60,7 +68,6 @@ const switchProps = {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
-  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -76,7 +83,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const switchElements = $.findElements(root, 'Switch')
+  const switchElements = findJSXElements(root, 'Switch', j)
   if (switchElements.length === 0) {
     return fileInfo.source
   }
@@ -88,7 +95,7 @@ function main(fileInfo, api, options = {}) {
     const children = path.node.children || []
 
     // Extract label prop to transform into <Switch.Description>
-    const labelAttr = $.findAttribute(attributes, 'label')
+    const labelAttr = findAttribute(attributes, 'label')
     const labelValue = labelAttr ? labelAttr.value : null
 
     const {
@@ -103,17 +110,17 @@ function main(fileInfo, api, options = {}) {
 
     styles.addHelpers(newHelpers)
 
-    const switchAttributes = $.filterAttributes(attributes, {
+    const switchAttributes = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    $.addTransformedProps(switchAttributes, transformedProps)
+    addTransformedProps(switchAttributes, transformedProps, j)
 
     path.node.openingElement.attributes = switchAttributes
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
-    const labelElement = $.createMemberElement('Switch', 'Label', [], children)
+    const labelElement = createMemberElement('Switch', 'Label', [], children, j)
 
     const newChildren = [j.jsxText('\n  '), labelElement]
 
@@ -124,11 +131,12 @@ function main(fileInfo, api, options = {}) {
           ? [j.jsxExpressionContainer(labelValue.expression)]
           : [j.jsxText(labelValue.value)]
 
-      const descriptionElement = $.createMemberElement(
+      const descriptionElement = createMemberElement(
         'Switch',
         'Description',
         [],
         descriptionChildren,
+        j,
       )
       newChildren.push(j.jsxText('\n  '), descriptionElement)
     }
@@ -141,7 +149,7 @@ function main(fileInfo, api, options = {}) {
     if (wrap && hasStyleProps) {
       const styleName = `switch${index}`
 
-      const switchElement = $.clone(path.node)
+      const switchElement = cloneElement(path.node, j)
 
       const tempStyles = []
       const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])

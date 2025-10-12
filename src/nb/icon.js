@@ -2,7 +2,7 @@
 // See icon.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { createJSXHelper } from '../helpers/factory.js'
+import { createAttribute, findJSXElements } from '@puns/shiftkit/jsx'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { NB_SPACE_SCALE_NUMERIC } from './mappings/nativebase-props.js'
 
@@ -30,7 +30,6 @@ function convertSizeToNumber(value, j) {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
-  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -42,7 +41,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const iconElements = $.findElements(root, 'Icon')
+  const iconElements = findJSXElements(root, 'Icon', j)
 
   if (iconElements.length === 0) {
     return fileInfo.source
@@ -89,11 +88,18 @@ function main(fileInfo, api, options = {}) {
           hasHeight = true
         }
 
-        const value = $.extractAttributeValue(attr.value)
+        // Extract value based on attribute value type
+        let value = null
+        if (attr.value?.type === 'JSXExpressionContainer') {
+          value = attr.value.expression
+        } else if (attr.value?.type === 'StringLiteral') {
+          value = attr.value
+        }
+
         const converted = convertSizeToNumber(value, j)
 
         if (converted) {
-          newAttributes.push($.createAttribute(propName, converted))
+          newAttributes.push(createAttribute(propName, converted, j))
         } else {
           newAttributes.push(attr)
         }

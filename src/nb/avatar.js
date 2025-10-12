@@ -1,9 +1,22 @@
 // Migrate NativeBase/Common Avatar -> Nordlys Avatar with object-based props
 // See avatar.md for documentation
 
-import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { buildStyleValue, createViewWrapper } from '@puns/shiftkit/jsx'
-import { createJSXHelper } from '../helpers/factory.js'
+import {
+  addNamedImport,
+  createNestedObject,
+  hasNamedImport,
+  removeNamedImport,
+} from '@puns/shiftkit'
+import {
+  addTransformedProps,
+  buildStyleValue,
+  cloneElement,
+  createAttribute,
+  createViewWrapper,
+  filterAttributes,
+  findJSXElements,
+  getAttributeValue,
+} from '@puns/shiftkit/jsx'
 import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -60,7 +73,6 @@ const avatarProps = {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
-  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -75,7 +87,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const avatarElements = $.findElements(root, 'Avatar')
+  const avatarElements = findJSXElements(root, 'Avatar', j)
 
   if (avatarElements.length === 0) {
     return fileInfo.source
@@ -87,10 +99,10 @@ function main(fileInfo, api, options = {}) {
   avatarElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
 
-    const iconNameValue = $.getAttributeValue(attributes, 'iconName')
-    const imageUriValue = $.getAttributeValue(attributes, 'imageUri')
-    const imageSourceValue = $.getAttributeValue(attributes, 'imageSource')
-    const lettersValue = $.getAttributeValue(attributes, 'letters')
+    const iconNameValue = getAttributeValue(attributes, 'iconName')
+    const imageUriValue = getAttributeValue(attributes, 'imageUri')
+    const imageSourceValue = getAttributeValue(attributes, 'imageSource')
+    const lettersValue = getAttributeValue(attributes, 'letters')
 
     // Warn and skip if letters prop is used (not supported)
     if (lettersValue) {
@@ -110,26 +122,32 @@ function main(fileInfo, api, options = {}) {
 
     styles.addHelpers(newHelpers)
 
-    const avatarAttributes = $.filterAttributes(attributes, {
+    const avatarAttributes = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    $.addTransformedProps(avatarAttributes, transformedProps)
+    addTransformedProps(avatarAttributes, transformedProps, j)
 
     if (iconNameValue) {
-      const iconObject = $.createNestedObject({
-        name: iconNameValue,
-        fill: 'blue',
-      })
-      avatarAttributes.push($.createAttribute('icon', iconObject))
+      const iconObject = createNestedObject(
+        {
+          name: iconNameValue,
+          fill: 'blue',
+        },
+        j,
+      )
+      avatarAttributes.push(createAttribute('icon', iconObject, j))
     } else if (imageUriValue) {
-      const imageObject = $.createNestedObject({
-        source: { uri: imageUriValue },
-      })
-      avatarAttributes.push($.createAttribute('image', imageObject))
+      const imageObject = createNestedObject(
+        {
+          source: { uri: imageUriValue },
+        },
+        j,
+      )
+      avatarAttributes.push(createAttribute('image', imageObject, j))
     } else if (imageSourceValue) {
-      const imageObject = $.createNestedObject({ source: imageSourceValue })
-      avatarAttributes.push($.createAttribute('image', imageObject))
+      const iconObject = createNestedObject({ source: imageSourceValue }, j)
+      avatarAttributes.push(createAttribute('image', iconObject, j))
     }
 
     path.node.openingElement.attributes = avatarAttributes
@@ -141,7 +159,7 @@ function main(fileInfo, api, options = {}) {
     if (wrap && hasStyleProps) {
       const styleName = `avatar${index}`
 
-      const avatarElement = $.clone(path.node)
+      const avatarElement = cloneElement(path.node, j)
 
       const tempStyles = []
       const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])

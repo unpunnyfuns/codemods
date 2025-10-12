@@ -2,8 +2,7 @@
 // See box.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { buildStyleValue } from '@puns/shiftkit/jsx'
-import { createJSXHelper } from '../helpers/factory.js'
+import { addTransformedProps, buildStyleValue, findJSXElements } from '@puns/shiftkit/jsx'
 import { createStyleContext } from '../helpers/style-context.js'
 import { directProps } from './mappings/props-direct.js'
 import {
@@ -69,7 +68,6 @@ const boxProps = {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
-  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? 'native-base'
@@ -84,7 +82,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const boxElements = $.findElements(root, 'Box')
+  const boxElements = findJSXElements(root, 'Box', j)
   if (boxElements.length === 0) {
     return fileInfo.source
   }
@@ -117,7 +115,7 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Add transformed props
-    $.addTransformedProps(path.node.openingElement.attributes, transformedProps)
+    addTransformedProps(path.node.openingElement.attributes, transformedProps, j)
 
     // Build and add style prop
     const tempStyles = []

@@ -3,12 +3,19 @@
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
 import {
+  addTransformedProps,
   buildStyleValue,
+  createAttribute,
+  createSelfClosingElement,
+  createStringAttribute,
   createViewWrapper,
   extractPropFromJSXElement,
   extractSimpleChild,
+  filterAttributes,
+  findJSXElements,
+  getAttributeValue,
+  hasAttribute,
 } from '@puns/shiftkit/jsx'
-import { createJSXHelper } from '../helpers/factory.js'
 import { createStyleContext } from '../helpers/style-context.js'
 import { componentAgnostic, platformOverrides, themeOverrides } from './mappings/props-drop.js'
 import {
@@ -64,7 +71,6 @@ const buttonProps = {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
-  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -81,7 +87,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const buttonElements = $.findElements(root, 'Button')
+  const buttonElements = findJSXElements(root, 'Button', j)
 
   if (buttonElements.length === 0) {
     return fileInfo.source
@@ -99,7 +105,7 @@ function main(fileInfo, api, options = {}) {
     let iconValue = null
     let textValue = null
 
-    const leftIconValue = $.getAttributeValue(attributes, 'leftIcon')
+    const leftIconValue = getAttributeValue(attributes, 'leftIcon')
 
     if (leftIconValue) {
       const iconName = extractPropFromJSXElement(leftIconValue, 'Icon', 'name')
@@ -138,31 +144,31 @@ function main(fileInfo, api, options = {}) {
 
     styles.addHelpers(newHelpers)
 
-    if ($.hasAttribute(attributes, 'rightIcon')) {
+    if (hasAttribute(attributes, 'rightIcon')) {
       warnings.push('Button rightIcon not supported in Nordlys - dropped')
     }
 
-    const buttonAttributes = $.filterAttributes(attributes, {
+    const buttonAttributes = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    $.addTransformedProps(buttonAttributes, transformedProps)
+    addTransformedProps(buttonAttributes, transformedProps, j)
 
     if (iconValue) {
-      buttonAttributes.push($.createAttribute('icon', iconValue))
+      buttonAttributes.push(createAttribute('icon', iconValue, j))
     }
 
     if (textValue) {
-      buttonAttributes.push($.createAttribute('text', textValue))
+      buttonAttributes.push(createAttribute('text', textValue, j))
     }
 
-    if (!$.hasAttribute(buttonAttributes, 'type')) {
-      buttonAttributes.push($.createStringAttribute('type', defaultType))
+    if (!hasAttribute(buttonAttributes, 'type')) {
+      buttonAttributes.push(createStringAttribute('type', defaultType, j))
     }
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
-    const buttonElement = $.createElement(targetName, buttonAttributes)
+    const buttonElement = createSelfClosingElement(targetName, buttonAttributes, j)
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 

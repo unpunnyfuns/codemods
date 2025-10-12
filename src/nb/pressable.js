@@ -2,8 +2,13 @@
 // See pressable.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { buildStyleValue } from '@puns/shiftkit/jsx'
-import { createJSXHelper } from '../helpers/factory.js'
+import {
+  addTransformedProps,
+  buildStyleValue,
+  createStringAttribute,
+  findJSXElements,
+  hasAttribute,
+} from '@puns/shiftkit/jsx'
 import { createStyleContext } from '../helpers/style-context.js'
 import { directProps } from './mappings/props-direct.js'
 import {
@@ -78,7 +83,6 @@ const pressableProps = {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
-  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -94,7 +98,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const pressableElements = $.findElements(root, 'Pressable')
+  const pressableElements = findJSXElements(root, 'Pressable', j)
   if (pressableElements.length === 0) {
     return fileInfo.source
   }
@@ -121,14 +125,14 @@ function main(fileInfo, api, options = {}) {
     path.node.openingElement.attributes = attributes.filter((attr) => !propsToRemove.includes(attr))
 
     // Preserve wrapper's default accessibilityRole="button" if not explicitly set
-    if (!$.hasAttribute(path.node.openingElement.attributes, 'accessibilityRole')) {
+    if (!hasAttribute(path.node.openingElement.attributes, 'accessibilityRole')) {
       path.node.openingElement.attributes.push(
-        $.createStringAttribute('accessibilityRole', 'button'),
+        createStringAttribute('accessibilityRole', 'button', j),
       )
     }
 
     // Add transformed props
-    $.addTransformedProps(path.node.openingElement.attributes, transformedProps)
+    addTransformedProps(path.node.openingElement.attributes, transformedProps, j)
 
     // Build and add style prop
     const tempStyles = []

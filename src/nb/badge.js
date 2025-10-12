@@ -2,8 +2,17 @@
 // See badge.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { buildStyleValue, createViewWrapper } from '@puns/shiftkit/jsx'
-import { createJSXHelper } from '../helpers/factory.js'
+import {
+  addTransformedProps,
+  buildStyleValue,
+  createAttribute,
+  createSelfClosingElement,
+  createStringAttribute,
+  createViewWrapper,
+  filterAttributes,
+  findJSXElements,
+  hasAttribute,
+} from '@puns/shiftkit/jsx'
 import { createStyleContext } from '../helpers/style-context.js'
 import { accessibility } from './mappings/props-direct.js'
 import { allPseudoProps } from './mappings/props-drop.js'
@@ -72,7 +81,6 @@ function extractTextContent(children) {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
-  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? 'native-base'
@@ -87,7 +95,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const badgeElements = $.findElements(root, 'Badge')
+  const badgeElements = findJSXElements(root, 'Badge', j)
 
   if (badgeElements.length === 0) {
     return fileInfo.source
@@ -134,9 +142,11 @@ function main(fileInfo, api, options = {}) {
       }
 
       // Create self-closing View with style
-      const viewElement = $.createElement('View', [
-        j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(styleValue)),
-      ])
+      const viewElement = createSelfClosingElement(
+        'View',
+        [j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(styleValue))],
+        j,
+      )
 
       // Replace Badge with View
       j(path).replaceWith(viewElement)
@@ -150,21 +160,21 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Has text content -> migrate to Nordlys Badge
-    const badgeAttributes = $.filterAttributes(attributes, {
+    const badgeAttributes = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    $.addTransformedProps(badgeAttributes, transformedProps)
+    addTransformedProps(badgeAttributes, transformedProps, j)
 
     // Add text prop with extracted content
-    badgeAttributes.push($.createAttribute('text', textContent))
+    badgeAttributes.push(createAttribute('text', textContent, j))
 
     // Add default size if not specified
-    if (!$.hasAttribute(badgeAttributes, 'size')) {
-      badgeAttributes.push($.createStringAttribute('size', 'md'))
+    if (!hasAttribute(badgeAttributes, 'size')) {
+      badgeAttributes.push(createStringAttribute('size', 'md', j))
     }
 
-    const badgeElement = $.createElement('Badge', badgeAttributes)
+    const badgeElement = createSelfClosingElement('Badge', badgeAttributes, j)
 
     // Wrap in View if style props exist
     if (wrap && hasStyleProps) {

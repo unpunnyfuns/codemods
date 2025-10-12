@@ -1,13 +1,8 @@
 // Migrate NativeBase Typography -> Nordlys Typography with wrapper View for style props
 // See typography.md for documentation
 
-import {
-  addNamedImport,
-  createViewWrapper,
-  hasNamedImport,
-  removeNamedImport,
-} from '@puns/shiftkit'
-import { createJSXHelper } from '../helpers/factory.js'
+import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
+import { cloneElement, createViewWrapper, findJSXElements } from '@puns/shiftkit/jsx'
 import { createStyleContext } from '../helpers/style-context.js'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { TYPOGRAPHY_RESTRICTED_PROPS } from './mappings/nordlys-props.js'
@@ -59,7 +54,6 @@ const typographyPropConfig = {
 
 function main(fileInfo, api, options = {}) {
   const j = api.jscodeshift
-  const $ = createJSXHelper(j)
   const root = j(fileInfo.source)
 
   const sourceImport = options.sourceImport ?? '@hb-frontend/common/src/components'
@@ -77,7 +71,7 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  const typographyElements = $.findElements(root, 'Typography')
+  const typographyElements = findJSXElements(root, 'Typography', j)
 
   if (typographyElements.length === 0) {
     return fileInfo.source
@@ -143,7 +137,7 @@ function main(fileInfo, api, options = {}) {
       const styleName = `typography${index}`
       styles.addStyle(styleName, styleProps)
 
-      const typographyElement = $.clone(path.node)
+      const typographyElement = cloneElement(path.node, j)
 
       const styleValue = j.memberExpression(j.identifier('styles'), j.identifier(styleName))
       const viewElement = createViewWrapper(typographyElement, styleValue, j)
