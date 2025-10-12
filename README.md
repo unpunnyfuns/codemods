@@ -1,6 +1,6 @@
 # NativeBase Migration Codemods
 
-jscodeshift codemods for migrating NativeBase components to Nordlys/Nordlys.
+jscodeshift codemods for migrating NativeBase components
 
 ## Quick Start
 
@@ -24,12 +24,3 @@ npm install
   --sourceImport="@hb-frontend/common/src/components" \
   --targetImport="@hb-frontend/app/src/components/nordlys/Button"
 ```
-
-**Common source imports:**
-- `native-base` (default for most codemods)
-- `@hb-frontend/common/src/components` (wrapped exports)
-
-**Common targets:**
-- `react-native` (for Box → View, Pressable)
-- `@hb-frontend/app/src/components/nordlys/[Component]` (Nordlys components)
-
