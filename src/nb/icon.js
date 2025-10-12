@@ -1,4 +1,4 @@
-// Migrate NativeBase/Common Icon → Nordlys Icon
+// Migrate NativeBase/Common Icon -> Nordlys Icon
 // See icon.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'

@@ -1,4 +1,4 @@
-// Migrate NativeBase/Common Switch → Nordlys Switch with compound components
+// Migrate NativeBase/Common Switch -> Nordlys Switch with compound components
 // See switch.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'

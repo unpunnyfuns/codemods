@@ -1,12 +1,12 @@
 /**
- * Common value mappings for NativeBase → Nordlys token transformations
+ * Common value mappings for NativeBase -> Nordlys token transformations
  *
  * PRIORITY: String literal transformations (align, justify) - Numeric values passed through
  *
  * Based on token comparison and codebase analysis:
  * - Semantic spacing tokens (2xs, xs, sm, md, lg, xl, 2xl, 3xl) are IDENTICAL - no transformation
  * - Numeric values (m={4}, space={2}) are kept as-is - no transformation
- * - Only string literals need value mapping (e.g., align="start" → alignItems="flex-start")
+ * - Only string literals need value mapping (e.g., align="start" -> alignItems="flex-start")
  */
 
 // Value mappings for alignment props (used in TRANSFORM_PROPS)
@@ -48,7 +48,7 @@ export const justifyValues = {
 //
 // Recommended approach:
 // - Map NativeBase semantic colors to Nordlys system tokens
-// - Example: themeColors.button.solid.primary.default → color.interactive.primary
+// - Example: themeColors.button.solid.primary.default -> color.interactive.primary
 // - Use getColorFromPath() helper at runtime if needed
 //
 // export const COLOR_TOKENS = {

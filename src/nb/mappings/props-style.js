@@ -1,5 +1,5 @@
 /**
- * NativeBase → Nordlys Style Prop Mappings
+ * NativeBase -> Nordlys Style Prop Mappings
  *
  * Generated from models using transformation rules.
  *
@@ -8,7 +8,7 @@
  * CONVERSIONS: maps-tokens.js, maps-color.js, maps-values.js
  *
  * Value transformation priority (Option B):
- * 1. valueMap (explicit string → value)
+ * 1. valueMap (explicit string -> value)
  * 2. tokenHelper (named token conversion)
  * 3. pass-through (numbers, expressions)
  *
@@ -61,7 +61,7 @@ export const spacing = generateMappings(SPACING_PROPS, {
 /**
  * Sizing Props (width, height, min/max)
  * Source: Subset of NativeBase LAYOUT_PROPS
- * ValueMap: full → 100%
+ * ValueMap: full -> 100%
  */
 const sizingProps = [
   'width',

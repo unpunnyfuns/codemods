@@ -1,4 +1,4 @@
-// Migrate NativeBase Box → React Native View with StyleSheet
+// Migrate NativeBase Box -> React Native View with StyleSheet
 // See box.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'

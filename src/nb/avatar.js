@@ -1,4 +1,4 @@
-// Migrate NativeBase/Common Avatar → Nordlys Avatar with object-based props
+// Migrate NativeBase/Common Avatar -> Nordlys Avatar with object-based props
 // See avatar.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
@@ -117,20 +117,20 @@ function main(fileInfo, api, options = {}) {
     $.addTransformedProps(avatarAttributes, transformedProps)
 
     if (iconNameValue) {
-      // iconName → icon={{ name: "...", fill: "blue" }}
+      // iconName -> icon={{ name: "...", fill: "blue" }}
       const iconObject = $.createNestedObject({
         name: iconNameValue,
         fill: 'blue',
       })
       avatarAttributes.push($.createAttribute('icon', iconObject))
     } else if (imageUriValue) {
-      // imageUri → image={{ source: { uri: "..." } }}
+      // imageUri -> image={{ source: { uri: "..." } }}
       const imageObject = $.createNestedObject({
         source: { uri: imageUriValue },
       })
       avatarAttributes.push($.createAttribute('image', imageObject))
     } else if (imageSourceValue) {
-      // imageSource → image={{ source }}
+      // imageSource -> image={{ source }}
       const imageObject = $.createNestedObject({ source: imageSourceValue })
       avatarAttributes.push($.createAttribute('image', imageObject))
     }

@@ -1,4 +1,4 @@
-// Migrate NativeBase/Common Button → Nordlys Button with extracted icon and text props
+// Migrate NativeBase/Common Button -> Nordlys Button with extracted icon and text props
 // See button.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'

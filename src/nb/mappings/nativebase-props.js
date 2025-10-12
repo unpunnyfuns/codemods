@@ -27,8 +27,8 @@ export const NB_SPACE_TOKENS = {
   18: '72px',
 }
 
-// NativeBase default numeric space scale (0-10 → pixels)
-// Used by Icon component for token→pixel conversion
+// NativeBase default numeric space scale (0-10 -> pixels)
+// Used by Icon component for token->pixel conversion
 export const NB_SPACE_SCALE_NUMERIC = {
   0: 0,
   1: 4,

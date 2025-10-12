@@ -1,4 +1,4 @@
-// Migrate NativeBase Alert → Nordlys Alert
+// Migrate NativeBase Alert -> Nordlys Alert
 // See alert.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'

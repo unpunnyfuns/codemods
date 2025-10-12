@@ -1,4 +1,4 @@
-// Migrate NativeBase Typography → Nordlys Typography with wrapper View for style props
+// Migrate NativeBase Typography -> Nordlys Typography with wrapper View for style props
 // See typography.md for documentation
 
 import {

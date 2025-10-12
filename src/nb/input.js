@@ -1,4 +1,4 @@
-// Migrate NativeBase Input → Nordlys Input (simple cases only)
+// Migrate NativeBase Input -> Nordlys Input (simple cases only)
 // See input.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'

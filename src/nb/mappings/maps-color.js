@@ -1,11 +1,11 @@
 /**
- * NativeBase → Nordlys Color Mappings
+ * NativeBase -> Nordlys Color Mappings
  *
  * Maps NativeBase semantic color paths to Nordlys color tokens.
  * Handles cases where:
- * 1. Path matches directly (background.secondary → color.background.secondary)
- * 2. Path needs remapping (white.900 → color.white.HW1)
- * 3. Path structure differs (avatar.success → needs mapping)
+ * 1. Path matches directly (background.secondary -> color.background.secondary)
+ * 2. Path needs remapping (white.900 -> color.white.HW1)
+ * 3. Path structure differs (avatar.success -> needs mapping)
  */
 
 /**
@@ -21,22 +21,22 @@ export const DIRECT_COLOR_PATHS = [
 ]
 
 /**
- * NativeBase → Nordlys color path remappings
+ * NativeBase -> Nordlys color path remappings
  * For cases where the semantic meaning matches but path differs
  */
 export const COLOR_PATH_REMAPPING = {
-  // NativeBase uses numeric scales, Nordlys uses named tokens
+  // NativeBase numeric scales -> Nordlys named tokens
   'white.900': 'white.HW1',
-  'white.0': 'white.HW1', // transparent in NB, white in Nordlys
-  'black.900': 'core.neutral.HN1', // Closest dark
+  'white.0': 'white.HW1',
+  'black.900': 'core.neutral.HN1',
 
-  // Input colors - NativeBase has these, need to check Nordlys equivalent
-  'input.backgroundDefault': 'background.secondary', // Gray[0] → White
+  // Input colors
+  'input.backgroundDefault': 'background.secondary',
   'input.backgroundFocus': 'background.secondary',
   'input.backgroundDisabled': 'background.tertiary',
 
   // Avatar colors
-  'avatar.default': 'background.primary', // Pink[200] → beige
+  'avatar.default': 'background.primary',
   'avatar.info': 'feedback.info.subtle',
   'avatar.success': 'feedback.success.subtle',
 }

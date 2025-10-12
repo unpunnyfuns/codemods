@@ -3,17 +3,6 @@
  *
  * Takes a list of source props (from nativebase-props.js) and applies transformation
  * rules to generate mapping configurations (for props-style.js).
- *
- * Rules:
- * - shortcuts: Map shorthand to full name (m → margin)
- * - renames: Map NB name to Nordlys name (marginX → marginHorizontal)
- * - expansions: Map one prop to multiple (size → [width, height])
- * - tokenHelper: Which token helper to use (space, color, radius)
- * - valueMap: Value transformations (full → 100%)
- *
- * Output format matches props-style.js:
- * - String: Direct 1:1 mapping
- * - Object: { styleName, tokenHelper?, valueMap?, properties? }
  */
 
 /**
@@ -22,10 +11,10 @@
  * @param {string[]} sourceProps - Array of prop names from NativeBase model
  * @param {object} rules - Transformation rules
  * @param {string} [rules.tokenHelper] - Token helper to use (space, color, radius)
- * @param {object} [rules.valueMap] - Value transformations (full → 100%)
- * @param {object} [rules.shortcuts] - Shorthand mappings (m → margin)
- * @param {object} [rules.renames] - Prop renames (marginX → marginHorizontal)
- * @param {object} [rules.expansions] - Multi-property expansions (size → [width, height])
+ * @param {object} [rules.valueMap] - Value transformations (full -> 100%)
+ * @param {object} [rules.shortcuts] - Shorthand mappings (m -> margin)
+ * @param {object} [rules.renames] - Prop renames (marginX -> marginHorizontal)
+ * @param {object} [rules.expansions] - Multi-property expansions (size -> [width, height])
  * @returns {object} Mapping configuration object
  */
 export function generateMappings(sourceProps, rules = {}) {
@@ -40,7 +29,7 @@ export function generateMappings(sourceProps, rules = {}) {
   const mappings = {}
 
   for (const prop of sourceProps) {
-    // Check if it's an expansion (one prop → multiple style props)
+    // Check if it's an expansion (one prop -> multiple style props)
     if (expansions[prop]) {
       mappings[prop] = {
         properties: expansions[prop],

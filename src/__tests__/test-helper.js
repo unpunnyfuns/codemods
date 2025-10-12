@@ -4,7 +4,7 @@ import jscodeshift from 'jscodeshift'
 
 /**
  * Test a codemod transform with normalized output for snapshot testing
- * Normalization: parse → reformat with consistent options
+ * Normalization: parse -> reformat with consistent options
  * This ensures formatting differences don't cause test failures
  *
  * @param {string} transformPath - Path to transform relative to src/ (e.g., 'nb/box' or 'transforms/redirect-imports')
@@ -15,7 +15,7 @@ export function testTransform(transformPath, fixturePath, extension = 'js') {
   const transform = require(resolve(__dirname, `../${transformPath}.js`)).default
   const j = jscodeshift.withParser('tsx')
 
-  // Extract folder from fixturePath (e.g., 'nb/box' → 'nb')
+  // Extract folder from fixturePath (e.g., 'nb/box' -> 'nb')
   const parts = fixturePath.split('/')
   const folder = parts[0]
   const filename = parts.slice(1).join('/')

@@ -1,6 +1,6 @@
 /**
  * NativeBase-specific prop categorization and transformation utilities
- * Handles prop mapping, StyleSheet extraction, and NativeBase→Nordlys token remapping
+ * Handles prop mapping, StyleSheet extraction, and NativeBase->Nordlys token remapping
  *
  * Validation derives from:
  * - nordlys-props.js: Target model (what's valid in Nordlys output)
@@ -157,8 +157,8 @@ function validateStyleValue(styleName, value) {
 
 /**
  * Transform token MemberExpression with numeric bracket notation to numeric literal
- * e.g., space['4'] → 4, radius['16'] → 16
- * Also transforms dimension string values: "full" → "100%"
+ * e.g., space['4'] -> 4, radius['16'] -> 16
+ * Also transforms dimension string values: "full" -> "100%"
  */
 function transformNumericTokenAccess(value, j) {
   if ((value.type === 'StringLiteral' || value.type === 'Literal') && value.value === 'full') {
@@ -215,8 +215,8 @@ export function applyValueMapping(value, valueMap, j) {
  * Transform a prop value using priority chain (Option B)
  *
  * Priority order:
- * 1. valueMap - explicit string → value transformations (e.g., full → 100%)
- * 2. tokenHelper - named token conversion with scale remapping (e.g., NB space.xl → Nordlys space.2xl)
+ * 1. valueMap - explicit string -> value transformations (e.g., full -> 100%)
+ * 2. tokenHelper - named token conversion with scale remapping (e.g., NB space.xl -> Nordlys space.2xl)
  * 3. pass-through - numbers, expressions, unknown strings
  *
  * @param {object} value - AST node for the value
@@ -323,7 +323,7 @@ export function categorizeProps(attributes, mappings, j) {
               for (const prop of element.properties) {
                 if (prop.type === 'Property' && prop.key.type === 'Identifier') {
                   const styleName = prop.key.name
-                  // space['4'] → 4
+                  // space['4'] -> 4
                   const transformedValue = transformNumericTokenAccess(prop.value, j)
 
                   const validation = validateStyleValue(styleName, transformedValue)
@@ -349,7 +349,7 @@ export function categorizeProps(attributes, mappings, j) {
           for (const prop of expr.properties) {
             if (prop.type === 'Property' && prop.key.type === 'Identifier') {
               const styleName = prop.key.name
-              // space['4'] → 4
+              // space['4'] -> 4
               const transformedValue = transformNumericTokenAccess(prop.value, j)
 
               const validation = validateStyleValue(styleName, transformedValue)
@@ -393,7 +393,7 @@ export function categorizeProps(attributes, mappings, j) {
       }
 
       if (value) {
-        // Use priority chain transformation (valueMap → tokenHelper → pass-through)
+        // Use priority chain transformation (valueMap -> tokenHelper -> pass-through)
         const result = transformPropValue(value, config, j, usedTokenHelpers)
         const processedValue = result.value
         const isTokenHelperCall = result.isTokenHelper

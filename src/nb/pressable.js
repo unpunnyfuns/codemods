@@ -1,4 +1,4 @@
-// Migrate NativeBase Pressable → React Native Pressable with StyleSheet
+// Migrate NativeBase Pressable -> React Native Pressable with StyleSheet
 // See pressable.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'

@@ -1,4 +1,4 @@
-// Migrate NativeBase Badge → Nordlys Badge (text badges) or View (indicator dots)
+// Migrate NativeBase Badge -> Nordlys Badge (text badges) or View (indicator dots)
 // See badge.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
@@ -119,7 +119,7 @@ function main(fileInfo, api, options = {}) {
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
-    // If no text content and has style props → indicator dot pattern, convert to View
+    // If no text content and has style props -> indicator dot pattern, convert to View
     if (!textContent && hasStyleProps) {
       warnings.push(
         'Badge: No text content detected, converting to styled View (indicator dot pattern)',
@@ -143,13 +143,13 @@ function main(fileInfo, api, options = {}) {
       return
     }
 
-    // If no text content and no style props → warn about missing text
+    // If no text content and no style props -> warn about missing text
     if (!textContent) {
       warnings.push('Badge: No text content or style props, cannot migrate to Nordlys Badge')
       return
     }
 
-    // Has text content → migrate to Nordlys Badge
+    // Has text content -> migrate to Nordlys Badge
     const badgeAttributes = $.filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })

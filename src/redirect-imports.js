@@ -33,7 +33,7 @@ function main(fileInfo, api, options = {}) {
   }
 
   // Track local name that needs to be renamed throughout the file
-  // Example: import { View as RNView } → localNameToRename='RNView', newName='CustomView'
+  // Example: import { View as RNView } -> localNameToRename='RNView', newName='CustomView'
   let localNameToRename = null
   let newName = null
 
