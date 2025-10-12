@@ -97,6 +97,11 @@ function validateStyleValue(styleName, value) {
   }
 
   if (value.type === 'StringLiteral' || value.type === 'Literal') {
+    // Literal with numeric value is valid (e.g., p={2} means 2dp directly)
+    if (value.type === 'Literal' && typeof value.value === 'number') {
+      return { isValid: true }
+    }
+
     const val = String(value.value)
 
     // Flag "0", "1", "2px", "230px" but allow percentages
