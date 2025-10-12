@@ -13,7 +13,7 @@ Migrates NativeBase `Box` to React Native `View` with `StyleSheet`.
 - `sourceImport` - Import to look for (default: `'native-base'`)
 - `targetImport` - Import for View (default: `'react-native'`)
 - `targetName` - Component name (default: `'View'`)
-- `tokenImport` - Design tokens import (default: `'@hb-frontend/nordlys'`)
+- `tokenImport` - Design tokens import (default: `'./tokens'`)
 
 ## Example
 
@@ -31,7 +31,7 @@ import { Box } from 'native-base'
 
 ```tsx
 import { StyleSheet, View } from 'react-native'
-import { color, radius, space } from '@hb-frontend/nordlys'
+import { color, radius, space } from './tokens'
 
 <View style={styles.box0}>
   <Text>Content</Text>
@@ -50,6 +50,6 @@ const styles = StyleSheet.create({
 ## Notes
 
 - Style props (spacing, sizing, colors, layout, border) extracted to StyleSheet
-- NativeBase color tokens mapped to Nordlys
+- NativeBase color tokens mapped to target framework
 - Direct props (onPress, testID, accessibility) passed through
 - Pseudo props (_hover, _pressed) and platform overrides (_web, _ios) dropped

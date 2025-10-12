@@ -1,6 +1,6 @@
 # Typography Migration
 
-Migrates NativeBase `Typography` to Nordlys `Typography`.
+Migrates NativeBase `Typography` to target framework `Typography`.
 
 ## Usage
 
@@ -11,8 +11,8 @@ Migrates NativeBase `Typography` to Nordlys `Typography`.
 ## Options
 
 - `sourceImport` - Import to look for (default: `'@org/common/src/components'`)
-- `targetImport` - Import for Typography (default: `'@hb-frontend/app/src/components/nordlys'`)
-- `tokenImport` - Design tokens import (default: `'@hb-frontend/nordlys'`)
+- `targetImport` - Import for Typography (default: `'./components'`)
+- `tokenImport` - Design tokens import (default: `'./tokens'`)
 
 ## Example
 
@@ -36,8 +36,8 @@ import { Typography } from '@org/common/src/components'
 
 ```tsx
 import { StyleSheet, View } from 'react-native'
-import { Typography } from '@hb-frontend/app/src/components/nordlys'
-import { space } from '@hb-frontend/nordlys'
+import { Typography } from './components'
+import { space } from './tokens'
 
 <View style={styles.typography0}>
   <Typography type="heading" size="xl" color="blue.500">
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
 
 ## Notes
 
-- Nordlys Typography doesn't accept style props - wrapped in View if present
+- target framework Typography doesn't accept style props - wrapped in View if present
 - Font props (`fontWeight`, `fontSize`, `lineHeight`) dropped (managed internally)
-- Color prop stays as string (Nordlys resolves internally)
+- Color prop stays as string (target framework resolves internally)
 - Props like `type`, `size`, `align`, `numberOfLines` passed through

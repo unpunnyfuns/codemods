@@ -1,13 +1,13 @@
 # Mappings
 
-Prop mapping configurations for NativeBase → Nordlys migrations.
+Prop mapping configurations for NativeBase to target framework migrations.
 
-Model-based system: formal models define both SOURCE (NativeBase) and TARGET (Nordlys), then complete mappings derive systematically from these models.
+Model-based system: formal models define both SOURCE (NativeBase) and TARGET (target framework), then complete mappings derive systematically from these models.
 
 ## Architecture
 
 ```
-Models (source of truth) → Mappings (derived) → Validation (enforced)
+Models (source of truth) to Mappings (derived) to Validation (enforced)
 ```
 
 ## Structure
@@ -16,15 +16,15 @@ Models (source of truth) → Mappings (derived) → Validation (enforced)
 | ------------------------------ | -------------------------------------------------------------------- |
 | **Models**                     |                                                                      |
 | `nativebase-styled-props.js`   | SOURCE model - Complete NativeBase styled-system documentation       |
-| `nordlys-props.js`             | TARGET model - Nordlys component capabilities and constraints        |
+| `nordlys-props.js`             | TARGET model - target framework component capabilities and constraints        |
 | **Mappings**                   |                                                                      |
-| `props-style.js`               | NativeBase → Nordlys style prop mappings (extracted to StyleSheet)   |
+| `props-style.js`               | NativeBase to target framework style prop mappings (extracted to StyleSheet)   |
 | `props-direct.js`              | Props that pass through unchanged (events, accessibility)            |
 | `props-drop.js`                | Props to remove (pseudo-props, platform overrides)                   |
 | `props-pseudo.js`              | NativeBase pseudo-prop definitions (\_hover, \_pressed, etc.)        |
 | `props-theme.js`               | NativeBase theme system props (colorScheme, variant, size)           |
 | **Value Transformations**      |                                                                      |
-| `maps-color.js`                | NativeBase → Nordlys color token remapping                           |
+| `maps-color.js`                | NativeBase to target framework color token remapping                           |
 | `maps-values.js`               | String value transformations (align, justify)                        |
 
 ## Models
@@ -43,11 +43,11 @@ Documents all NativeBase styled-props with categorization:
 // - RN_LIMITED: Partial support in RN
 // - IMAGE_ONLY: Only works on Image components
 
-// Nordlys Mapping Strategy:
-// - DIRECT: Map directly to RN prop (e.g., p → padding)
-// - TOKEN: Use Nordlys token helper (e.g., bg → backgroundColor with color token)
-// - VALUE_MAP: Transform string values (e.g., align: start → flex-start)
-// - DROP: Remove (web-only, unsupported, handled differently in Nordlys)
+// target framework Mapping Strategy:
+// - DIRECT: Map directly to RN prop (e.g., p to padding)
+// - TOKEN: Use target framework token helper (e.g., bg to backgroundColor with color token)
+// - VALUE_MAP: Transform string values (e.g., align: start to flex-start)
+// - DROP: Remove (web-only, unsupported, handled differently in target framework)
 ```
 
 **Exports:**
@@ -68,15 +68,15 @@ WEB_ONLY_PROPS    // List of props to drop for RN
 
 **Note:** Our codemods use React Native native shorthands:
 
-- `mx` → `marginHorizontal` (not `['marginLeft', 'marginRight']` like NativeBase)
-- `my` → `marginVertical` (not `['marginTop', 'marginBottom']`)
+- `mx` to `marginHorizontal` (not `['marginLeft', 'marginRight']` like NativeBase)
+- `my` to `marginVertical` (not `['marginTop', 'marginBottom']`)
 - Same for `px`/`py`
 
 ### nordlys-props.js
 
-**TARGET MODEL** - Nordlys component capabilities and constraints.
+**TARGET MODEL** - target framework component capabilities and constraints.
 
-Documents what's valid in Nordlys output:
+Documents what's valid in target framework output:
 
 **Exports:**
 
@@ -97,7 +97,7 @@ TRANSFORM_PROPS        // transform, rotation, scaleX, scaleY, translateX, trans
 SHADOW_PROPS           // shadowColor, shadowOffset, shadowOpacity, shadowRadius, elevation
 ALL_VIEW_STYLE_PROPS   // Combined
 
-// Props That Expect Nordlys Tokens
+// Props That Expect target framework Tokens
 PROPS_USING_SPACE_TOKENS   // gap, margin*, padding*, top, right, bottom, left, etc.
 PROPS_USING_RADIUS_TOKENS  // borderRadius, borderTopLeftRadius, etc.
 PROPS_USING_COLOR_TOKENS   // backgroundColor, borderColor, shadowColor, etc.
@@ -119,7 +119,7 @@ TYPOGRAPHY_RESTRICTED_PROPS   // { managed: [...], allowed: [...], wrapForLayout
 
 ### props-style.js
 
-**NativeBase → Nordlys style prop mappings** (extracted to StyleSheet).
+**NativeBase to target framework style prop mappings** (extracted to StyleSheet).
 
 Complete mappings derived from both models. Used by `categorizeProps()` in `../props.js`.
 
@@ -197,7 +197,7 @@ NativeBase-specific props to remove during migration.
 export const dropProps = [
   // Pseudo-props (from props-pseudo.js)
   ...pseudoProps,
-  // Theme props that don't map to Nordlys (from props-theme.js)
+  // Theme props that don't map to target framework (from props-theme.js)
   'colorScheme',
   // Platform overrides
   '_web',
@@ -227,7 +227,7 @@ NESTED_PSEUDO        // _text, _icon, _stack, _input, _web, _ios, _android, etc.
 ALL_PSEUDO_PROPS     // Combined
 ```
 
-All pseudo-props are dropped - Nordlys uses different patterns.
+All pseudo-props are dropped - target framework uses different patterns.
 
 ### props-theme.js
 
@@ -247,19 +247,19 @@ These are typically dropped or transformed in TRANSFORM_PROPS.
 
 ### maps-color.js
 
-Maps NativeBase color tokens to Nordlys color system.
+Maps NativeBase color tokens to target framework color system.
 
 **Exports:**
 
 ```javascript
-getNordlysColorPath(nativeBaseColor) → string
+gettarget frameworkColorPath(nativeBaseColor) to string
 ```
 
 **Example:**
 
 ```javascript
-getNordlysColorPath('blue.500')        // → 'blue.500'
-getNordlysColorPath('primary.600')     // → 'background.primary' (or mapped equivalent)
+gettarget frameworkColorPath('blue.500')        // to 'blue.500'
+gettarget frameworkColorPath('primary.600')     // to 'background.primary' (or mapped equivalent)
 ```
 
 Used by `processTokenHelper()` in `../props.js` when `tokenHelper: 'color'`.
@@ -271,8 +271,8 @@ String value transformations.
 **Exports:**
 
 ```javascript
-ALIGN_VALUES      // start → flex-start, end → flex-end, center, stretch, baseline
-JUSTIFY_VALUES    // start → flex-start, between → space-between, around, evenly
+ALIGN_VALUES      // start to flex-start, end to flex-end, center, stretch, baseline
+JUSTIFY_VALUES    // start to flex-start, between to space-between, around, evenly
 ```
 
 **Usage in component TRANSFORM_PROPS:**
@@ -354,7 +354,7 @@ export const validRadiusTokens = RADIUS_TOKENS
 
 ## Design Principles
 
-**Model-based:** Formal models define SOURCE (NativeBase) and TARGET (Nordlys)
+**Model-based:** Formal models define SOURCE (NativeBase) and TARGET (target framework)
 
 **Single source of truth:** Validation derives from models, not hardcoded lists
 

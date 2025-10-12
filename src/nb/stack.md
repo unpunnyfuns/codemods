@@ -11,9 +11,9 @@ Migrates NativeBase `HStack`/`VStack` to `Stack` with `direction` prop.
 ## Options
 
 - `sourceImport` - Import to look for (default: `'native-base'`)
-- `targetImport` - Import for Stack (default: `'@hb-frontend/app/src/components/nordlys/Stack'`)
+- `targetImport` - Import for Stack (default: `'./components/Stack'`)
 - `targetName` - Component name (default: `'Stack'`)
-- `tokenImport` - Design tokens import (default: `'@hb-frontend/nordlys'`)
+- `tokenImport` - Design tokens import (default: `'./tokens'`)
 
 ## Example
 
@@ -37,8 +37,8 @@ import { HStack, VStack } from 'react-native'
 
 ```tsx
 import { StyleSheet } from 'react-native'
-import { Stack } from '@hb-frontend/app/src/components/nordlys/'
-import { space } from '@hb-frontend/nordlys'
+import { Stack } from './components/Stack'
+import { space } from './tokens'
 
 <Stack direction="horizontal" gap={space[2]} style={styles.hstack0}>
   <Text>Left</Text>
@@ -58,9 +58,9 @@ const styles = StyleSheet.create({
 
 ## Notes
 
-- `HStack` → `Stack` with `direction="horizontal"`
-- `VStack` → `Stack` with `direction="vertical"`
-- `space` → `gap` (stays on element)
-- `align` → `alignItems` (extracted to StyleSheet, values mapped: start → flex-start, etc.)
-- `justify` → `justifyContent` (extracted to StyleSheet, values mapped: between → space-between, etc.)
+- `HStack` becomes `Stack` with `direction="horizontal"`
+- `VStack` becomes `Stack` with `direction="vertical"`
+- `space` becomes `gap` (stays on element)
+- `align` becomes `alignItems` (extracted to StyleSheet, values mapped: start to flex-start, etc.)
+- `justify` becomes `justifyContent` (extracted to StyleSheet, values mapped: between to space-between, etc.)
 - Props like `divider`, `reversed`, `_text`, `_stack` dropped

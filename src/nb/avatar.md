@@ -1,6 +1,6 @@
 # Avatar Migration
 
-Migrates NativeBase/Common `Avatar` to Nordlys `Avatar` with object-based props.
+Migrates NativeBase/Common `Avatar` to target framework `Avatar` with object-based props.
 
 ## Usage
 
@@ -11,8 +11,8 @@ Migrates NativeBase/Common `Avatar` to Nordlys `Avatar` with object-based props.
 ## Options
 
 - `sourceImport` - Import to look for (default: `'@org/common/src/components'`)
-- `targetImport` - Import for Avatar (default: `'@hb-frontend/app/src/components/nordlys'`)
-- `tokenImport` - Design tokens import (default: `'@hb-frontend/nordlys'`)
+- `targetImport` - Import for Avatar (default: `'./components'`)
+- `tokenImport` - Design tokens import (default: `'./tokens'`)
 
 ## Example
 
@@ -30,8 +30,8 @@ import { Avatar } from '@org/common/src/components'
 ### After
 
 ```tsx
-import { Avatar } from '@hb-frontend/app/src/components/nordlys'
-import { color } from '@hb-frontend/nordlys'
+import { Avatar } from './components'
+import { color } from './tokens'
 
 <Avatar icon={{ name: "user", fill: color.blue['500'] }} size="md" />
 <Avatar image={{ source: { uri: "https://example.com/avatar.jpg" } }} size="lg" />
@@ -41,8 +41,8 @@ import { color } from '@hb-frontend/nordlys'
 
 ## Notes
 
-- `iconName="user"` → `icon={{ name: "user", fill: bgColor }}`
-- `imageUri="url"` → `image={{ source: { uri: "url" } }}`
-- `imageSource={source}` → `image={{ source }}`
+- `iconName="user"` to `icon={{ name: "user", fill: bgColor }}`
+- `imageUri="url"` to `image={{ source: { uri: "url" } }}`
+- `imageSource={source}` to `image={{ source }}`
 - `letters` not supported, issues warning
 - Style props wrapped in View if present

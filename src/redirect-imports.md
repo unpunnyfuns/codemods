@@ -82,4 +82,4 @@ export function MyComponent() {
 - Handles trailing slashes in import paths
 - Preserves `import type` declarations
 - Renames all usages of the identifier throughout the file (except in import/export specifiers)
-- Works with aliased imports: `import { Box as MyBox }` → local name is tracked correctly
+- Works with aliased imports: `import { Box as MyBox }` tracks local name correctly

@@ -1,6 +1,6 @@
 # Button Migration
 
-Migrates NativeBase/Common `Button` to Nordlys `Button` with extracted `icon` and `text` props.
+Migrates NativeBase/Common `Button` to target framework `Button` with extracted `icon` and `text` props.
 
 ## Usage
 
@@ -11,8 +11,8 @@ Migrates NativeBase/Common `Button` to Nordlys `Button` with extracted `icon` an
 ## Options
 
 - `sourceImport` - Import to look for (default: `'@org/common/src/components'`)
-- `targetImport` - Import for Button (default: `'@hb-frontend/app/src/components/nordlys'`)
-- `tokenImport` - Design tokens import (default: `'@hb-frontend/nordlys'`)
+- `targetImport` - Import for Button (default: `'./components'`)
+- `tokenImport` - Design tokens import (default: `'./tokens'`)
 
 ## Example
 
@@ -35,7 +35,7 @@ import { Button, Icon } from '@org/common/src/components'
 ### After
 
 ```tsx
-import { Button } from '@hb-frontend/app/src/components/nordlys'
+import { Button } from './components'
 
 <Button
   icon="Plus"
@@ -50,9 +50,9 @@ import { Button } from '@hb-frontend/app/src/components/nordlys'
 
 ## Notes
 
-- `leftIcon={<Icon name="..." />}` → `icon="..."`
-- Children → `text={children}` (simple children only)
-- `isDisabled` → `disabled`, `isLoading` → `loading`
+- `leftIcon={<Icon name="..." />}` to `icon="..."`
+- Children to `text={children}` (simple children only)
+- `isDisabled` to `disabled`, `isLoading` to `loading`
 - Adds `type="solid"` (may need manual adjustment)
 - Style props wrapped in View if present
 - Warns for: complex children, rightIcon, icon-only buttons

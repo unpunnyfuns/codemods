@@ -17,10 +17,10 @@ npm install
 ```bash
 # Migrate Box from a wrapped NativeBase export
 ./run.sh nb/box "src/**/*.tsx" \
-  --sourceImport="@hb-frontend/common/src/components"
+  --sourceImport="./components/common"
 
 # Migrate Button from custom wrapper with custom target
-./run.sh nb/button packages/app/src/components/molecules/CountryModal/CountryModalItem/CountryModalItem.tsx \
-  --sourceImport="@hb-frontend/common/src/components" \
-  --targetImport="@hb-frontend/app/src/components/nordlys/Button"
+./run.sh nb/button "src/**/*.tsx" \
+  --sourceImport="./components/common" \
+  --targetImport="./components/Button"
 ```

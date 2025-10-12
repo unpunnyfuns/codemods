@@ -1,6 +1,6 @@
-# NativeBase vs Nordlys Token Comparison
+# NativeBase vs target framework Token Comparison
 
-This document compares the NativeBase theme tokens with Nordlys (nl-tokens) to understand value mappings for codemods.
+This document compares the NativeBase theme tokens with target framework (nl-tokens) to understand value mappings for codemods.
 
 ## Spacing Scale
 
@@ -20,7 +20,7 @@ space: {
 }
 ```
 
-### Nordlys (nl-tokens)
+### target framework (nl-tokens)
 ```typescript
 space: {
   zero: 0,         // dimension[0]
@@ -58,9 +58,9 @@ dimension: {
 ```
 
 **Mapping:**
-- ✅ 2xs, xs, sm, md, lg, xl, 2xl, 3xl → **IDENTICAL MAPPING** (no transformation needed for semantic names)
-- ⚠️ NativeBase '14' (56px) → No direct Nordlys equivalent (dimension[14] = 40px, would need dimension[15]=44 or custom)
-- ⚠️ NativeBase '18' (72px) → No direct Nordlys equivalent
+- ✅ 2xs, xs, sm, md, lg, xl, 2xl, 3xl to **IDENTICAL MAPPING** (no transformation needed for semantic names)
+- ⚠️ NativeBase '14' (56px) to No direct target framework equivalent (dimension[14] = 40px, would need dimension[15]=44 or custom)
+- ⚠️ NativeBase '18' (72px) to No direct target framework equivalent
 
 ## Border Radius
 
@@ -73,7 +73,7 @@ radii: {
 }
 ```
 
-### Nordlys
+### target framework
 ```typescript
 radius: {
   sm: 4,   // space.xs
@@ -85,8 +85,8 @@ radius: {
 ```
 
 **Mapping:**
-- ✅ sm, md, lg → **IDENTICAL VALUES** (no transformation needed)
-- ℹ️ Nordlys has additional xl (24) and 2xl (32) that NativeBase doesn't use
+- ✅ sm, md, lg to **IDENTICAL VALUES** (no transformation needed)
+- ℹ️ target framework has additional xl (24) and 2xl (32) that NativeBase doesn't use
 
 ## Colors
 
@@ -108,7 +108,7 @@ blue: {
 }
 ```
 
-### Nordlys Structure
+### target framework Structure
 - **Core colors**: HB/HN prefixed scales 1-10 (e.g., `core.blue.HB6`, `core.neutral.HN5`)
 - **Extended colors**: HG/HR/HY prefixed scales 1-10 (e.g., `extended.green.HG6`)
 - Uses hex values directly
@@ -128,12 +128,12 @@ core: {
 ```
 
 **Mapping Challenge:**
-- ⚠️ **REQUIRES MANUAL MAPPING**: NativeBase numeric scales (0-900) don't directly correspond to Nordlys scales (1-10)
-- ⚠️ Need to determine which NativeBase colors map to which Nordlys tokens
+- ⚠️ **REQUIRES MANUAL MAPPING**: NativeBase numeric scales (0-900) don't directly correspond to target framework scales (1-10)
+- ⚠️ Need to determine which NativeBase colors map to which target framework tokens
 - Example potential mapping (needs verification):
-  - `blue.600` → `core.blue.HB5` or `HB6`?
-  - `blue.0` → `core.blue.HB10`?
-  - `gray.300` → `core.neutral.HN?`?
+  - `blue.600` to `core.blue.HB5` or `HB6`?
+  - `blue.0` to `core.blue.HB10`?
+  - `gray.300` to `core.neutral.HN?`?
 
 ## Props That Need Value Mapping
 
@@ -141,37 +141,37 @@ Based on these tokens, here are the props that will need value transformations:
 
 ### 1. Spacing Props (IDENTICAL - no transformation needed)
 ```javascript
-// NativeBase → Nordlys (same values)
-space="2xs"  → gap: 2
-space="xs"   → gap: 4
-space="sm"   → gap: 8
-space="md"   → gap: 12
-space="lg"   → gap: 16
-space="xl"   → gap: 32
-space="2xl"  → gap: 64
-space="3xl"  → gap: 128
+// NativeBase to target framework (same values)
+space="2xs"  to gap: 2
+space="xs"   to gap: 4
+space="sm"   to gap: 8
+space="md"   to gap: 12
+space="lg"   to gap: 16
+space="xl"   to gap: 32
+space="2xl"  to gap: 64
+space="3xl"  to gap: 128
 
 // Also applies to: m, mt, mb, ml, mr, mx, my, p, pt, pb, pl, pr, px, py
 ```
 
 ### 2. Border Radius (IDENTICAL - no transformation needed)
 ```javascript
-rounded="sm" → borderRadius: 4
-rounded="md" → borderRadius: 8
-rounded="lg" → borderRadius: 12
+rounded="sm" to borderRadius: 4
+rounded="md" to borderRadius: 8
+rounded="lg" to borderRadius: 12
 ```
 
 ### 3. Colors (REQUIRES MANUAL MAPPING)
 ```javascript
 // Example - needs verification:
-bg="blue.600"      → backgroundColor: '#0056B2' or core.blue.HB?
-bg="primary.500"   → backgroundColor: ??? (need semantic mapping)
-color="gray.300"   → color: core.neutral.HN?
+bg="blue.600"      to backgroundColor: '#0056B2' or core.blue.HB?
+bg="primary.500"   to backgroundColor: ??? (need semantic mapping)
+color="gray.300"   to color: core.neutral.HN?
 ```
 
-## Nordlys Token Architecture
+## target framework Token Architecture
 
-Nordlys uses a sophisticated 3-tier token system:
+target framework uses a sophisticated 3-tier token system:
 
 **1. Reference Tokens** (raw values):
 ```typescript
@@ -201,14 +201,14 @@ getColorFromPath('interactive.primary') // returns '#005FA5'
 **PRIORITY: String literal transformations only**
 
 1. ✅ **Spacing/Radius**: No value transformation - keep as-is
-   - Semantic tokens: `space="md"` → `gap: 'md'` (kept as string)
-   - Numeric values: `space={4}` → `gap: 4` (kept as number)
+   - Semantic tokens: `space="md"` to `gap: 'md'` (kept as string)
+   - Numeric values: `space={4}` to `gap: 4` (kept as number)
    - Both semantic and numeric used in codebase - pass through unchanged
 
 2. ⏳ **Colors - Defer for Later**:
-   - Map NativeBase semantic colors → Nordlys system tokens
-   - Example: `themeColors.button.solid.primary.default` → `color.interactive.primary`
-   - Use Nordlys's 3-tier system (reference → system → component)
+   - Map NativeBase semantic colors to target framework system tokens
+   - Example: `themeColors.button.solid.primary.default` to `color.interactive.primary`
+   - Use target framework's 3-tier system (reference to system to component)
    - Can use `getColorFromPath()` helper at runtime
 
 ## Files to Update

@@ -1,6 +1,6 @@
 # Switch Migration
 
-Migrates NativeBase/Common `Switch` to Nordlys `Switch` with compound components.
+Migrates NativeBase/Common `Switch` to target framework `Switch` with compound components.
 
 ## Usage
 
@@ -11,8 +11,8 @@ Migrates NativeBase/Common `Switch` to Nordlys `Switch` with compound components
 ## Options
 
 - `sourceImport` - Import to look for (default: `'@org/common/src/components'`)
-- `targetImport` - Import for Switch (default: `'@hb-frontend/app/src/components/nordlys'`)
-- `tokenImport` - Design tokens import (default: `'@hb-frontend/nordlys'`)
+- `targetImport` - Import for Switch (default: `'./components'`)
+- `tokenImport` - Design tokens import (default: `'./tokens'`)
 
 ## Example
 
@@ -34,7 +34,7 @@ import { Switch } from '@org/common/src/components'
 ### After
 
 ```tsx
-import { Switch } from '@hb-frontend/app/src/components/nordlys'
+import { Switch } from './components'
 
 <Switch value={enabled} onValueChange={setEnabled} disabled={loading}>
   <Switch.Label>Toggle this to receive notifications</Switch.Label>
@@ -44,7 +44,7 @@ import { Switch } from '@hb-frontend/app/src/components/nordlys'
 
 ## Notes
 
-- `isChecked` → `value`, `onToggle` → `onValueChange`, `isDisabled` → `disabled`
-- Children → `<Switch.Label>`
-- `label` prop → `<Switch.Description>`
+- `isChecked` to `value`, `onToggle` to `onValueChange`, `isDisabled` to `disabled`
+- Children to `<Switch.Label>`
+- `label` prop to `<Switch.Description>`
 - Style props wrapped in View if present

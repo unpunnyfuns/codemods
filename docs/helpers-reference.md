@@ -131,7 +131,7 @@ Renames a JSX element.
 root.findJSXElements('Box').forEach(path => {
   updateElementName(path, 'View')
 })
-// <Box> → <View>
+// <Box> becomes <View>
 ```
 
 ### `addPropsToElement(j, path, props)`
@@ -149,7 +149,7 @@ addPropsToElement(j, path, {
   testID: j.literal('test'),
   disabled: j.literal(true)
 })
-// <Button> → <Button testID="test" disabled={true}>
+// <Button> becomes <Button testID="test" disabled={true}>
 ```
 
 ### `removePropsFromElement(path, propNames)`
@@ -163,7 +163,7 @@ Removes JSX attributes from element.
 **Example:**
 ```javascript
 removePropsFromElement(path, ['_hover', '_pressed'])
-// <Box _hover={{}} _pressed={{}}> → <Box>
+// <Box _hover={{}} _pressed={{}}> becomes <Box>
 ```
 
 ### `addStyleProp(j, path, styleValue)`
@@ -186,8 +186,8 @@ const styleRef = j.memberExpression(
   j.identifier('box0')
 )
 addStyleProp(j, path, styleRef)
-// <View> → <View style={styles.box0}>
-// <View style={styles.outer}> → <View style={[styles.outer, styles.box0]}>
+// <View> becomes <View style={styles.box0}>
+// <View style={styles.outer}> becomes <View style={[styles.outer, styles.box0]}>
 ```
 
 ### `buildStyleValue(j, styleKeyPrefix, styleIndex)`
@@ -204,7 +204,7 @@ Builds a style reference expression.
 **Example:**
 ```javascript
 const styleRef = buildStyleValue(j, 'view', 0)
-// → styles.view0
+// Returns: styles.view0
 ```
 
 ### `createViewWrapper(j, path, styleValue)`
@@ -219,7 +219,7 @@ Wraps JSX element in a View with style prop.
 **Example:**
 ```javascript
 createViewWrapper(j, path, styleRef)
-// <Switch /> → <View style={styles.view0}><Switch /></View>
+// <Switch /> becomes <View style={styles.view0}><Switch /></View>
 ```
 
 ## jsx-extraction.js
@@ -396,13 +396,13 @@ Builds nested member expression from dot-separated path, using bracket notation 
 **Example:**
 ```javascript
 buildNestedMemberExpression(j, 'color.blue.500')
-// → color.blue['500']
+// Returns: color.blue['500']
 
 buildNestedMemberExpression(j, 'space.md')
-// → space.md
+// Returns: space.md
 
 buildNestedMemberExpression(j, 'typography.heading.h1.size')
-// → typography.heading.h1.size
+// Returns: typography.heading.h1.size
 ```
 
 ## Usage Patterns

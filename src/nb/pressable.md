@@ -12,7 +12,7 @@ Migrates NativeBase `Pressable` to React Native `Pressable` with `StyleSheet`.
 
 - `sourceImport` - Import to look for (default: `'native-base'`)
 - `targetImport` - Import for Pressable (default: `'react-native'`)
-- `tokenImport` - Design tokens import (default: `'@hb-frontend/nordlys'`)
+- `tokenImport` - Design tokens import (default: `'./tokens'`)
 
 ## Example
 
@@ -30,7 +30,7 @@ import { Pressable } from 'native-base'
 
 ```tsx
 import { Pressable, StyleSheet } from 'react-native'
-import { color, space } from '@hb-frontend/nordlys'
+import { color, space } from './tokens'
 
 <Pressable
   style={styles.pressable0}
