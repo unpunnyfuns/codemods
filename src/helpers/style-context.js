@@ -50,6 +50,7 @@ export function createStyleContext() {
 
     /**
      * Apply all accumulated styles and imports to the root AST
+     * Returns the variable name used for the StyleSheet
      */
     applyToRoot(root, options, j) {
       const { wrap = true, tokenImport = '@hb-frontend/nordlys' } = options
@@ -62,8 +63,29 @@ export function createStyleContext() {
         for (const h of usedTokenHelpers) {
           addNamedImport(root, tokenImport, h, j)
         }
-        addOrExtendStyleSheet(root, elementStyles, j)
+        const stylesVarName = addOrExtendStyleSheet(root, elementStyles, j)
+
+        // If a different variable name was used (e.g., 'componentStyles' instead of 'styles'),
+        // update all style references in the AST
+        if (stylesVarName && stylesVarName !== 'styles') {
+          root
+            .find(j.MemberExpression, {
+              object: { type: 'Identifier', name: 'styles' },
+            })
+            .forEach((path) => {
+              // Only update if it's a style reference (like styles.button0)
+              // Check if the property name matches one of our generated style names
+              const propertyName = path.node.property.name
+              if (elementStyles.some((s) => s.name === propertyName)) {
+                path.node.object.name = stylesVarName
+              }
+            })
+        }
+
+        return stylesVarName
       }
+
+      return undefined
     },
   }
 }
