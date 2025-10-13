@@ -50,7 +50,7 @@ const transformProps = {
   size: { propName: 'size', valueMap: { xs: 'sm' } },
 }
 
-const directPropsList = ['onPress', 'testID', 'isLoading']
+const directPropsList = ['onPress', 'testID', 'isLoading', 'isDisabled']
 
 const dropPropsList = [
   ...platformOverrides,
