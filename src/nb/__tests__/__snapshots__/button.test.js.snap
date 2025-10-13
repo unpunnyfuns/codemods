@@ -20,21 +20,26 @@ export function MyComponent() {
       <View style={styles.button0}>
         <Button
           testID="button1"
-          size="md"
           onPress={() => {}}
+          size={"md"}
           icon={'PlusOutlined'}
           text={t('addNew')}
           variant='secondary'
           type='solid' />
       </View>
       <Button
-        size="lg"
         onPress={() => {}}
+        size={"lg"}
         disabled
         text={'Simple text'}
         variant='primary'
         type='solid' />
-      <Button size="md" onPress={() => {}} text={text} variant='secondary' type='solid' />
+      <Button
+        onPress={() => {}}
+        size={"md"}
+        text={text}
+        variant='secondary'
+        type='solid' />
     </>
   );
 }

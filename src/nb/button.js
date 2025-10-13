@@ -47,9 +47,10 @@ delete styleProps.size
 
 const transformProps = {
   isDisabled: 'disabled',
+  size: { propName: 'size', valueMap: { xs: 'sm' } },
 }
 
-const directPropsList = ['size', 'onPress', 'testID', 'isLoading']
+const directPropsList = ['onPress', 'testID', 'isLoading']
 
 const dropPropsList = [
   ...platformOverrides,
@@ -174,7 +175,7 @@ function main(fileInfo, api, options = {}) {
       nordlysVariant = nbVariantValue
       nordlysType = 'solid'
     } else {
-      // Map NativeBase variants
+      // Map NativeBase/other variants
       switch (nbVariantValue) {
         case 'solid':
           nordlysVariant = 'primary'
@@ -186,6 +187,7 @@ function main(fileInfo, api, options = {}) {
           break
         case 'ghost':
         case 'link':
+        case 'unstyled':
           nordlysVariant = 'primary'
           nordlysType = 'ghost'
           break
