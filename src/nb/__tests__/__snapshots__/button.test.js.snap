@@ -24,17 +24,15 @@ export function MyComponent() {
           size="md"
           onPress={() => {}}
           icon={'PlusOutlined'}
-          text={t('addNew')}
-          type='solid' />
+          text={t('addNew')} />
       </View>
       <Button
         variant="primary"
         size="lg"
         onPress={() => {}}
         disabled
-        text={'Simple text'}
-        type='solid' />
-      <Button variant="secondary" size="md" onPress={() => {}} text={text} type='solid' />
+        text={'Simple text'} />
+      <Button variant="secondary" size="md" onPress={() => {}} text={text} />
     </>
   );
 }

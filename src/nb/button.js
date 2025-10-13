@@ -49,7 +49,7 @@ const transformProps = {
   isDisabled: 'disabled',
 }
 
-const directPropsList = ['size', 'variant', 'onPress', 'testID', 'isLoading', 'type']
+const directPropsList = ['size', 'variant', 'onPress', 'testID', 'isLoading']
 
 const dropPropsList = [
   ...platformOverrides,
@@ -77,7 +77,6 @@ function main(fileInfo, api, options = {}) {
   const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/Button'
   const targetName = options.targetName ?? 'Button'
   const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
-  const defaultType = options.defaultType ?? 'solid'
   // Default: true (wrap in View when style props exist)
   const wrap = options.wrap ?? true
 
@@ -160,10 +159,6 @@ function main(fileInfo, api, options = {}) {
 
     if (textValue) {
       buttonAttributes.push(createAttribute('text', textValue, j))
-    }
-
-    if (!hasAttribute(buttonAttributes, 'type')) {
-      buttonAttributes.push(createStringAttribute('type', defaultType, j))
     }
 
     addElementComment(path, droppedProps, invalidStyles, j)
