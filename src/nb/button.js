@@ -130,7 +130,20 @@ function main(fileInfo, api, options = {}) {
       }
     }
 
-    const { value: extractedText, isComplex } = extractSimpleChild(children, j)
+    const { value: extractedText, isComplex } = extractSimpleChild(children, j, {
+      allowedExpressionTypes: [
+        'Identifier',
+        'CallExpression',
+        'MemberExpression',
+        'StringLiteral',
+        'ConditionalExpression',
+        'TemplateLiteral',
+        'LogicalExpression',
+        'BinaryExpression',
+        'NumericLiteral',
+        'BooleanLiteral',
+      ],
+    })
     if (isComplex) {
       warnings.push(
         `Button with complex children cannot be automatically migrated - requires manual conversion (${fileInfo.path})`,
