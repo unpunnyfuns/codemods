@@ -162,6 +162,18 @@ function main(fileInfo, api, options = {}) {
       buttonAttributes.push(createAttribute('text', textValue, j))
     }
 
+    // Add defaults for required props
+    if (!hasAttribute(attributes, 'onPress')) {
+      const noopHandler = j.arrowFunctionExpression([], j.blockStatement([]))
+      buttonAttributes.push(createAttribute('onPress', noopHandler, j))
+      warnings.push('Button: Missing onPress - added no-op handler (TODO: wire up actual handler)')
+    }
+
+    if (!hasAttribute(attributes, 'size') && !transformedProps.size) {
+      buttonAttributes.push(createStringAttribute('size', 'md', j))
+      warnings.push('Button: Missing size - defaulted to "md"')
+    }
+
     // Map NativeBase variant to Nordlys variant + type
     const nbVariant = getAttributeValue(attributes, 'variant')
     const nbVariantValue =
