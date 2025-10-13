@@ -238,6 +238,21 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Button', j)
   addNamedImport(root, targetImport, targetName, j)
 
+  // Remove Icon import if no longer used
+  const iconImports = root.find(j.ImportDeclaration).filter((path) => {
+    return (path.node.specifiers || []).some(
+      (spec) => spec.type === 'ImportSpecifier' && spec.imported.name === 'Icon',
+    )
+  })
+  if (iconImports.length > 0) {
+    const iconUsages = root.find(j.JSXElement, {
+      openingElement: { name: { name: 'Icon' } },
+    })
+    if (iconUsages.length === 0) {
+      removeNamedImport(iconImports, 'Icon', j)
+    }
+  }
+
   styles.applyToRoot(root, { wrap, tokenImport }, j)
 
   return root.toSource({
