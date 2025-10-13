@@ -7,7 +7,7 @@
  * - nativebase-styled-props.js: Source model (NativeBase props documentation)
  */
 
-import { addNamedImport, buildTokenPath } from '@puns/shiftkit'
+import { addNamedImport, buildTokenPath, createMemberExpression } from '@puns/shiftkit'
 import { transformStringsInExpression } from '@puns/shiftkit/jsx'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { convertRadiusToken, convertSpaceToken } from './mappings/maps-tokens.js'
@@ -694,7 +694,7 @@ export function addOrExtendStyleSheet(root, elementStyles, j) {
   const styleSheetCall = j.variableDeclaration('const', [
     j.variableDeclarator(
       j.identifier(stylesVarName),
-      j.callExpression(j.memberExpression(j.identifier('StyleSheet'), j.identifier('create')), [
+      j.callExpression(createMemberExpression('StyleSheet.create', j), [
         j.objectExpression(newStyleProperties),
       ]),
     ),
