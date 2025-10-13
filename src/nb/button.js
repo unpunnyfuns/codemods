@@ -49,7 +49,7 @@ const transformProps = {
   isDisabled: 'disabled',
 }
 
-const directPropsList = ['size', 'variant', 'onPress', 'testID', 'isLoading']
+const directPropsList = ['size', 'onPress', 'testID', 'isLoading']
 
 const dropPropsList = [
   ...platformOverrides,
@@ -160,6 +160,43 @@ function main(fileInfo, api, options = {}) {
     if (textValue) {
       buttonAttributes.push(createAttribute('text', textValue, j))
     }
+
+    // Map NativeBase variant to Nordlys variant + type
+    const nbVariant = getAttributeValue(attributes, 'variant')
+    const nbVariantValue =
+      nbVariant?.type === 'StringLiteral' ? nbVariant.value : nbVariant?.value || 'primary'
+
+    let nordlysVariant = 'primary'
+    let nordlysType = 'solid'
+
+    // If already using Nordlys variants (primary/secondary), preserve them
+    if (nbVariantValue === 'primary' || nbVariantValue === 'secondary') {
+      nordlysVariant = nbVariantValue
+      nordlysType = 'solid'
+    } else {
+      // Map NativeBase variants
+      switch (nbVariantValue) {
+        case 'solid':
+          nordlysVariant = 'primary'
+          nordlysType = 'solid'
+          break
+        case 'outline':
+          nordlysVariant = 'secondary'
+          nordlysType = 'solid'
+          break
+        case 'ghost':
+        case 'link':
+          nordlysVariant = 'primary'
+          nordlysType = 'ghost'
+          break
+        default:
+          nordlysVariant = 'primary'
+          nordlysType = 'solid'
+      }
+    }
+
+    buttonAttributes.push(createStringAttribute('variant', nordlysVariant, j))
+    buttonAttributes.push(createStringAttribute('type', nordlysType, j))
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
