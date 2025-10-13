@@ -183,9 +183,9 @@ function main(fileInfo, api, options = {}) {
 
     addTransformedProps(buttonAttributes, transformedProps, j)
 
-    if (iconValue) {
-      buttonAttributes.push(createAttribute('icon', iconValue, j))
-    }
+    // Always set icon (undefined if no icon)
+    const finalIconValue = iconValue || j.identifier('undefined')
+    buttonAttributes.push(createAttribute('icon', finalIconValue, j))
 
     if (textValue) {
       buttonAttributes.push(createAttribute('text', textValue, j))
