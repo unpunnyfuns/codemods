@@ -133,7 +133,7 @@ function main(fileInfo, api, options = {}) {
     const { value: extractedText, isComplex } = extractSimpleChild(children, j)
     if (isComplex) {
       warnings.push(
-        'Button with complex children cannot be automatically migrated - requires manual conversion',
+        `Button with complex children cannot be automatically migrated - requires manual conversion (${fileInfo.path})`,
       )
       skipped++
       return
@@ -142,7 +142,7 @@ function main(fileInfo, api, options = {}) {
 
     if (!iconValue && !textValue) {
       warnings.push(
-        'Button without text or icon cannot be migrated (icon-only requires manual setup)',
+        `Button without text or icon cannot be migrated (icon-only requires manual setup) (${fileInfo.path})`,
       )
       skipped++
       return
