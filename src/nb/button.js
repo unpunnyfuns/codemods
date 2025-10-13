@@ -117,7 +117,6 @@ function main(fileInfo, api, options = {}) {
   buttonElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
     const children = path.node.children || []
-    const elementWarnings = []
 
     let iconValue = null
     let textValue = null

@@ -7,9 +7,10 @@
  * - nativebase-styled-props.js: Source model (NativeBase props documentation)
  */
 
-import { addNamedImport, buildTokenPath, createMemberExpression } from '@puns/shiftkit'
+import { buildTokenPath } from '@puns/shiftkit'
 import { transformStringsInExpression } from '@puns/shiftkit/jsx'
 import {
+  addOrExtendStyleSheet as addOrExtendStyleSheetShiftkit,
   buildStyleSheetProperties as buildStyleSheetPropertiesShiftkit,
   shouldExtractToStyleSheet as shouldExtractToStyleSheetShiftkit,
 } from '@puns/shiftkit/rn'
@@ -505,10 +506,12 @@ export function categorizeProps(attributes, mappings, j) {
 }
 
 /**
- * Re-export shiftkit helper for backward compatibility
+ * Re-export shiftkit helpers for backward compatibility
  * Convert style props object to AST properties for StyleSheet
+ * Create or extend StyleSheet.create() with conflict resolution
  */
 export const buildStyleSheetProperties = buildStyleSheetPropertiesShiftkit
+export const addOrExtendStyleSheet = addOrExtendStyleSheetShiftkit
 
 /**
  * Format a JSX attribute value for display
@@ -599,93 +602,4 @@ export function addElementComment(path, droppedProps, invalidStyles, j) {
       children.splice(index, 0, j.jsxText('\n      '), jsxComment, j.jsxText('\n      '))
     }
   }
-}
-
-/**
- * Check if a variable name is already imported or declared
- */
-function isNameInUse(root, name, j) {
-  // Check for imports
-  const imports = root.find(j.ImportDeclaration)
-  for (const importPath of imports.paths()) {
-    const specifiers = importPath.node.specifiers || []
-    for (const spec of specifiers) {
-      if (spec.local && spec.local.name === name) {
-        return true
-      }
-    }
-  }
-
-  // Check for variable declarations
-  const declarations = root.find(j.VariableDeclarator, { id: { name } })
-  if (declarations.length > 0) {
-    return true
-  }
-
-  return false
-}
-
-/**
- * Create or extend StyleSheet.create() at the end of the file
- */
-export function addOrExtendStyleSheet(root, elementStyles, j) {
-  if (elementStyles.length === 0) {
-    return
-  }
-
-  const newStyleProperties = elementStyles.map(({ name, styles }) => {
-    const properties = buildStyleSheetProperties(styles, j)
-    return j.property('init', j.identifier(name), j.objectExpression(properties))
-  })
-
-  // First, look for ANY existing StyleSheet.create() call
-  const allStyleSheets = root.find(j.VariableDeclarator, {
-    init: {
-      type: 'CallExpression',
-      callee: {
-        type: 'MemberExpression',
-        object: { name: 'StyleSheet' },
-        property: { name: 'create' },
-      },
-    },
-  })
-
-  // If there's an existing StyleSheet.create, extend it
-  if (allStyleSheets.length > 0) {
-    const firstStyleSheet = allStyleSheets.at(0)
-    const createCallArgs = firstStyleSheet.get().node.init.arguments
-    if (createCallArgs.length > 0 && createCallArgs[0].type === 'ObjectExpression') {
-      createCallArgs[0].properties.push(...newStyleProperties)
-    }
-    // Return the variable name of the existing StyleSheet
-    const existingVarName = firstStyleSheet.get().node.id.name
-    addNamedImport(root, 'react-native', 'StyleSheet', j)
-    return existingVarName
-  }
-
-  // No existing StyleSheet.create found, create a new one
-  // Determine the variable name to use
-  // If 'styles' is already imported/declared, use 'componentStyles'
-  let stylesVarName = 'styles'
-  if (isNameInUse(root, 'styles', j)) {
-    stylesVarName = 'componentStyles'
-  }
-
-  const styleSheetCall = j.variableDeclaration('const', [
-    j.variableDeclarator(
-      j.identifier(stylesVarName),
-      j.callExpression(createMemberExpression('StyleSheet.create', j), [
-        j.objectExpression(newStyleProperties),
-      ]),
-    ),
-  ])
-
-  root.find(j.Program).forEach((path) => {
-    path.node.body.push(styleSheetCall)
-  })
-
-  addNamedImport(root, 'react-native', 'StyleSheet', j)
-
-  // Return the variable name used so callers can reference it
-  return stylesVarName
 }
