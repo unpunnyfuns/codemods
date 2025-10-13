@@ -9,11 +9,7 @@
 
 import { buildTokenPath } from '@puns/shiftkit'
 import { transformStringsInExpression } from '@puns/shiftkit/jsx'
-import {
-  addOrExtendStyleSheet as addOrExtendStyleSheetShiftkit,
-  buildStyleSheetProperties as buildStyleSheetPropertiesShiftkit,
-  shouldExtractToStyleSheet as shouldExtractToStyleSheetShiftkit,
-} from '@puns/shiftkit/rn'
+import { shouldExtractToStyleSheet } from '@puns/shiftkit/rn'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { convertRadiusToken, convertSpaceToken } from './mappings/maps-tokens.js'
 import {
@@ -22,12 +18,6 @@ import {
   RADIUS_TOKENS,
   SPACE_TOKENS,
 } from './mappings/nordlys-props.js'
-
-/**
- * Re-export shiftkit helper for backward compatibility
- * Check if a value can be extracted to StyleSheet (literal or token helper reference)
- */
-export const shouldExtractToStyleSheet = shouldExtractToStyleSheetShiftkit
 
 /**
  * Validation constants from Nordlys model
@@ -504,14 +494,6 @@ export function categorizeProps(attributes, mappings, j) {
     existingStyleReferences,
   }
 }
-
-/**
- * Re-export shiftkit helpers for backward compatibility
- * Convert style props object to AST properties for StyleSheet
- * Create or extend StyleSheet.create() with conflict resolution
- */
-export const buildStyleSheetProperties = buildStyleSheetPropertiesShiftkit
-export const addOrExtendStyleSheet = addOrExtendStyleSheetShiftkit
 
 /**
  * Format a JSX attribute value for display
