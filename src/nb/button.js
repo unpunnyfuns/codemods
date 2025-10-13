@@ -44,6 +44,7 @@ const styleProps = {
   ...extra,
 }
 delete styleProps.size
+delete styleProps.color // Button text color is controlled by variant/type, not a color prop
 
 const transformProps = {
   disabled: 'isDisabled',
