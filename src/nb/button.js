@@ -276,6 +276,11 @@ function main(fileInfo, api, options = {}) {
     }
   }
 
+  // Only change imports if we successfully migrated at least one button
+  if (migrated === 0) {
+    return fileInfo.source
+  }
+
   // Only remove the Button import from sourceImport
   removeNamedImport(imports, 'Button', j)
 
