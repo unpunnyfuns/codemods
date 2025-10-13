@@ -3,7 +3,7 @@
 exports[`nb/badge > migrates Badge component 1`] = `
 "import { Badge } from '@hb-frontend/app/src/components/nordlys/Badge';
 import { View, StyleSheet } from 'react-native';
-import { radius, color, space } from '@hb-frontend/nordlys';
+import { color, space } from '@hb-frontend/nordlys';
 
 export function Example() {
   return (

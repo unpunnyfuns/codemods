@@ -223,17 +223,17 @@ export function applyValueMapping(value, valueMap, j) {
  * @param {object} value - AST node for the value
  * @param {object} config - Mapping config { styleName, tokenHelper, valueMap, properties }
  * @param {object} j - jscodeshift API
- * @param {Set} usedTokenHelpers - Set to track which token helpers are used
- * @returns {object} { value, isTokenHelper }
+ * @returns {object} { value, isTokenHelper, tokenHelper }
  */
-export function transformPropValue(value, config, j, usedTokenHelpers) {
+export function transformPropValue(value, config, j) {
   if (!value) {
-    return { value, isTokenHelper: false }
+    return { value, isTokenHelper: false, tokenHelper: null }
   }
 
   const { tokenHelper, valueMap } = config
   let processedValue = value
   let isTokenHelper = false
+  let usedHelper = null
 
   // Priority 1: valueMap (explicit transformations)
   if (valueMap) {
@@ -271,7 +271,7 @@ export function transformPropValue(value, config, j, usedTokenHelpers) {
         j,
       )
       isTokenHelper = true
-      usedTokenHelpers.add(tokenHelper)
+      usedHelper = tokenHelper
     }
     // Handle simple StringLiteral/Literal
     else if (processedValue.type === 'StringLiteral' || processedValue.type === 'Literal') {
@@ -281,7 +281,7 @@ export function transformPropValue(value, config, j, usedTokenHelpers) {
         // Convert numeric strings to numeric literals
         if (/^\d+$/.test(tokenPath)) {
           const numericValue = Number.parseInt(tokenPath, 10)
-          return { value: j.numericLiteral(numericValue), isTokenHelper: false }
+          return { value: j.numericLiteral(numericValue), isTokenHelper: false, tokenHelper: null }
         }
 
         // Apply token-specific conversions
@@ -296,13 +296,13 @@ export function transformPropValue(value, config, j, usedTokenHelpers) {
         // Build token helper expression (e.g., space.md, color.icon.brand)
         processedValue = buildTokenPath(j, tokenHelper, tokenPath)
         isTokenHelper = true
-        usedTokenHelpers.add(tokenHelper)
+        usedHelper = tokenHelper
       }
     }
   }
 
   // Priority 3: pass-through (numbers, expressions, unknown strings)
-  return { value: processedValue, isTokenHelper }
+  return { value: processedValue, isTokenHelper, tokenHelper: usedHelper }
 }
 
 /**
@@ -426,11 +426,14 @@ export function categorizeProps(attributes, mappings, j) {
 
       if (value) {
         // Use priority chain transformation (valueMap -> tokenHelper -> pass-through)
-        const result = transformPropValue(value, config, j, usedTokenHelpers)
+        const result = transformPropValue(value, config, j)
         const processedValue = result.value
         const isTokenHelperCall = result.isTokenHelper
+        const tokenHelperName = result.tokenHelper
 
         const shouldExtract = shouldExtractToStyleSheet(processedValue, isTokenHelperCall)
+
+        let validPropAdded = false
 
         if (properties) {
           for (const prop of properties) {
@@ -442,15 +445,22 @@ export function categorizeProps(attributes, mappings, j) {
 
             const targetStyles = shouldExtract ? styleProps : inlineStyles
             targetStyles[prop] = processedValue
+            validPropAdded = true
           }
         } else {
           const validation = validateStyleValue(styleName, processedValue)
           if (validation.isValid) {
             const targetStyles = shouldExtract ? styleProps : inlineStyles
             targetStyles[styleName] = processedValue
+            validPropAdded = true
           } else {
             invalidStyles.push({ styleName, value: validation.reason })
           }
+        }
+
+        // Only add tokenHelper if at least one valid prop was added
+        if (validPropAdded && tokenHelperName) {
+          usedTokenHelpers.add(tokenHelperName)
         }
 
         propsToRemove.push(attr)
@@ -474,8 +484,12 @@ export function categorizeProps(attributes, mappings, j) {
 
       // Use priority chain transformation for transformed props too
       if (value && typeof config !== 'string') {
-        const result = transformPropValue(value, config, j, usedTokenHelpers)
+        const result = transformPropValue(value, config, j)
         value = j.jsxExpressionContainer(result.value)
+        // Always add tokenHelper for transformed props (they go on element, not validated)
+        if (result.tokenHelper) {
+          usedTokenHelpers.add(result.tokenHelper)
+        }
       }
       // Wrap other expression types back in JSXExpressionContainer
       else if (
