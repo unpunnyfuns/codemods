@@ -9,6 +9,10 @@
 
 import { addNamedImport, buildTokenPath, createMemberExpression } from '@puns/shiftkit'
 import { transformStringsInExpression } from '@puns/shiftkit/jsx'
+import {
+  buildStyleSheetProperties as buildStyleSheetPropertiesShiftkit,
+  shouldExtractToStyleSheet as shouldExtractToStyleSheetShiftkit,
+} from '@puns/shiftkit/rn'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { convertRadiusToken, convertSpaceToken } from './mappings/maps-tokens.js'
 import {
@@ -19,31 +23,10 @@ import {
 } from './mappings/nordlys-props.js'
 
 /**
+ * Re-export shiftkit helper for backward compatibility
  * Check if a value can be extracted to StyleSheet (literal or token helper reference)
  */
-export function shouldExtractToStyleSheet(value, isTokenHelper = false) {
-  if (!value) {
-    return false
-  }
-
-  if (
-    value.type === 'Literal' ||
-    value.type === 'StringLiteral' ||
-    value.type === 'NumericLiteral' ||
-    value.type === 'BooleanLiteral'
-  ) {
-    return true
-  }
-
-  // Token helper member expressions can be extracted (e.g., radius.md)
-  // User member expressions like props.spacing should stay inline
-  if (value.type === 'MemberExpression' && isTokenHelper) {
-    return true
-  }
-
-  // Everything else (variables, function calls, user member expressions) stays inline
-  return false
-}
+export const shouldExtractToStyleSheet = shouldExtractToStyleSheetShiftkit
 
 /**
  * Validation constants from Nordlys model
@@ -522,13 +505,10 @@ export function categorizeProps(attributes, mappings, j) {
 }
 
 /**
+ * Re-export shiftkit helper for backward compatibility
  * Convert style props object to AST properties for StyleSheet
  */
-export function buildStyleSheetProperties(styleProps, j) {
-  return Object.entries(styleProps).map(([key, value]) => {
-    return j.property('init', j.identifier(key), value)
-  })
-}
+export const buildStyleSheetProperties = buildStyleSheetPropertiesShiftkit
 
 /**
  * Format a JSX attribute value for display
