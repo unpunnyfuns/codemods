@@ -250,17 +250,32 @@ function main(fileInfo, api, options = {}) {
   removeNamedImport(imports, 'Button', j)
   addNamedImport(root, targetImport, targetName, j)
 
-  // Remove Icon import if no longer used
+  // Remove Icon import if no longer used anywhere
   const iconImports = root.find(j.ImportDeclaration).filter((path) => {
     return (path.node.specifiers || []).some(
       (spec) => spec.type === 'ImportSpecifier' && spec.imported.name === 'Icon',
     )
   })
   if (iconImports.length > 0) {
-    const iconUsages = root.find(j.JSXElement, {
+    // Check for JSX usage: <Icon />
+    const iconJSXUsages = root.find(j.JSXElement, {
       openingElement: { name: { name: 'Icon' } },
     })
-    if (iconUsages.length === 0) {
+
+    // Check for identifier references (types, re-exports, etc.)
+    const iconIdentifierUsages = root.find(j.Identifier, { name: 'Icon' })
+
+    // Count non-import usages (exclude the import specifier itself)
+    let nonImportUsages = 0
+    iconIdentifierUsages.forEach((path) => {
+      // Skip if this is the import specifier
+      if (path.parent.node.type === 'ImportSpecifier') {
+        return
+      }
+      nonImportUsages++
+    })
+
+    if (iconJSXUsages.length === 0 && nonImportUsages === 0) {
       removeNamedImport(iconImports, 'Icon', j)
     }
   }
