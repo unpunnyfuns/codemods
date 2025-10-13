@@ -8,6 +8,7 @@
  */
 
 import { addNamedImport, buildTokenPath } from '@puns/shiftkit'
+import { transformStringsInExpression } from '@puns/shiftkit/jsx'
 import { getNordlysColorPath } from './mappings/maps-color.js'
 import { convertRadiusToken, convertSpaceToken } from './mappings/maps-tokens.js'
 import {
@@ -240,32 +241,63 @@ export function transformPropValue(value, config, j, usedTokenHelpers) {
   }
 
   // Priority 2: tokenHelper (named token conversion)
-  if (
-    tokenHelper &&
-    (processedValue.type === 'StringLiteral' || processedValue.type === 'Literal')
-  ) {
-    let tokenPath = processedValue.value
+  if (tokenHelper) {
+    // Handle ConditionalExpression and LogicalExpression with string literals
+    if (
+      processedValue.type === 'ConditionalExpression' ||
+      processedValue.type === 'LogicalExpression'
+    ) {
+      processedValue = transformStringsInExpression(
+        processedValue,
+        (str) => {
+          // Convert numeric strings to numeric literals
+          if (/^\d+$/.test(str)) {
+            return j.numericLiteral(Number.parseInt(str, 10))
+          }
 
-    if (typeof tokenPath === 'string') {
-      // Convert numeric strings to numeric literals
-      if (/^\d+$/.test(tokenPath)) {
-        const numericValue = Number.parseInt(tokenPath, 10)
-        return { value: j.numericLiteral(numericValue), isTokenHelper: false }
-      }
+          // Apply token-specific conversions
+          let tokenPath = str
+          if (tokenHelper === 'space') {
+            tokenPath = convertSpaceToken(tokenPath)
+          } else if (tokenHelper === 'radius') {
+            tokenPath = convertRadiusToken(tokenPath)
+          } else if (tokenHelper === 'color') {
+            tokenPath = getNordlysColorPath(tokenPath)
+          }
 
-      // Apply token-specific conversions
-      if (tokenHelper === 'space') {
-        tokenPath = convertSpaceToken(tokenPath)
-      } else if (tokenHelper === 'radius') {
-        tokenPath = convertRadiusToken(tokenPath)
-      } else if (tokenHelper === 'color') {
-        tokenPath = getNordlysColorPath(tokenPath)
-      }
-
-      // Build token helper expression (e.g., space.md, color.icon.brand)
-      processedValue = buildTokenPath(j, tokenHelper, tokenPath)
+          // Build token helper expression (e.g., space.md, color.icon.brand)
+          return buildTokenPath(j, tokenHelper, tokenPath)
+        },
+        j,
+      )
       isTokenHelper = true
       usedTokenHelpers.add(tokenHelper)
+    }
+    // Handle simple StringLiteral/Literal
+    else if (processedValue.type === 'StringLiteral' || processedValue.type === 'Literal') {
+      let tokenPath = processedValue.value
+
+      if (typeof tokenPath === 'string') {
+        // Convert numeric strings to numeric literals
+        if (/^\d+$/.test(tokenPath)) {
+          const numericValue = Number.parseInt(tokenPath, 10)
+          return { value: j.numericLiteral(numericValue), isTokenHelper: false }
+        }
+
+        // Apply token-specific conversions
+        if (tokenHelper === 'space') {
+          tokenPath = convertSpaceToken(tokenPath)
+        } else if (tokenHelper === 'radius') {
+          tokenPath = convertRadiusToken(tokenPath)
+        } else if (tokenHelper === 'color') {
+          tokenPath = getNordlysColorPath(tokenPath)
+        }
+
+        // Build token helper expression (e.g., space.md, color.icon.brand)
+        processedValue = buildTokenPath(j, tokenHelper, tokenPath)
+        isTokenHelper = true
+        usedTokenHelpers.add(tokenHelper)
+      }
     }
   }
 
