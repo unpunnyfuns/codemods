@@ -6,6 +6,7 @@ import {
   addTransformedProps,
   buildStyleValue,
   createStringAttribute,
+  filterAttributes,
   findJSXElements,
   hasAttribute,
 } from '@puns/shiftkit/jsx'
@@ -121,18 +122,18 @@ function main(fileInfo, api, options = {}) {
 
     styles.addHelpers(newHelpers)
 
-    // Remove props that need to be removed
-    path.node.openingElement.attributes = attributes.filter((attr) => !propsToRemove.includes(attr))
+    // Keep only direct props (filter out style props and dropped props)
+    const pressableAttributes = filterAttributes(attributes, {
+      allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
+    })
 
     // Preserve wrapper's default accessibilityRole="button" if not explicitly set
-    if (!hasAttribute(path.node.openingElement.attributes, 'accessibilityRole')) {
-      path.node.openingElement.attributes.push(
-        createStringAttribute('accessibilityRole', 'button', j),
-      )
+    if (!hasAttribute(pressableAttributes, 'accessibilityRole')) {
+      pressableAttributes.push(createStringAttribute('accessibilityRole', 'button', j))
     }
 
     // Add transformed props
-    addTransformedProps(path.node.openingElement.attributes, transformedProps, j)
+    addTransformedProps(pressableAttributes, transformedProps, j)
 
     // Build and add style prop
     const tempStyles = []
@@ -154,8 +155,11 @@ function main(fileInfo, api, options = {}) {
         j.jsxIdentifier('style'),
         j.jsxExpressionContainer(styleValue),
       )
-      path.node.openingElement.attributes.push(styleProp)
+      pressableAttributes.push(styleProp)
     }
+
+    // Update element attributes
+    path.node.openingElement.attributes = pressableAttributes
 
     addElementComment(path, droppedProps, invalidStyles, j)
   })

@@ -2,7 +2,12 @@
 // See stack.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { addTransformedProps, buildStyleValue, findJSXElements } from '@puns/shiftkit/jsx'
+import {
+  addTransformedProps,
+  buildStyleValue,
+  filterAttributes,
+  findJSXElements,
+} from '@puns/shiftkit/jsx'
 import { createStyleContext } from '../helpers/style-context.js'
 import { alignValues, justifyValues } from './mappings/maps-values.js'
 import { directProps } from './mappings/props-direct.js'
@@ -153,23 +158,17 @@ function main(fileInfo, api, options = {}) {
         }
       }
 
-      // Remove props that need to be removed
-      path.node.openingElement.attributes = attributes.filter(
-        (attr) => !propsToRemove.includes(attr),
-      )
-
-      // Update element name
-      path.node.openingElement.name = j.jsxIdentifier(targetName)
-      if (path.node.closingElement) {
-        path.node.closingElement.name = j.jsxIdentifier(targetName)
-      }
+      // Keep only direct props (filter out style props and dropped props)
+      const stackAttributes = filterAttributes(attributes, {
+        allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
+      })
 
       // Add direction prop
       const directionProp = j.jsxAttribute(j.jsxIdentifier('direction'), j.stringLiteral(direction))
-      path.node.openingElement.attributes.push(directionProp)
+      stackAttributes.push(directionProp)
 
       // Add transformed props
-      addTransformedProps(path.node.openingElement.attributes, transformedProps, j)
+      addTransformedProps(stackAttributes, transformedProps, j)
 
       // Build and add style prop
       const tempStyles = []
@@ -185,12 +184,21 @@ function main(fileInfo, api, options = {}) {
         styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
       }
 
-      // Add style prop to element
-      const styleProp = j.jsxAttribute(
-        j.jsxIdentifier('style'),
-        j.jsxExpressionContainer(styleValue),
-      )
-      path.node.openingElement.attributes.push(styleProp)
+      // Add style prop to element (only if styleValue is not null)
+      if (styleValue) {
+        const styleProp = j.jsxAttribute(
+          j.jsxIdentifier('style'),
+          j.jsxExpressionContainer(styleValue),
+        )
+        stackAttributes.push(styleProp)
+      }
+
+      // Update element name and attributes
+      path.node.openingElement.name = j.jsxIdentifier(targetName)
+      if (path.node.closingElement) {
+        path.node.closingElement.name = j.jsxIdentifier(targetName)
+      }
+      path.node.openingElement.attributes = stackAttributes
 
       addElementComment(path, droppedProps, invalidStyles, j)
     })

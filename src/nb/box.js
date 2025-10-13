@@ -2,7 +2,12 @@
 // See box.md for documentation
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
-import { addTransformedProps, buildStyleValue, findJSXElements } from '@puns/shiftkit/jsx'
+import {
+  addTransformedProps,
+  buildStyleValue,
+  filterAttributes,
+  findJSXElements,
+} from '@puns/shiftkit/jsx'
 import { createStyleContext } from '../helpers/style-context.js'
 import { directProps } from './mappings/props-direct.js'
 import {
@@ -105,17 +110,13 @@ function main(fileInfo, api, options = {}) {
 
     styles.addHelpers(newHelpers)
 
-    // Remove props that need to be removed
-    path.node.openingElement.attributes = attributes.filter((attr) => !propsToRemove.includes(attr))
-
-    // Update element name
-    path.node.openingElement.name = j.jsxIdentifier(targetName)
-    if (path.node.closingElement) {
-      path.node.closingElement.name = j.jsxIdentifier(targetName)
-    }
+    // Keep only direct props (filter out style props and dropped props)
+    const viewAttributes = filterAttributes(attributes, {
+      allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
+    })
 
     // Add transformed props
-    addTransformedProps(path.node.openingElement.attributes, transformedProps, j)
+    addTransformedProps(viewAttributes, transformedProps, j)
 
     // Build and add style prop
     const tempStyles = []
@@ -137,8 +138,15 @@ function main(fileInfo, api, options = {}) {
         j.jsxIdentifier('style'),
         j.jsxExpressionContainer(styleValue),
       )
-      path.node.openingElement.attributes.push(styleProp)
+      viewAttributes.push(styleProp)
     }
+
+    // Update element name and attributes
+    path.node.openingElement.name = j.jsxIdentifier(targetName)
+    if (path.node.closingElement) {
+      path.node.closingElement.name = j.jsxIdentifier(targetName)
+    }
+    path.node.openingElement.attributes = viewAttributes
 
     addElementComment(path, droppedProps, invalidStyles, j)
   })

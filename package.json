@@ -13,7 +13,7 @@
   "author": "Pål Nes",
   "license": "UNLICENSED",
   "dependencies": {
-    "@puns/shiftkit": "^0.0.1",
+    "@puns/shiftkit": "^0.0.2",
     "jscodeshift": "^17.3.0"
   },
   "devDependencies": {
