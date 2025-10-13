@@ -121,18 +121,18 @@ function main(fileInfo, api, options = {}) {
       warnings.push(`Icon: Dropped unsupported prop "${propName}"`)
     })
 
-    // Warn if required props missing
+    // Add defaults for missing required props
     if (!hasName) {
       warnings.push('Icon: Missing required "name" prop')
     }
     if (!hasWidth) {
-      warnings.push('Icon: Missing required "width" prop (add width={20})')
+      newAttributes.push(createAttribute('width', j.numericLiteral(20), j))
     }
     if (!hasHeight) {
-      warnings.push('Icon: Missing required "height" prop (add height={20})')
+      newAttributes.push(createAttribute('height', j.numericLiteral(20), j))
     }
     if (!hasColor) {
-      warnings.push('Icon: Missing required "color" prop (add color="icon.primary")')
+      newAttributes.push(createAttribute('color', j.stringLiteral('icon.primary'), j))
     }
 
     path.node.openingElement.attributes = newAttributes
