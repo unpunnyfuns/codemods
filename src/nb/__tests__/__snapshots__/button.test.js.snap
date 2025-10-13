@@ -29,7 +29,6 @@ export function MyComponent() {
       <Button
         onPress={() => {}}
         size={"lg"}
-        disabled
         icon={undefined}
         text={'Simple text'}
         variant='primary'

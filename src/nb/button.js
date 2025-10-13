@@ -46,7 +46,7 @@ const styleProps = {
 delete styleProps.size
 
 const transformProps = {
-  isDisabled: 'disabled',
+  disabled: 'isDisabled',
   size: { propName: 'size', valueMap: { xs: 'sm' } },
 }
 
