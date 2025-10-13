@@ -622,6 +622,30 @@ export function addElementComment(path, droppedProps, invalidStyles, j) {
 }
 
 /**
+ * Check if a variable name is already imported or declared
+ */
+function isNameInUse(root, name, j) {
+  // Check for imports
+  const imports = root.find(j.ImportDeclaration)
+  for (const importPath of imports.paths()) {
+    const specifiers = importPath.node.specifiers || []
+    for (const spec of specifiers) {
+      if (spec.local && spec.local.name === name) {
+        return true
+      }
+    }
+  }
+
+  // Check for variable declarations
+  const declarations = root.find(j.VariableDeclarator, { id: { name } })
+  if (declarations.length > 0) {
+    return true
+  }
+
+  return false
+}
+
+/**
  * Create or extend StyleSheet.create() at the end of the file
  */
 export function addOrExtendStyleSheet(root, elementStyles, j) {
@@ -634,9 +658,8 @@ export function addOrExtendStyleSheet(root, elementStyles, j) {
     return j.property('init', j.identifier(name), j.objectExpression(properties))
   })
 
-  // Check if there's already a StyleSheet.create() call assigned to 'styles'
-  const existingStyleSheet = root.find(j.VariableDeclarator, {
-    id: { name: 'styles' },
+  // First, look for ANY existing StyleSheet.create() call
+  const allStyleSheets = root.find(j.VariableDeclarator, {
     init: {
       type: 'CallExpression',
       callee: {
@@ -647,27 +670,42 @@ export function addOrExtendStyleSheet(root, elementStyles, j) {
     },
   })
 
-  if (existingStyleSheet.length > 0) {
-    existingStyleSheet.forEach((path) => {
-      const createCallArgs = path.node.init.arguments
-      if (createCallArgs.length > 0 && createCallArgs[0].type === 'ObjectExpression') {
-        createCallArgs[0].properties.push(...newStyleProperties)
-      }
-    })
-  } else {
-    const styleSheetCall = j.variableDeclaration('const', [
-      j.variableDeclarator(
-        j.identifier('styles'),
-        j.callExpression(j.memberExpression(j.identifier('StyleSheet'), j.identifier('create')), [
-          j.objectExpression(newStyleProperties),
-        ]),
-      ),
-    ])
-
-    root.find(j.Program).forEach((path) => {
-      path.node.body.push(styleSheetCall)
-    })
+  // If there's an existing StyleSheet.create, extend it
+  if (allStyleSheets.length > 0) {
+    const firstStyleSheet = allStyleSheets.at(0)
+    const createCallArgs = firstStyleSheet.get().node.init.arguments
+    if (createCallArgs.length > 0 && createCallArgs[0].type === 'ObjectExpression') {
+      createCallArgs[0].properties.push(...newStyleProperties)
+    }
+    // Return the variable name of the existing StyleSheet
+    const existingVarName = firstStyleSheet.get().node.id.name
+    addNamedImport(root, 'react-native', 'StyleSheet', j)
+    return existingVarName
   }
 
+  // No existing StyleSheet.create found, create a new one
+  // Determine the variable name to use
+  // If 'styles' is already imported/declared, use 'componentStyles'
+  let stylesVarName = 'styles'
+  if (isNameInUse(root, 'styles', j)) {
+    stylesVarName = 'componentStyles'
+  }
+
+  const styleSheetCall = j.variableDeclaration('const', [
+    j.variableDeclarator(
+      j.identifier(stylesVarName),
+      j.callExpression(j.memberExpression(j.identifier('StyleSheet'), j.identifier('create')), [
+        j.objectExpression(newStyleProperties),
+      ]),
+    ),
+  ])
+
+  root.find(j.Program).forEach((path) => {
+    path.node.body.push(styleSheetCall)
+  })
+
   addNamedImport(root, 'react-native', 'StyleSheet', j)
+
+  // Return the variable name used so callers can reference it
+  return stylesVarName
 }
