@@ -96,6 +96,7 @@ function main(fileInfo, api, options = {}) {
   const warnings = []
   const styles = createStyleContext()
   let migrated = 0
+  let hasViewWrappers = false
 
   avatarElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -184,6 +185,7 @@ function main(fileInfo, api, options = {}) {
 
       const viewElement = createViewWrapper(avatarElement, styleValue, j)
       j(path).replaceWith(viewElement)
+      hasViewWrappers = true
     }
   })
 
@@ -201,6 +203,11 @@ function main(fileInfo, api, options = {}) {
 
   removeNamedImport(imports, 'Avatar', j)
   addNamedImport(root, targetImport, targetName, j)
+
+  // Add View import if we created View wrappers with inline styles only
+  if (hasViewWrappers && styles.length === 0) {
+    addNamedImport(root, 'react-native', 'View', j)
+  }
 
   styles.applyToRoot(root, { wrap, tokenImport }, j)
 

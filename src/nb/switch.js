@@ -48,7 +48,7 @@ const transformProps = {
   isDisabled: 'disabled',
 }
 
-const directPropsList = accessibility
+const directPropsList = [...accessibility, 'value', 'onValueChange', 'disabled']
 
 const dropPropsList = [
   ...allPseudoProps,
