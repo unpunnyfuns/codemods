@@ -21,4 +21,9 @@ describe('remove-unused', () => {
     const output = testTransform('remove-unused', 'remove-unused/all-used', 'tsx')
     expect(output).toMatchSnapshot()
   })
+
+  it('preserves StyleSheet styles variable', () => {
+    const output = testTransform('remove-unused', 'remove-unused/styles', 'tsx')
+    expect(output).toMatchSnapshot()
+  })
 })

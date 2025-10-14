@@ -5,6 +5,7 @@ import { removeNamedImport } from '@puns/shiftkit'
 
 /**
  * Find all identifier references in the AST (excluding imports)
+ * Includes both runtime and TypeScript type usage
  */
 function findUsedIdentifiers(root, j) {
   const used = new Set()
@@ -23,28 +24,69 @@ function findUsedIdentifiers(root, j) {
       return
     }
 
-    // Skip function parameters
+    // Skip function parameters (only when they're the param itself, not when used in body)
     if (
       parent.type === 'FunctionDeclaration' ||
       parent.type === 'FunctionExpression' ||
       parent.type === 'ArrowFunctionExpression'
     ) {
-      if (path.name === 'params') {
+      // Only skip if this is actually in the params array
+      const parentPath = path.parent
+      if (parentPath && parentPath.name === 'params') {
         return
       }
     }
 
-    // Skip property keys in object literals (not usages)
-    if (parent.type === 'Property' && path.name === 'key' && !parent.computed) {
-      return
+    // Skip property keys in object literals (not usages) - UNLESS it's a shorthand property
+    if (parent.type === 'Property' && path.name === 'key') {
+      if (!parent.computed && !parent.shorthand) {
+        return
+      }
     }
 
-    // Skip JSX attribute names
+    // Skip JSX attribute names (the attribute name itself, not the value)
     if (parent.type === 'JSXAttribute' && path.name === 'name') {
       return
     }
 
+    // Skip object property keys in patterns (destructuring) on the left side
+    if (
+      parent.type === 'Property' &&
+      path.name === 'key' &&
+      path.parent.parent.node.type === 'ObjectPattern'
+    ) {
+      return
+    }
+
     used.add(path.node.name)
+  })
+
+  // Find TypeScript type references
+  // TSTypeReference: type annotations like `: FC` or `<FC>`
+  root.find(j.TSTypeReference).forEach((path) => {
+    if (path.node.typeName.type === 'Identifier') {
+      used.add(path.node.typeName.name)
+    }
+    // Handle qualified names like `React.FC`
+    if (path.node.typeName.type === 'TSQualifiedName') {
+      let current = path.node.typeName
+      while (current.type === 'TSQualifiedName') {
+        if (current.right.type === 'Identifier') {
+          used.add(current.right.name)
+        }
+        current = current.left
+      }
+      if (current.type === 'Identifier') {
+        used.add(current.name)
+      }
+    }
+  })
+
+  // TSTypeQuery: typeof expressions in types
+  root.find(j.TSTypeQuery).forEach((path) => {
+    if (path.node.exprName.type === 'Identifier') {
+      used.add(path.node.exprName.name)
+    }
   })
 
   return used
