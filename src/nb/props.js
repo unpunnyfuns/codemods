@@ -28,7 +28,7 @@ const dimensionProps = DIMENSION_PROPS
  * Auto-transform safe numeric string values to numeric literals
  * Converts "4" → {4}, "1.5" → {1.5}
  */
-function autoTransformNumericString(value, j) {
+function convertNumericString(value, j) {
   if (value.type === 'StringLiteral' || value.type === 'Literal') {
     const val = String(value.value)
     // Pure numeric strings (no units, no tokens)
@@ -43,7 +43,7 @@ function autoTransformNumericString(value, j) {
  * Validate a value against a list of valid token names
  * Returns { isValid: boolean, reason?: string }
  */
-export function validateTokenValue(value, validTokens, allowNumeric = false) {
+export function validateToken(value, validTokens, allowNumeric = false) {
   if (value.type === 'StringLiteral' || value.type === 'Literal') {
     const val = String(value.value)
     if (!validTokens.includes(val)) {
@@ -74,7 +74,7 @@ export function validateTokenValue(value, validTokens, allowNumeric = false) {
  * Check if a style value is valid for the given style property
  * Returns { isValid: boolean, reason?: string, category?: string }
  */
-function validateStyleValue(styleName, value) {
+function validateStyle(styleName, value) {
   // Check if prop is valid on React Native View
   if (!VIEW_STYLE_PROPS[styleName]) {
     const displayValue = value.type === 'StringLiteral' ? `"${value.value}"` : '{...}'
@@ -141,7 +141,7 @@ function validateStyleValue(styleName, value) {
  * e.g., space['4'] -> 4, radius['16'] -> 16
  * Also transforms dimension string values: "full" -> "100%"
  */
-function transformNumericTokenAccess(value, j) {
+function convertNumericToken(value, j) {
   if ((value.type === 'StringLiteral' || value.type === 'Literal') && value.value === 'full') {
     return j.stringLiteral('100%')
   }
@@ -168,7 +168,7 @@ function transformNumericTokenAccess(value, j) {
 /**
  * Apply value mapping to a prop value
  */
-export function applyValueMapping(value, valueMap, j) {
+export function applyValueMap(value, valueMap, j) {
   if (!valueMap) {
     return value
   }
@@ -205,7 +205,7 @@ export function applyValueMapping(value, valueMap, j) {
  * @param {object} j - jscodeshift API
  * @returns {object} { value, isTokenHelper, tokenHelper }
  */
-export function transformPropValue(value, config, j) {
+export function transformProp(value, config, j) {
   if (!value) {
     return { value, isTokenHelper: false, tokenHelper: null }
   }
@@ -217,7 +217,7 @@ export function transformPropValue(value, config, j) {
 
   // Priority 1: valueMap (explicit transformations)
   if (valueMap) {
-    processedValue = applyValueMapping(processedValue, valueMap, j)
+    processedValue = applyValueMap(processedValue, valueMap, j)
   }
 
   // Priority 2: tokenHelper (named token conversion)
@@ -303,7 +303,7 @@ function processStyleProp(
   invalidStyles,
   manualFailures,
 ) {
-  const validation = validateStyleValue(styleName, value)
+  const validation = validateStyle(styleName, value)
   if (!validation.isValid) {
     invalidStyles.push({ styleName, value: validation.reason })
     if (validation.category === 'manual') {
@@ -372,8 +372,8 @@ export function categorizeProps(attributes, mappings, j) {
                 if (prop.type === 'Property' && prop.key.type === 'Identifier') {
                   const styleName = prop.key.name
                   // Apply transformations: space['4'] -> 4, "4" -> {4}
-                  let value = transformNumericTokenAccess(prop.value, j)
-                  value = autoTransformNumericString(value, j)
+                  let value = convertNumericToken(prop.value, j)
+                  value = convertNumericString(value, j)
 
                   const shouldExtract = shouldExtractToStyleSheet(value, false)
                   processStyleProp(
@@ -399,8 +399,8 @@ export function categorizeProps(attributes, mappings, j) {
             if (prop.type === 'Property' && prop.key.type === 'Identifier') {
               const styleName = prop.key.name
               // Apply transformations: space['4'] -> 4, "4" -> {4}
-              let value = transformNumericTokenAccess(prop.value, j)
-              value = autoTransformNumericString(value, j)
+              let value = convertNumericToken(prop.value, j)
+              value = convertNumericString(value, j)
 
               const shouldExtract = shouldExtractToStyleSheet(value, false)
               processStyleProp(
@@ -444,10 +444,10 @@ export function categorizeProps(attributes, mappings, j) {
 
       if (value) {
         // Apply auto-transform first
-        value = autoTransformNumericString(value, j)
+        value = convertNumericString(value, j)
 
         // Use priority chain transformation (valueMap -> tokenHelper -> pass-through)
-        const result = transformPropValue(value, config, j)
+        const result = transformProp(value, config, j)
         const transformed = result.value
         const isHelper = result.isTokenHelper
         const helper = result.tokenHelper
@@ -510,7 +510,7 @@ export function categorizeProps(attributes, mappings, j) {
 
       // Use priority chain transformation for transformed props too
       if (value && typeof config !== 'string') {
-        const result = transformPropValue(value, config, j)
+        const result = transformProp(value, config, j)
         value = j.jsxExpressionContainer(result.value)
         // Always add tokenHelper for transformed props (they go on element, not validated)
         if (result.tokenHelper) {
@@ -551,7 +551,7 @@ export function categorizeProps(attributes, mappings, j) {
 /**
  * Format a JSX attribute value for display
  */
-function formatPropValue(attr, _j) {
+function formatProp(attr, _j) {
   if (!attr.value) {
     return '{true}'
   }
@@ -606,7 +606,7 @@ export function addElementComment(path, droppedProps, invalidStyles, j) {
 
   if (droppedProps.length > 0) {
     for (const { name, attr } of droppedProps) {
-      const value = formatPropValue(attr, j)
+      const value = formatProp(attr, j)
       lines.push(`${name}=${value}`)
     }
   }

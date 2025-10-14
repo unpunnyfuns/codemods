@@ -28,12 +28,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import {
-  addElementComment,
-  categorizeProps,
-  validateTokenValue,
-  validSpaceTokens,
-} from './props.js'
+import { addElementComment, categorizeProps, validateToken, validSpaceTokens } from './props.js'
 
 // Stack prop mappings
 const styleProps = {
@@ -158,7 +153,7 @@ function main(fileInfo, api, options = {}) {
       // gap prop must be a valid space token name
       if (transformedProps.gap) {
         const gapValue = transformedProps.gap
-        const validation = validateTokenValue(gapValue, validSpaceTokens, false)
+        const validation = validateToken(gapValue, validSpaceTokens, false)
 
         if (!validation.isValid) {
           const gapAttr = j.jsxAttribute(j.jsxIdentifier('gap'), gapValue)
