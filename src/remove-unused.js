@@ -148,34 +148,30 @@ function findUsedIdentifiers(root, j) {
     used.add(path.node.name)
   })
 
-  // Find TypeScript type annotations on variables, parameters, etc.
-  // These include type annotations like `: Type`, return types, etc.
-  root.find(j.TSTypeAnnotation).forEach((path) => {
-    if (path.node.typeAnnotation) {
-      extractTypeNames(path.node.typeAnnotation, used)
-    }
-  })
+  // Find TypeScript type usage in a single traversal
+  root.find(j.Node).forEach((path) => {
+    const node = path.node
 
-  // Type alias declarations: type Foo = Bar
-  root.find(j.TSTypeAliasDeclaration).forEach((path) => {
-    if (path.node.typeAnnotation) {
-      extractTypeNames(path.node.typeAnnotation, used)
+    // Type annotations: `: Type`, return types, etc.
+    if (node.type === 'TSTypeAnnotation' && node.typeAnnotation) {
+      extractTypeNames(node.typeAnnotation, used)
     }
-  })
 
-  // TypeScript type parameters in generics: useForm<Type>(), new Array<Type>(), etc.
-  // These are attached to CallExpression and NewExpression nodes
-  const extractTypeParams = (path) => {
-    const typeParams = path.node.typeParameters || path.node.typeArguments
-    if (typeParams?.params) {
-      for (const param of typeParams.params) {
-        extractTypeNames(param, used)
+    // Type alias declarations: type Foo = Bar
+    if (node.type === 'TSTypeAliasDeclaration' && node.typeAnnotation) {
+      extractTypeNames(node.typeAnnotation, used)
+    }
+
+    // Type parameters in generics: useForm<Type>(), new Array<Type>()
+    if (node.type === 'CallExpression' || node.type === 'NewExpression') {
+      const typeParams = node.typeParameters || node.typeArguments
+      if (typeParams?.params) {
+        for (const param of typeParams.params) {
+          extractTypeNames(param, used)
+        }
       }
     }
-  }
-
-  root.find(j.CallExpression).forEach(extractTypeParams)
-  root.find(j.NewExpression).forEach(extractTypeParams)
+  })
 
   return used
 }
