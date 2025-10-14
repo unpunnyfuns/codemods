@@ -125,16 +125,16 @@ function main(fileInfo, api, options = {}) {
     styles.addHelpers(usedTokenHelpers)
 
     // Keep only direct props (filter out style props and dropped props)
-    const viewAttributes = filterAttributes(attributes, {
+    const attrs = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
     // Add transformed props
-    addTransformedProps(viewAttributes, transformedProps, j)
+    addTransformedProps(attrs, transformedProps, j)
 
     // Build and add style prop
     const tempStyles = []
-    const styleValue = buildStyleValue(
+    const style = buildStyleValue(
       styleProps,
       inlineStyles,
       `box${index}`,
@@ -146,13 +146,10 @@ function main(fileInfo, api, options = {}) {
       styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
     }
 
-    // Add style prop to element (only if styleValue is not null)
-    if (styleValue) {
-      const styleProp = j.jsxAttribute(
-        j.jsxIdentifier('style'),
-        j.jsxExpressionContainer(styleValue),
-      )
-      viewAttributes.push(styleProp)
+    // Add style prop to element (only if style is not null)
+    if (style) {
+      const styleProp = j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(style))
+      attrs.push(styleProp)
     }
 
     // Update element name and attributes
@@ -160,7 +157,7 @@ function main(fileInfo, api, options = {}) {
     if (path.node.closingElement) {
       path.node.closingElement.name = j.jsxIdentifier(targetName)
     }
-    path.node.openingElement.attributes = viewAttributes
+    path.node.openingElement.attributes = attrs
 
     addElementComment(path, droppedProps, invalidStyles, j)
     migrated++

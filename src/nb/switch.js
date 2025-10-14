@@ -97,7 +97,7 @@ function main(fileInfo, api, options = {}) {
     const children = path.node.children || []
 
     // Extract label prop to transform into <Switch.Description>
-    const labelValue = findAttribute(attributes, 'label')?.value ?? null
+    const label = findAttribute(attributes, 'label')?.value ?? null
 
     const {
       styleProps,
@@ -123,13 +123,13 @@ function main(fileInfo, api, options = {}) {
 
     styles.addHelpers(usedTokenHelpers)
 
-    const switchAttributes = filterAttributes(attributes, {
+    const attrs = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    addTransformedProps(switchAttributes, transformedProps, j)
+    addTransformedProps(attrs, transformedProps, j)
 
-    path.node.openingElement.attributes = switchAttributes
+    path.node.openingElement.attributes = attrs
 
     addElementComment(path, droppedProps, invalidStyles, j)
     migrated++
@@ -139,11 +139,11 @@ function main(fileInfo, api, options = {}) {
     const newChildren = [j.jsxText('\n  '), labelElement]
 
     // Add <Switch.Description> if label prop exists
-    if (labelValue) {
+    if (label) {
       const descriptionChildren =
-        labelValue.type === 'JSXExpressionContainer'
-          ? [j.jsxExpressionContainer(labelValue.expression)]
-          : [j.jsxText(labelValue.value)]
+        label.type === 'JSXExpressionContainer'
+          ? [j.jsxExpressionContainer(label.expression)]
+          : [j.jsxText(label.value)]
 
       const descriptionElement = createMemberElement(
         'Switch',
@@ -158,21 +158,21 @@ function main(fileInfo, api, options = {}) {
     newChildren.push(j.jsxText('\n'))
     path.node.children = newChildren
 
-    const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
+    const hasStyles = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
-    if (wrap && hasStyleProps) {
+    if (wrap && hasStyles) {
       const styleName = `switch${index}`
 
-      const switchElement = cloneElement(path.node, j)
+      const element = cloneElement(path.node, j)
 
       const tempStyles = []
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
       if (tempStyles.length > 0) {
         styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
       }
 
-      const viewElement = createViewWrapper(switchElement, styleValue, j)
-      j(path).replaceWith(viewElement)
+      const wrapper = createViewWrapper(element, style, j)
+      j(path).replaceWith(wrapper)
     }
   })
 

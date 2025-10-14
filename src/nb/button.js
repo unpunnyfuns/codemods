@@ -119,14 +119,14 @@ function main(fileInfo, api, options = {}) {
     const attributes = path.node.openingElement.attributes || []
     const children = path.node.children || []
 
-    let iconValue = null
-    let textValue = null
+    let icon = null
+    let text = null
 
     const leftIcon = getAttributeValue(attributes, 'leftIcon')
     if (leftIcon) {
       const iconName = extractPropFromJSXElement(leftIcon, 'Icon', 'name')
       if (iconName) {
-        iconValue = typeof iconName === 'string' ? j.stringLiteral(iconName) : iconName
+        icon = typeof iconName === 'string' ? j.stringLiteral(iconName) : iconName
       }
     }
 
@@ -151,9 +151,9 @@ function main(fileInfo, api, options = {}) {
       skipped++
       return
     }
-    textValue = extractedText
+    text = extractedText
 
-    if (!iconValue && !textValue) {
+    if (!icon && !text) {
       warnings.push(
         `Button without text or icon cannot be migrated (icon-only requires manual setup) (${fileInfo.path})`,
       )
@@ -189,29 +189,27 @@ function main(fileInfo, api, options = {}) {
       warnings.push('Button rightIcon not supported in Nordlys - dropped')
     }
 
-    const buttonAttributes = filterAttributes(attributes, {
+    const attrs = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    addTransformedProps(buttonAttributes, transformedProps, j)
+    addTransformedProps(attrs, transformedProps, j)
 
     // Always set icon (undefined if no icon)
-    buttonAttributes.push(createAttribute('icon', iconValue || j.identifier('undefined'), j))
+    attrs.push(createAttribute('icon', icon || j.identifier('undefined'), j))
 
-    if (textValue) {
-      buttonAttributes.push(createAttribute('text', textValue, j))
+    if (text) {
+      attrs.push(createAttribute('text', text, j))
     }
 
     // Add defaults for required props
     if (!hasAttribute(attributes, 'onPress')) {
-      buttonAttributes.push(
-        createAttribute('onPress', j.arrowFunctionExpression([], j.blockStatement([])), j),
-      )
+      attrs.push(createAttribute('onPress', j.arrowFunctionExpression([], j.blockStatement([])), j))
       warnings.push('Button: Missing onPress - added no-op handler (TODO: wire up actual handler)')
     }
 
     if (!hasAttribute(attributes, 'size') && !transformedProps.size) {
-      buttonAttributes.push(createStringAttribute('size', 'md', j))
+      attrs.push(createStringAttribute('size', 'md', j))
       warnings.push('Button: Missing size - defaulted to "md"')
     }
 
@@ -250,28 +248,28 @@ function main(fileInfo, api, options = {}) {
       }
     }
 
-    buttonAttributes.push(createStringAttribute('variant', nordlysVariant, j))
-    buttonAttributes.push(createStringAttribute('type', nordlysType, j))
+    attrs.push(createStringAttribute('variant', nordlysVariant, j))
+    attrs.push(createStringAttribute('type', nordlysType, j))
 
     addElementComment(path, droppedProps, invalidStyles, j)
 
-    const buttonElement = createSelfClosingElement(targetName, buttonAttributes, j)
+    const element = createSelfClosingElement(targetName, attrs, j)
 
-    const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
+    const hasStyles = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
-    if (wrap && hasStyleProps) {
+    if (wrap && hasStyles) {
       const styleName = `button${index}`
 
       const tempStyles = []
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
       if (tempStyles.length > 0) {
         styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
       }
 
-      const viewElement = createViewWrapper(buttonElement, styleValue, j)
-      j(path).replaceWith(viewElement)
+      const wrapper = createViewWrapper(element, style, j)
+      j(path).replaceWith(wrapper)
     } else {
-      j(path).replaceWith(buttonElement)
+      j(path).replaceWith(element)
     }
 
     migrated++

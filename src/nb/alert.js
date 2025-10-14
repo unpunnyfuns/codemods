@@ -182,18 +182,18 @@ function main(fileInfo, api, options = {}) {
 
     styles.addHelpers(usedTokenHelpers)
 
-    const alertAttributes = filterAttributes(attributes, {
+    const attrs = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    addTransformedProps(alertAttributes, transformedProps, j)
+    addTransformedProps(attrs, transformedProps, j)
 
     if (title) {
-      alertAttributes.push(createAttribute('title', title, j))
+      attrs.push(createAttribute('title', title, j))
     }
 
     if (description) {
-      alertAttributes.push(createAttribute('description', description, j))
+      attrs.push(createAttribute('description', description, j))
     }
 
     if (!description) {
@@ -203,24 +203,24 @@ function main(fileInfo, api, options = {}) {
     addElementComment(path, droppedProps, invalidStyles, j)
     migrated++
 
-    const alertElement = createSelfClosingElement('Alert', alertAttributes, j)
+    const element = createSelfClosingElement('Alert', attrs, j)
 
-    const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
+    const hasStyles = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
     // Wrap in View if style props exist
-    if (wrap && hasStyleProps) {
+    if (wrap && hasStyles) {
       const styleName = `alert${index}`
 
       const tempStyles = []
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
       if (tempStyles.length > 0) {
         styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
       }
 
-      const viewElement = createViewWrapper(alertElement, styleValue, j)
-      j(path).replaceWith(viewElement)
+      const wrapper = createViewWrapper(element, style, j)
+      j(path).replaceWith(wrapper)
     } else {
-      j(path).replaceWith(alertElement)
+      j(path).replaceWith(element)
     }
   })
 

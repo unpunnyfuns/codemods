@@ -102,13 +102,13 @@ function main(fileInfo, api, options = {}) {
     const attributes = path.node.openingElement.attributes || []
 
     // Extract Avatar props (iconName, imageUri, imageSource, letters)
-    const iconNameValue = getAttributeValue(attributes, 'iconName')
-    const imageUriValue = getAttributeValue(attributes, 'imageUri')
-    const imageSourceValue = getAttributeValue(attributes, 'imageSource')
-    const lettersValue = getAttributeValue(attributes, 'letters')
+    const iconName = getAttributeValue(attributes, 'iconName')
+    const imageUri = getAttributeValue(attributes, 'imageUri')
+    const imageSource = getAttributeValue(attributes, 'imageSource')
+    const letters = getAttributeValue(attributes, 'letters')
 
     // Cannot migrate: letters prop not supported in Nordlys
-    if (lettersValue) {
+    if (letters) {
       warnings.push('Avatar with letters prop cannot be migrated (not supported in Nordlys Avatar)')
       return
     }
@@ -140,43 +140,39 @@ function main(fileInfo, api, options = {}) {
     styles.addHelpers(usedTokenHelpers)
 
     // Build Nordlys Avatar attributes
-    const avatarAttributes = filterAttributes(attributes, {
+    const attrs = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
-    addTransformedProps(avatarAttributes, transformedProps, j)
+    addTransformedProps(attrs, transformedProps, j)
 
     // Convert iconName/imageUri/imageSource to Nordlys object props
-    if (iconNameValue) {
-      avatarAttributes.push(
-        createAttribute('icon', createNestedObject({ name: iconNameValue, fill: 'blue' }, j), j),
+    if (iconName) {
+      attrs.push(
+        createAttribute('icon', createNestedObject({ name: iconName, fill: 'blue' }, j), j),
       )
-    } else if (imageUriValue) {
-      avatarAttributes.push(
-        createAttribute('image', createNestedObject({ source: { uri: imageUriValue } }, j), j),
-      )
-    } else if (imageSourceValue) {
-      avatarAttributes.push(
-        createAttribute('image', createNestedObject({ source: imageSourceValue }, j), j),
-      )
+    } else if (imageUri) {
+      attrs.push(createAttribute('image', createNestedObject({ source: { uri: imageUri } }, j), j))
+    } else if (imageSource) {
+      attrs.push(createAttribute('image', createNestedObject({ source: imageSource }, j), j))
     }
 
-    path.node.openingElement.attributes = avatarAttributes
+    path.node.openingElement.attributes = attrs
 
     addElementComment(path, droppedProps, invalidStyles, j)
     migrated++
 
     // Wrap in <View style={styles.avatarN}> if style props exist
-    const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
-    if (wrap && hasStyleProps) {
+    const hasStyles = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
+    if (wrap && hasStyles) {
       const styleName = `avatar${index}`
-      const avatarElement = cloneElement(path.node, j)
+      const element = cloneElement(path.node, j)
       const tempStyles = []
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
       if (tempStyles.length > 0) {
         styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
       }
-      const viewElement = createViewWrapper(avatarElement, styleValue, j)
-      j(path).replaceWith(viewElement)
+      const wrapper = createViewWrapper(element, style, j)
+      j(path).replaceWith(wrapper)
       hasViewWrappers = true
     }
   })

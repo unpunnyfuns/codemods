@@ -139,10 +139,10 @@ function main(fileInfo, api, options = {}) {
     addElementComment(path, droppedProps, invalidStyles, j)
     migrated++
 
-    const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
+    const hasStyles = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
     // If no text content and has style props -> indicator dot pattern, convert to View
-    if (!textContent && hasStyleProps) {
+    if (!textContent && hasStyles) {
       warnings.push(
         'Badge: No text content detected, converting to styled View (indicator dot pattern)',
       )
@@ -150,20 +150,20 @@ function main(fileInfo, api, options = {}) {
       // Convert to View with styles
       const styleName = `badge${index}`
       const tempStyles = []
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
       if (tempStyles.length > 0) {
         styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
       }
 
       // Create self-closing View with style
-      const viewElement = createSelfClosingElement(
+      const element = createSelfClosingElement(
         'View',
-        [j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(styleValue))],
+        [j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(style))],
         j,
       )
 
       // Replace Badge with View
-      j(path).replaceWith(viewElement)
+      j(path).replaceWith(element)
       return
     }
 
@@ -174,34 +174,34 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Has text content -> migrate to Nordlys Badge
-    const badgeAttributes = filterAttributes(attributes, {
+    const attrs = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
 
-    addTransformedProps(badgeAttributes, transformedProps, j)
+    addTransformedProps(attrs, transformedProps, j)
 
     // Add text prop with extracted content
-    badgeAttributes.push(createAttribute('text', textContent, j))
+    attrs.push(createAttribute('text', textContent, j))
 
     // Add default size if not specified
-    if (!hasAttribute(badgeAttributes, 'size')) {
-      badgeAttributes.push(createStringAttribute('size', 'md', j))
+    if (!hasAttribute(attrs, 'size')) {
+      attrs.push(createStringAttribute('size', 'md', j))
     }
 
-    const badgeElement = createSelfClosingElement('Badge', badgeAttributes, j)
+    const element = createSelfClosingElement('Badge', attrs, j)
 
     // Wrap in View if style props exist
-    if (wrap && hasStyleProps) {
+    if (wrap && hasStyles) {
       const styleName = `badge${index}`
       const tempStyles = []
-      const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+      const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
       if (tempStyles.length > 0) {
         styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
       }
-      const viewElement = createViewWrapper(badgeElement, styleValue, j)
-      j(path).replaceWith(viewElement)
+      const wrapper = createViewWrapper(element, style, j)
+      j(path).replaceWith(wrapper)
     } else {
-      j(path).replaceWith(badgeElement)
+      j(path).replaceWith(element)
     }
   })
 
