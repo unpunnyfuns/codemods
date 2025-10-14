@@ -4,6 +4,22 @@
 import { removeNamedImport } from '@puns/shiftkit'
 
 /**
+ * Extract identifier from a qualified name (e.g., Screens.PAYMENT_DETAILS)
+ */
+function extractQualifiedName(node, used) {
+  let current = node
+  while (current.type === 'TSQualifiedName') {
+    if (current.right?.type === 'Identifier') {
+      used.add(current.right.name)
+    }
+    current = current.left
+  }
+  if (current?.type === 'Identifier') {
+    used.add(current.name)
+  }
+}
+
+/**
  * Recursively extract all type names from a TypeScript type node
  */
 function extractTypeNames(typeNode, used) {
@@ -15,19 +31,8 @@ function extractTypeNames(typeNode, used) {
   if (typeNode.type === 'TSTypeReference' && typeNode.typeName) {
     if (typeNode.typeName.type === 'Identifier') {
       used.add(typeNode.typeName.name)
-    }
-    // Handle qualified names like Screens.PAYMENT_DETAILS
-    if (typeNode.typeName.type === 'TSQualifiedName') {
-      let current = typeNode.typeName
-      while (current.type === 'TSQualifiedName') {
-        if (current.right && current.right.type === 'Identifier') {
-          used.add(current.right.name)
-        }
-        current = current.left
-      }
-      if (current && current.type === 'Identifier') {
-        used.add(current.name)
-      }
+    } else if (typeNode.typeName.type === 'TSQualifiedName') {
+      extractQualifiedName(typeNode.typeName, used)
     }
 
     // Recursively process type parameters (nested generics)
@@ -38,15 +43,11 @@ function extractTypeNames(typeNode, used) {
     }
   }
 
-  // Union types: Type1 | Type2
-  if (typeNode.type === 'TSUnionType' && typeNode.types) {
-    for (const t of typeNode.types) {
-      extractTypeNames(t, used)
-    }
-  }
-
-  // Intersection types: Type1 & Type2
-  if (typeNode.type === 'TSIntersectionType' && typeNode.types) {
+  // Union/Intersection types: Type1 | Type2, Type1 & Type2
+  if (
+    (typeNode.type === 'TSUnionType' || typeNode.type === 'TSIntersectionType') &&
+    typeNode.types
+  ) {
     for (const t of typeNode.types) {
       extractTypeNames(t, used)
     }
@@ -66,30 +67,16 @@ function extractTypeNames(typeNode, used) {
 
   // Indexed access types: Props['variant']
   if (typeNode.type === 'TSIndexedAccessType') {
-    if (typeNode.objectType) {
-      extractTypeNames(typeNode.objectType, used)
-    }
-    if (typeNode.indexType) {
-      extractTypeNames(typeNode.indexType, used)
-    }
+    extractTypeNames(typeNode.objectType, used)
+    extractTypeNames(typeNode.indexType, used)
   }
 
   // Type query: typeof Type
   if (typeNode.type === 'TSTypeQuery' && typeNode.exprName) {
     if (typeNode.exprName.type === 'Identifier') {
       used.add(typeNode.exprName.name)
-    }
-    if (typeNode.exprName.type === 'TSQualifiedName') {
-      let current = typeNode.exprName
-      while (current.type === 'TSQualifiedName') {
-        if (current.right && current.right.type === 'Identifier') {
-          used.add(current.right.name)
-        }
-        current = current.left
-      }
-      if (current && current.type === 'Identifier') {
-        used.add(current.name)
-      }
+    } else if (typeNode.exprName.type === 'TSQualifiedName') {
+      extractQualifiedName(typeNode.exprName, used)
     }
   }
 
@@ -178,24 +165,17 @@ function findUsedIdentifiers(root, j) {
 
   // TypeScript type parameters in generics: useForm<Type>(), new Array<Type>(), etc.
   // These are attached to CallExpression and NewExpression nodes
-  // Use extractTypeNames to recursively handle nested generics
-  root.find(j.CallExpression).forEach((path) => {
+  const extractTypeParams = (path) => {
     const typeParams = path.node.typeParameters || path.node.typeArguments
     if (typeParams?.params) {
       for (const param of typeParams.params) {
         extractTypeNames(param, used)
       }
     }
-  })
+  }
 
-  root.find(j.NewExpression).forEach((path) => {
-    const typeParams = path.node.typeParameters || path.node.typeArguments
-    if (typeParams?.params) {
-      for (const param of typeParams.params) {
-        extractTypeNames(param, used)
-      }
-    }
-  })
+  root.find(j.CallExpression).forEach(extractTypeParams)
+  root.find(j.NewExpression).forEach(extractTypeParams)
 
   return used
 }
