@@ -32,7 +32,7 @@
   },
   "overrides": [
     {
-      "includes": ["src/__testfixtures__/**"],
+      "includes": ["src/__testfixtures__/**", "src/*/__testfixtures__/**"],
       "linter": {
         "enabled": false
       }
