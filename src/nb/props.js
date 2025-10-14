@@ -291,6 +291,33 @@ export function transformPropValue(value, config, j) {
 }
 
 /**
+ * Process a single style property with validation
+ * @returns {boolean} true if prop was added successfully
+ */
+function processStyleProp(
+  styleName,
+  value,
+  shouldExtract,
+  styleProps,
+  inlineStyles,
+  invalidStyles,
+  manualFailures,
+) {
+  const validation = validateStyleValue(styleName, value)
+  if (!validation.isValid) {
+    invalidStyles.push({ styleName, value: validation.reason })
+    if (validation.category === 'manual') {
+      manualFailures.push({ styleName, value: validation.reason })
+    }
+    return false
+  }
+
+  const target = shouldExtract ? styleProps : inlineStyles
+  target[styleName] = value
+  return true
+}
+
+/**
  * Categorize props from JSX attributes into style/inline/transform/drop
  *
  * Returns:
@@ -306,9 +333,9 @@ export function transformPropValue(value, config, j) {
  */
 export function categorizeProps(attributes, mappings, j) {
   const {
-    styleProps: stylePropMappings = {},
-    transformProps: transformPropMappings = {},
-    dropProps: dropPropList = [],
+    styleProps: styleMappings = {},
+    transformProps: transformMappings = {},
+    dropProps: dropList = [],
   } = mappings
   const styleProps = {}
   const inlineStyles = {}
@@ -322,6 +349,7 @@ export function categorizeProps(attributes, mappings, j) {
   const existingStyleReferences = []
 
   attributes.forEach((attr) => {
+    // Skip non-attributes
     if (attr.type !== 'JSXAttribute') {
       return
     }
@@ -331,6 +359,7 @@ export function categorizeProps(attributes, mappings, j) {
 
     const propName = attr.name.name
 
+    // Handle style prop (inline StyleSheet or array of styles)
     if (propName === 'style') {
       if (attr.value?.type === 'JSXExpressionContainer') {
         const expr = attr.value.expression
@@ -343,22 +372,19 @@ export function categorizeProps(attributes, mappings, j) {
                 if (prop.type === 'Property' && prop.key.type === 'Identifier') {
                   const styleName = prop.key.name
                   // Apply transformations: space['4'] -> 4, "4" -> {4}
-                  let transformedValue = transformNumericTokenAccess(prop.value, j)
-                  transformedValue = autoTransformNumericString(transformedValue, j)
+                  let value = transformNumericTokenAccess(prop.value, j)
+                  value = autoTransformNumericString(value, j)
 
-                  const validation = validateStyleValue(styleName, transformedValue)
-                  if (!validation.isValid) {
-                    invalidStyles.push({ styleName, value: validation.reason })
-                    if (validation.category === 'manual') {
-                      manualFailures.push({ styleName, value: validation.reason })
-                    }
-                    continue
-                  }
-
-                  const targetStyles = shouldExtractToStyleSheet(transformedValue, false)
-                    ? styleProps
-                    : inlineStyles
-                  targetStyles[styleName] = transformedValue
+                  const shouldExtract = shouldExtractToStyleSheet(value, false)
+                  processStyleProp(
+                    styleName,
+                    value,
+                    shouldExtract,
+                    styleProps,
+                    inlineStyles,
+                    invalidStyles,
+                    manualFailures,
+                  )
                 }
               }
             } else if (element.type === 'MemberExpression') {
@@ -373,22 +399,19 @@ export function categorizeProps(attributes, mappings, j) {
             if (prop.type === 'Property' && prop.key.type === 'Identifier') {
               const styleName = prop.key.name
               // Apply transformations: space['4'] -> 4, "4" -> {4}
-              let transformedValue = transformNumericTokenAccess(prop.value, j)
-              transformedValue = autoTransformNumericString(transformedValue, j)
+              let value = transformNumericTokenAccess(prop.value, j)
+              value = autoTransformNumericString(value, j)
 
-              const validation = validateStyleValue(styleName, transformedValue)
-              if (!validation.isValid) {
-                invalidStyles.push({ styleName, value: validation.reason })
-                if (validation.category === 'manual') {
-                  manualFailures.push({ styleName, value: validation.reason })
-                }
-                continue
-              }
-
-              const targetStyles = shouldExtractToStyleSheet(transformedValue, false)
-                ? styleProps
-                : inlineStyles
-              targetStyles[styleName] = transformedValue
+              const shouldExtract = shouldExtractToStyleSheet(value, false)
+              processStyleProp(
+                styleName,
+                value,
+                shouldExtract,
+                styleProps,
+                inlineStyles,
+                invalidStyles,
+                manualFailures,
+              )
             }
           }
         }
@@ -399,8 +422,8 @@ export function categorizeProps(attributes, mappings, j) {
       }
 
       propsToRemove.push(attr)
-    } else if (stylePropMappings[propName]) {
-      const config = stylePropMappings[propName]
+    } else if (styleMappings[propName]) {
+      const config = styleMappings[propName]
       let styleName, properties
 
       // Support both string (simple mapping) and object (with options)
@@ -425,52 +448,51 @@ export function categorizeProps(attributes, mappings, j) {
 
         // Use priority chain transformation (valueMap -> tokenHelper -> pass-through)
         const result = transformPropValue(value, config, j)
-        const processedValue = result.value
-        const isTokenHelperCall = result.isTokenHelper
-        const tokenHelperName = result.tokenHelper
+        const transformed = result.value
+        const isHelper = result.isTokenHelper
+        const helper = result.tokenHelper
 
-        const shouldExtract = shouldExtractToStyleSheet(processedValue, isTokenHelperCall)
+        const shouldExtract = shouldExtractToStyleSheet(transformed, isHelper)
 
-        let validPropAdded = false
+        let added = false
 
         if (properties) {
           for (const prop of properties) {
-            const validation = validateStyleValue(prop, processedValue)
-            if (!validation.isValid) {
-              invalidStyles.push({ styleName: prop, value: validation.reason })
-              if (validation.category === 'manual') {
-                manualFailures.push({ styleName: prop, value: validation.reason })
-              }
-              continue
+            if (
+              processStyleProp(
+                prop,
+                transformed,
+                shouldExtract,
+                styleProps,
+                inlineStyles,
+                invalidStyles,
+                manualFailures,
+              )
+            ) {
+              added = true
             }
-
-            const targetStyles = shouldExtract ? styleProps : inlineStyles
-            targetStyles[prop] = processedValue
-            validPropAdded = true
           }
         } else {
-          const validation = validateStyleValue(styleName, processedValue)
-          if (validation.isValid) {
-            const targetStyles = shouldExtract ? styleProps : inlineStyles
-            targetStyles[styleName] = processedValue
-            validPropAdded = true
-          } else {
-            invalidStyles.push({ styleName, value: validation.reason })
-            if (validation.category === 'manual') {
-              manualFailures.push({ styleName, value: validation.reason })
-            }
-          }
+          added = processStyleProp(
+            styleName,
+            transformed,
+            shouldExtract,
+            styleProps,
+            inlineStyles,
+            invalidStyles,
+            manualFailures,
+          )
         }
 
         // Only add tokenHelper if at least one valid prop was added
-        if (validPropAdded && tokenHelperName) {
-          usedTokenHelpers.add(tokenHelperName)
+        if (added && helper) {
+          usedTokenHelpers.add(helper)
         }
 
         propsToRemove.push(attr)
       }
-    } else if (transformPropMappings[propName]) {
-      const config = transformPropMappings[propName]
+    } else if (transformMappings[propName]) {
+      const config = transformMappings[propName]
       let newPropName
 
       // Support both string (simple rename) and object (with options)
@@ -506,7 +528,7 @@ export function categorizeProps(attributes, mappings, j) {
 
       transformedProps[newPropName] = value
       propsToRemove.push(attr)
-    } else if (dropPropList.includes(propName)) {
+    } else if (dropList.includes(propName)) {
       propsToRemove.push(attr)
       droppedProps.push({ name: propName, attr })
     }
