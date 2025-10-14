@@ -199,23 +199,38 @@ function main(fileInfo, api, options = {}) {
   const removeVariables = options.variables !== false // default: true
   const verbose = options.verbose || false
 
-  let changed = false
+  let totalChanged = false
+  let passCount = 0
+  const maxPasses = 10 // Safety limit to prevent infinite loops
 
-  if (removeImports) {
-    const removed = removeUnusedImports(root, j, { verbose })
-    if (removed.length > 0) {
-      changed = true
+  // Keep running passes until nothing changes (cascading removals)
+  while (passCount < maxPasses) {
+    passCount++
+    let passChanged = false
+
+    if (removeImports) {
+      const removed = removeUnusedImports(root, j, { verbose: verbose && passCount === 1 })
+      if (removed.length > 0) {
+        passChanged = true
+        totalChanged = true
+      }
+    }
+
+    if (removeVariables) {
+      const removed = removeUnusedVariables(root, j, { verbose: verbose && passCount === 1 })
+      if (removed.length > 0) {
+        passChanged = true
+        totalChanged = true
+      }
+    }
+
+    // If nothing changed this pass, we're done
+    if (!passChanged) {
+      break
     }
   }
 
-  if (removeVariables) {
-    const removed = removeUnusedVariables(root, j, { verbose })
-    if (removed.length > 0) {
-      changed = true
-    }
-  }
-
-  if (!changed) {
+  if (!totalChanged) {
     return fileInfo.source
   }
 
