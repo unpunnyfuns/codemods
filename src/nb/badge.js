@@ -117,25 +117,24 @@ function main(fileInfo, api, options = {}) {
       inlineStyles,
       transformedProps,
       propsToRemove,
-      usedTokenHelpers: newHelpers,
+      usedTokenHelpers,
       droppedProps,
       invalidStyles,
       hasManualFailures,
     } = categorizeProps(attributes, badgeProps, j)
 
-    // Skip transformation if manual intervention required (unless --unsafe)
-    if (hasManualFailures && !options.unsafe) {
-      console.warn(`⚠️  Badge element skipped - manual fixes required (${fileInfo.path})`)
-      return
+    // Skip if manual fixes needed (unless --unsafe mode)
+    if (hasManualFailures) {
+      const msg = options.unsafe
+        ? `⚠️  Badge: unsafe mode - proceeding with partial migration (${fileInfo.path})`
+        : `⚠️  Badge skipped - manual fixes required (${fileInfo.path})`
+      console.warn(msg)
+      if (!options.unsafe) {
+        return
+      }
     }
 
-    if (hasManualFailures && options.unsafe) {
-      console.warn(
-        `⚠️  Badge element: unsafe mode - proceeding with partial migration (${fileInfo.path})`,
-      )
-    }
-
-    styles.addHelpers(newHelpers)
+    styles.addHelpers(usedTokenHelpers)
 
     addElementComment(path, droppedProps, invalidStyles, j)
     migrated++
@@ -208,7 +207,8 @@ function main(fileInfo, api, options = {}) {
 
   if (warnings.length > 0) {
     console.warn('⚠️  Badge migration warnings:')
-    for (const w of warnings) {
+    const uniqueWarnings = [...new Set(warnings)]
+    for (const w of uniqueWarnings) {
       console.warn(`   ${w}`)
     }
   }

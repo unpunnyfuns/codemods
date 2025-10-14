@@ -104,26 +104,25 @@ function main(fileInfo, api, options = {}) {
       inlineStyles,
       transformedProps,
       propsToRemove,
-      usedTokenHelpers: newHelpers,
+      usedTokenHelpers,
       droppedProps,
       invalidStyles,
       existingStyleReferences,
       hasManualFailures,
     } = categorizeProps(attributes, boxProps, j)
 
-    // Skip transformation if manual intervention required
-    if (hasManualFailures && !options.unsafe) {
-      warnings.push(`Box element skipped - manual fixes required (${fileInfo.path})`)
-      return
+    // Skip if manual fixes needed (unless --unsafe mode)
+    if (hasManualFailures) {
+      const msg = options.unsafe
+        ? `Box: unsafe mode - proceeding with partial migration (${fileInfo.path})`
+        : `Box skipped - manual fixes required (${fileInfo.path})`
+      warnings.push(msg)
+      if (!options.unsafe) {
+        return
+      }
     }
 
-    if (hasManualFailures && options.unsafe) {
-      warnings.push(
-        `Box element: unsafe mode - proceeding with partial migration (${fileInfo.path})`,
-      )
-    }
-
-    styles.addHelpers(newHelpers)
+    styles.addHelpers(usedTokenHelpers)
 
     // Keep only direct props (filter out style props and dropped props)
     const viewAttributes = filterAttributes(attributes, {

@@ -122,10 +122,9 @@ function main(fileInfo, api, options = {}) {
     let iconValue = null
     let textValue = null
 
-    const leftIconValue = getAttributeValue(attributes, 'leftIcon')
-
-    if (leftIconValue) {
-      const iconName = extractPropFromJSXElement(leftIconValue, 'Icon', 'name')
+    const leftIcon = getAttributeValue(attributes, 'leftIcon')
+    if (leftIcon) {
+      const iconName = extractPropFromJSXElement(leftIcon, 'Icon', 'name')
       if (iconName) {
         iconValue = typeof iconName === 'string' ? j.stringLiteral(iconName) : iconName
       }
@@ -167,25 +166,24 @@ function main(fileInfo, api, options = {}) {
       inlineStyles,
       transformedProps,
       propsToRemove,
-      usedTokenHelpers: newHelpers,
+      usedTokenHelpers,
       droppedProps,
       invalidStyles,
       hasManualFailures,
     } = categorizeProps(attributes, buttonProps, j)
 
-    // Skip transformation if manual intervention required (unless --unsafe)
-    if (hasManualFailures && !options.unsafe) {
-      console.warn(`⚠️  Button element skipped - manual fixes required (${fileInfo.path})`)
-      return
+    // Skip if manual fixes needed (unless --unsafe mode)
+    if (hasManualFailures) {
+      const msg = options.unsafe
+        ? `⚠️  Button: unsafe mode - proceeding with partial migration (${fileInfo.path})`
+        : `⚠️  Button skipped - manual fixes required (${fileInfo.path})`
+      console.warn(msg)
+      if (!options.unsafe) {
+        return
+      }
     }
 
-    if (hasManualFailures && options.unsafe) {
-      console.warn(
-        `⚠️  Button element: unsafe mode - proceeding with partial migration (${fileInfo.path})`,
-      )
-    }
-
-    styles.addHelpers(newHelpers)
+    styles.addHelpers(usedTokenHelpers)
 
     if (hasAttribute(attributes, 'rightIcon')) {
       warnings.push('Button rightIcon not supported in Nordlys - dropped')
@@ -198,8 +196,7 @@ function main(fileInfo, api, options = {}) {
     addTransformedProps(buttonAttributes, transformedProps, j)
 
     // Always set icon (undefined if no icon)
-    const finalIconValue = iconValue || j.identifier('undefined')
-    buttonAttributes.push(createAttribute('icon', finalIconValue, j))
+    buttonAttributes.push(createAttribute('icon', iconValue || j.identifier('undefined'), j))
 
     if (textValue) {
       buttonAttributes.push(createAttribute('text', textValue, j))
@@ -207,8 +204,9 @@ function main(fileInfo, api, options = {}) {
 
     // Add defaults for required props
     if (!hasAttribute(attributes, 'onPress')) {
-      const noopHandler = j.arrowFunctionExpression([], j.blockStatement([]))
-      buttonAttributes.push(createAttribute('onPress', noopHandler, j))
+      buttonAttributes.push(
+        createAttribute('onPress', j.arrowFunctionExpression([], j.blockStatement([])), j),
+      )
       warnings.push('Button: Missing onPress - added no-op handler (TODO: wire up actual handler)')
     }
 
@@ -218,20 +216,20 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Map NativeBase variant to Nordlys variant + type
-    const nbVariant = getAttributeValue(attributes, 'variant')
-    const nbVariantValue =
-      nbVariant?.type === 'StringLiteral' ? nbVariant.value : nbVariant?.value || 'primary'
+    const variant = getAttributeValue(attributes, 'variant')
+    const variantValue =
+      variant?.type === 'StringLiteral' ? variant.value : variant?.value || 'primary'
 
     let nordlysVariant = 'primary'
     let nordlysType = 'solid'
 
     // If already using Nordlys variants (primary/secondary), preserve them
-    if (nbVariantValue === 'primary' || nbVariantValue === 'secondary') {
-      nordlysVariant = nbVariantValue
+    if (variantValue === 'primary' || variantValue === 'secondary') {
+      nordlysVariant = variantValue
       nordlysType = 'solid'
     } else {
       // Map NativeBase/other variants
-      switch (nbVariantValue) {
+      switch (variantValue) {
         case 'solid':
           nordlysVariant = 'primary'
           nordlysType = 'solid'
@@ -264,19 +262,16 @@ function main(fileInfo, api, options = {}) {
     if (wrap && hasStyleProps) {
       const styleName = `button${index}`
 
-      // buildStyleValue handles complex style processing and pushes to internal array
       const tempStyles = []
       const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
-
-      // Add the generated styles to our context
       if (tempStyles.length > 0) {
         styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
       }
 
       const viewElement = createViewWrapper(buttonElement, styleValue, j)
-      path.replace(viewElement)
+      j(path).replaceWith(viewElement)
     } else {
-      path.replace(buttonElement)
+      j(path).replaceWith(buttonElement)
     }
 
     migrated++

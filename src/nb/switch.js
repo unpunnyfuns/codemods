@@ -97,33 +97,31 @@ function main(fileInfo, api, options = {}) {
     const children = path.node.children || []
 
     // Extract label prop to transform into <Switch.Description>
-    const labelAttr = findAttribute(attributes, 'label')
-    const labelValue = labelAttr ? labelAttr.value : null
+    const labelValue = findAttribute(attributes, 'label')?.value ?? null
 
     const {
       styleProps,
       inlineStyles,
       transformedProps,
       propsToRemove,
-      usedTokenHelpers: newHelpers,
+      usedTokenHelpers,
       droppedProps,
       invalidStyles,
       hasManualFailures,
     } = categorizeProps(attributes, switchProps, j)
 
-    // Skip transformation if manual intervention required (unless --unsafe)
-    if (hasManualFailures && !options.unsafe) {
-      console.warn(`⚠️  Switch element skipped - manual fixes required (${fileInfo.path})`)
-      return
+    // Skip if manual fixes needed (unless --unsafe mode)
+    if (hasManualFailures) {
+      const msg = options.unsafe
+        ? `⚠️  Switch: unsafe mode - proceeding with partial migration (${fileInfo.path})`
+        : `⚠️  Switch skipped - manual fixes required (${fileInfo.path})`
+      console.warn(msg)
+      if (!options.unsafe) {
+        return
+      }
     }
 
-    if (hasManualFailures && options.unsafe) {
-      console.warn(
-        `⚠️  Switch element: unsafe mode - proceeding with partial migration (${fileInfo.path})`,
-      )
-    }
-
-    styles.addHelpers(newHelpers)
+    styles.addHelpers(usedTokenHelpers)
 
     const switchAttributes = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),

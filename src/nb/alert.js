@@ -163,25 +163,24 @@ function main(fileInfo, api, options = {}) {
       inlineStyles,
       transformedProps,
       propsToRemove,
-      usedTokenHelpers: newHelpers,
+      usedTokenHelpers,
       droppedProps,
       invalidStyles,
       hasManualFailures,
     } = categorizeProps(attributes, alertProps, j)
 
-    // Skip transformation if manual intervention required (unless --unsafe)
-    if (hasManualFailures && !options.unsafe) {
-      console.warn(`⚠️  Alert element skipped - manual fixes required (${fileInfo.path})`)
-      return
+    // Skip if manual fixes needed (unless --unsafe mode)
+    if (hasManualFailures) {
+      const msg = options.unsafe
+        ? `⚠️  Alert: unsafe mode - proceeding with partial migration (${fileInfo.path})`
+        : `⚠️  Alert skipped - manual fixes required (${fileInfo.path})`
+      console.warn(msg)
+      if (!options.unsafe) {
+        return
+      }
     }
 
-    if (hasManualFailures && options.unsafe) {
-      console.warn(
-        `⚠️  Alert element: unsafe mode - proceeding with partial migration (${fileInfo.path})`,
-      )
-    }
-
-    styles.addHelpers(newHelpers)
+    styles.addHelpers(usedTokenHelpers)
 
     const alertAttributes = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
@@ -227,7 +226,8 @@ function main(fileInfo, api, options = {}) {
 
   if (warnings.length > 0) {
     console.warn('⚠️  Alert migration warnings:')
-    for (const w of warnings) {
+    const uniqueWarnings = [...new Set(warnings)]
+    for (const w of uniqueWarnings) {
       console.warn(`   ${w}`)
     }
   }

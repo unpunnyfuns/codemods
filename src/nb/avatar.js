@@ -101,68 +101,63 @@ function main(fileInfo, api, options = {}) {
   avatarElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
 
+    // Extract Avatar props (iconName, imageUri, imageSource, letters)
     const iconNameValue = getAttributeValue(attributes, 'iconName')
     const imageUriValue = getAttributeValue(attributes, 'imageUri')
     const imageSourceValue = getAttributeValue(attributes, 'imageSource')
     const lettersValue = getAttributeValue(attributes, 'letters')
 
-    // Warn and skip if letters prop is used (not supported)
+    // Cannot migrate: letters prop not supported in Nordlys
     if (lettersValue) {
       warnings.push('Avatar with letters prop cannot be migrated (not supported in Nordlys Avatar)')
       return
     }
 
+    // Categorize props into style/transform/direct/drop buckets
     const {
       styleProps,
       inlineStyles,
       transformedProps,
       propsToRemove,
-      usedTokenHelpers: newHelpers,
+      usedTokenHelpers,
       droppedProps,
       invalidStyles,
       hasManualFailures,
     } = categorizeProps(attributes, avatarProps, j)
 
-    // Skip transformation if manual intervention required (unless --unsafe)
-    if (hasManualFailures && !options.unsafe) {
-      console.warn(`⚠️  Avatar element skipped - manual fixes required (${fileInfo.path})`)
-      return
+    // Skip if manual fixes needed (unless --unsafe mode)
+    if (hasManualFailures) {
+      const msg = options.unsafe
+        ? `⚠️  Avatar: unsafe mode - proceeding with partial migration (${fileInfo.path})`
+        : `⚠️  Avatar skipped - manual fixes required (${fileInfo.path})`
+      console.warn(msg)
+      if (!options.unsafe) {
+        return
+      }
     }
 
-    if (hasManualFailures && options.unsafe) {
-      console.warn(
-        `⚠️  Avatar element: unsafe mode - proceeding with partial migration (${fileInfo.path})`,
-      )
-    }
+    // Track token helpers used
+    styles.addHelpers(usedTokenHelpers)
 
-    styles.addHelpers(newHelpers)
-
+    // Build Nordlys Avatar attributes
     const avatarAttributes = filterAttributes(attributes, {
       allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
     })
-
     addTransformedProps(avatarAttributes, transformedProps, j)
 
+    // Convert iconName/imageUri/imageSource to Nordlys object props
     if (iconNameValue) {
-      const iconObject = createNestedObject(
-        {
-          name: iconNameValue,
-          fill: 'blue',
-        },
-        j,
+      avatarAttributes.push(
+        createAttribute('icon', createNestedObject({ name: iconNameValue, fill: 'blue' }, j), j),
       )
-      avatarAttributes.push(createAttribute('icon', iconObject, j))
     } else if (imageUriValue) {
-      const imageObject = createNestedObject(
-        {
-          source: { uri: imageUriValue },
-        },
-        j,
+      avatarAttributes.push(
+        createAttribute('image', createNestedObject({ source: { uri: imageUriValue } }, j), j),
       )
-      avatarAttributes.push(createAttribute('image', imageObject, j))
     } else if (imageSourceValue) {
-      const iconObject = createNestedObject({ source: imageSourceValue }, j)
-      avatarAttributes.push(createAttribute('image', iconObject, j))
+      avatarAttributes.push(
+        createAttribute('image', createNestedObject({ source: imageSourceValue }, j), j),
+      )
     }
 
     path.node.openingElement.attributes = avatarAttributes
@@ -170,19 +165,16 @@ function main(fileInfo, api, options = {}) {
     addElementComment(path, droppedProps, invalidStyles, j)
     migrated++
 
+    // Wrap in <View style={styles.avatarN}> if style props exist
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
-
     if (wrap && hasStyleProps) {
       const styleName = `avatar${index}`
-
       const avatarElement = cloneElement(path.node, j)
-
       const tempStyles = []
       const styleValue = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
       if (tempStyles.length > 0) {
         styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
       }
-
       const viewElement = createViewWrapper(avatarElement, styleValue, j)
       j(path).replaceWith(viewElement)
       hasViewWrappers = true
@@ -191,7 +183,8 @@ function main(fileInfo, api, options = {}) {
 
   if (warnings.length > 0) {
     console.warn('⚠️  Avatar migration warnings:')
-    for (const w of warnings) {
+    const uniqueWarnings = [...new Set(warnings)]
+    for (const w of uniqueWarnings) {
       console.warn(`   ${w}`)
     }
   }
