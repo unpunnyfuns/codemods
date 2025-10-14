@@ -7,7 +7,9 @@ import { removeNamedImport } from '@puns/shiftkit'
  * Recursively extract all type names from a TypeScript type node
  */
 function extractTypeNames(typeNode, used) {
-  if (!typeNode) return
+  if (!typeNode) {
+    return
+  }
 
   // TSTypeReference: the main type node
   if (typeNode.type === 'TSTypeReference' && typeNode.typeName) {
@@ -29,7 +31,7 @@ function extractTypeNames(typeNode, used) {
     }
 
     // Recursively process type parameters (nested generics)
-    if (typeNode.typeParameters && typeNode.typeParameters.params) {
+    if (typeNode.typeParameters?.params) {
       for (const param of typeNode.typeParameters.params) {
         extractTypeNames(param, used)
       }
@@ -170,7 +172,7 @@ function findUsedIdentifiers(root, j) {
   // Use extractTypeNames to recursively handle nested generics
   root.find(j.CallExpression).forEach((path) => {
     const typeParams = path.node.typeParameters || path.node.typeArguments
-    if (typeParams && typeParams.params) {
+    if (typeParams?.params) {
       for (const param of typeParams.params) {
         extractTypeNames(param, used)
       }
@@ -179,7 +181,7 @@ function findUsedIdentifiers(root, j) {
 
   root.find(j.NewExpression).forEach((path) => {
     const typeParams = path.node.typeParameters || path.node.typeArguments
-    if (typeParams && typeParams.params) {
+    if (typeParams?.params) {
       for (const param of typeParams.params) {
         extractTypeNames(param, used)
       }

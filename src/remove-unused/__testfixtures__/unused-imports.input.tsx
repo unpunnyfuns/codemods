@@ -1,8 +1,8 @@
-import { Button, Icon, Text } from 'native-base'
-import { useCallback, useEffect, useState } from 'react'
+import { Text } from 'native-base'
+import { useEffect, useState } from 'react'
 
 export function Example() {
-  const [count, setCount] = useState(0)
+  const [count, _setCount] = useState(0)
 
   useEffect(() => {
     console.log(count)

@@ -2,7 +2,7 @@ import { Text } from 'native-base'
 import { useState } from 'react'
 
 export function Component() {
-  const [value, setValue] = useState('')
+  const [value, _setValue] = useState('')
   const config = { enabled: true }
 
   return (

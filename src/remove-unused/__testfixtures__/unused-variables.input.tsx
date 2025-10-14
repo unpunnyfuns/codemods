@@ -1,17 +1,17 @@
 export function calculate() {
   const result = 42
   const temp = 100
-  const unused = 'never used'
-  const alsoUnused = false
+  const _unused = 'never used'
+  const _alsoUnused = false
 
   return result + temp
 }
 
 export function multipleDeclarations() {
   const a = 1,
-    b = 2,
+    _b = 2,
     c = 3,
-    d = 4
+    _d = 4
 
   return a + c
 }

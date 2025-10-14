@@ -26,8 +26,8 @@ import {
 import type { ResponseType } from './types'
 
 export function Component() {
-  const [data, setData] = useState<ResponseType<EncryptionDetailsResponseProps>>()
-  const [value, setValue] = useState<SharedValue<number> | null>(null)
+  const [_data, _setData] = useState<ResponseType<EncryptionDetailsResponseProps>>()
+  const [_value, _setValue] = useState<SharedValue<number> | null>(null)
 
   type NavRef = typeof RootStack
 
@@ -77,11 +77,11 @@ export function Component() {
 `;
 
 exports[`remove-unused > removes both imports and variables 1`] = `
-"import { Text } from 'native-base';
-import { useState } from 'react';
+"import { Text } from 'native-base'
+import { useState } from 'react'
 
 export function Component() {
-  const [value, setValue] = useState('')
+  const [value, _setValue] = useState('')
   const config = { enabled: true }
 
   return (
@@ -95,11 +95,11 @@ export function Component() {
 `;
 
 exports[`remove-unused > removes unused imports 1`] = `
-"import { Text } from 'native-base';
-import { useEffect, useState } from 'react';
+"import { Text } from 'native-base'
+import { useEffect, useState } from 'react'
 
 export function Example() {
-  const [count, setCount] = useState(0)
+  const [count, _setCount] = useState(0)
 
   useEffect(() => {
     console.log(count)
