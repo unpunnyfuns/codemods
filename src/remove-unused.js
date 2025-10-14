@@ -67,7 +67,7 @@ function findUsedIdentifiers(root, j) {
     if (path.node.typeName.type === 'Identifier') {
       used.add(path.node.typeName.name)
     }
-    // Handle qualified names like `React.FC`
+    // Handle qualified names like `React.FC` or `Screens.UPDATE_PHONE_NUMBER`
     if (path.node.typeName.type === 'TSQualifiedName') {
       let current = path.node.typeName
       while (current.type === 'TSQualifiedName') {
@@ -89,13 +89,68 @@ function findUsedIdentifiers(root, j) {
     }
   })
 
+  // TypeScript type parameters in generics: useForm<Type>(), new Array<Type>(), etc.
+  // These are attached to CallExpression and NewExpression nodes
+  root.find(j.CallExpression).forEach((path) => {
+    const typeParams = path.node.typeParameters || path.node.typeArguments
+    if (typeParams && typeParams.params) {
+      typeParams.params.forEach((param) => {
+        if (param.type === 'TSTypeReference' && param.typeName) {
+          if (param.typeName.type === 'Identifier') {
+            used.add(param.typeName.name)
+          }
+          // Handle qualified names in generics like Screens.UPDATE_PHONE_NUMBER
+          if (param.typeName.type === 'TSQualifiedName') {
+            let current = param.typeName
+            while (current.type === 'TSQualifiedName') {
+              if (current.right && current.right.type === 'Identifier') {
+                used.add(current.right.name)
+              }
+              current = current.left
+            }
+            if (current && current.type === 'Identifier') {
+              used.add(current.name)
+            }
+          }
+        }
+      })
+    }
+  })
+
+  root.find(j.NewExpression).forEach((path) => {
+    const typeParams = path.node.typeParameters || path.node.typeArguments
+    if (typeParams && typeParams.params) {
+      typeParams.params.forEach((param) => {
+        if (param.type === 'TSTypeReference' && param.typeName) {
+          if (param.typeName.type === 'Identifier') {
+            used.add(param.typeName.name)
+          }
+          if (param.typeName.type === 'TSQualifiedName') {
+            let current = param.typeName
+            while (current.type === 'TSQualifiedName') {
+              if (current.right && current.right.type === 'Identifier') {
+                used.add(current.right.name)
+              }
+              current = current.left
+            }
+            if (current && current.type === 'Identifier') {
+              used.add(current.name)
+            }
+          }
+        }
+      })
+    }
+  })
+
   return used
 }
 
 /**
  * Remove unused named imports
+ * IMPORTANT: Must recalculate usedIdentifiers each time this is called
  */
 function removeUnusedImports(root, j, options = {}) {
+  // Recalculate on every call - important for multi-pass
   const usedIdentifiers = findUsedIdentifiers(root, j)
   const removedImports = []
 
@@ -139,8 +194,10 @@ function removeUnusedImports(root, j, options = {}) {
 /**
  * Remove unused variables (const, let, var declarations)
  * NEVER removes exported declarations - only internal unused variables
+ * IMPORTANT: Must recalculate usedIdentifiers each time this is called
  */
 function removeUnusedVariables(root, j, options = {}) {
+  // Recalculate on every call - important for multi-pass
   const usedIdentifiers = findUsedIdentifiers(root, j)
   const removedVariables = []
 

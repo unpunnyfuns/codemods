@@ -26,4 +26,9 @@ describe('remove-unused', () => {
     const output = testTransform('remove-unused', 'remove-unused/styles', 'tsx')
     expect(output).toMatchSnapshot()
   })
+
+  it('preserves types used in generics', () => {
+    const output = testTransform('remove-unused', 'remove-unused/generics', 'tsx')
+    expect(output).toMatchSnapshot()
+  })
 })

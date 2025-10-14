@@ -15,6 +15,25 @@ const styles = StyleSheet.create({
 "
 `;
 
+exports[`remove-unused > preserves types used in generics 1`] = `
+"import { useForm } from 'react-hook-form'
+import { PhoneNumberFormValues, Screens } from '@hb-frontend/types'
+import { useRoute } from '@hb-frontend/app/src/navigation/useRoute'
+
+export function Component() {
+  const form = useForm<PhoneNumberFormValues>()
+  const route = useRoute<Screens.UPDATE_PHONE_NUMBER>()
+
+  return (
+    <div>
+      {form.getValues()}
+      {route.name}
+    </div>
+  )
+}
+"
+`;
+
 exports[`remove-unused > preserves used identifiers 1`] = `
 "import { Button, Text } from 'native-base'
 import { useState } from 'react'
