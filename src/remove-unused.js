@@ -96,12 +96,19 @@ function removeUnusedImports(root, j, options = {}) {
 
 /**
  * Remove unused variables (const, let, var declarations)
+ * NEVER removes exported declarations - only internal unused variables
  */
 function removeUnusedVariables(root, j, options = {}) {
   const usedIdentifiers = findUsedIdentifiers(root, j)
   const removedVariables = []
 
   root.find(j.VariableDeclaration).forEach((path) => {
+    // NEVER touch exported declarations
+    const parent = path.parent.node
+    if (parent.type === 'ExportNamedDeclaration' || parent.type === 'ExportDefaultDeclaration') {
+      return
+    }
+
     const declarations = path.node.declarations || []
     const unusedDeclarations = []
 
