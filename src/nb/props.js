@@ -25,17 +25,38 @@ export const validRadiusTokens = RADIUS_TOKENS
 const dimensionProps = DIMENSION_PROPS
 
 /**
- * Auto-transform safe numeric string values to numeric literals
- * Converts "4" → {4}, "1.5" → {1.5}
+ * Normalize value literals for StyleSheet extraction
+ * - "full" → "100%"
+ * - space['4'] → 4
+ * - "4" → 4
  */
-function convertNumericString(value, j) {
+function normalizeValue(value, j) {
+  // "full" dimension
+  if ((value.type === 'StringLiteral' || value.type === 'Literal') && value.value === 'full') {
+    return j.stringLiteral('100%')
+  }
+
+  // space['4'] → 4, radius['16'] → 16
+  if (value.type === 'MemberExpression') {
+    const tokenName = value.object?.name
+    if (tokenName && ['space', 'radius'].includes(tokenName)) {
+      if (value.computed && value.property?.type === 'StringLiteral') {
+        const propertyValue = value.property.value
+        if (/^\d+$/.test(propertyValue)) {
+          return j.numericLiteral(Number.parseInt(propertyValue, 10))
+        }
+      }
+    }
+  }
+
+  // "4" → 4, "1.5" → 1.5
   if (value.type === 'StringLiteral' || value.type === 'Literal') {
     const val = String(value.value)
-    // Pure numeric strings (no units, no tokens)
     if (/^\d+(\.\d+)?$/.test(val)) {
       return j.numericLiteral(Number.parseFloat(val))
     }
   }
+
   return value
 }
 
@@ -134,35 +155,6 @@ function validateStyle(styleName, value) {
   }
 
   return { isValid: true }
-}
-
-/**
- * Transform token MemberExpression with numeric bracket notation to numeric literal
- * e.g., space['4'] -> 4, radius['16'] -> 16
- * Also transforms dimension string values: "full" -> "100%"
- */
-function convertNumericToken(value, j) {
-  if ((value.type === 'StringLiteral' || value.type === 'Literal') && value.value === 'full') {
-    return j.stringLiteral('100%')
-  }
-
-  if (value.type !== 'MemberExpression') {
-    return value
-  }
-
-  const tokenName = value.object?.name
-  if (!tokenName || !['space', 'radius'].includes(tokenName)) {
-    return value
-  }
-
-  if (value.computed && value.property?.type === 'StringLiteral') {
-    const propertyValue = value.property.value
-    if (/^\d+$/.test(propertyValue)) {
-      return j.numericLiteral(Number.parseInt(propertyValue, 10))
-    }
-  }
-
-  return value
 }
 
 /**
@@ -371,9 +363,7 @@ export function categorizeProps(attributes, mappings, j) {
               for (const prop of element.properties) {
                 if (prop.type === 'Property' && prop.key.type === 'Identifier') {
                   const styleName = prop.key.name
-                  // Apply transformations: space['4'] -> 4, "4" -> {4}
-                  let value = convertNumericToken(prop.value, j)
-                  value = convertNumericString(value, j)
+                  const value = normalizeValue(prop.value, j)
 
                   const shouldExtract = shouldExtractToStyleSheet(value, false)
                   processStyleProp(
@@ -398,9 +388,7 @@ export function categorizeProps(attributes, mappings, j) {
           for (const prop of expr.properties) {
             if (prop.type === 'Property' && prop.key.type === 'Identifier') {
               const styleName = prop.key.name
-              // Apply transformations: space['4'] -> 4, "4" -> {4}
-              let value = convertNumericToken(prop.value, j)
-              value = convertNumericString(value, j)
+              const value = normalizeValue(prop.value, j)
 
               const shouldExtract = shouldExtractToStyleSheet(value, false)
               processStyleProp(
@@ -443,9 +431,6 @@ export function categorizeProps(attributes, mappings, j) {
       }
 
       if (value) {
-        // Apply auto-transform first
-        value = convertNumericString(value, j)
-
         // Use priority chain transformation (valueMap -> tokenHelper -> pass-through)
         const result = transformProp(value, config, j)
         const transformed = result.value
