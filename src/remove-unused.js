@@ -125,7 +125,7 @@ function findUsedIdentifiers(root, j) {
     }
 
     // Skip property keys in object literals (not usages) - UNLESS it's a shorthand property
-    if (parent.type === 'Property' && path.name === 'key') {
+    if ((parent.type === 'Property' || parent.type === 'ObjectProperty') && path.name === 'key') {
       if (!parent.computed && !parent.shorthand) {
         return
       }
