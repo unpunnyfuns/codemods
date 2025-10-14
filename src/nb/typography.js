@@ -67,7 +67,7 @@ function main(fileInfo, api, options = {}) {
     source: { value: sourceImport },
   })
 
-  if (!hasNamedImport(imports, 'Typography')) {
+  if (!imports.length || !hasNamedImport(imports, 'Typography')) {
     return fileInfo.source
   }
 

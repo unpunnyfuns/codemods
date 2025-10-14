@@ -44,6 +44,7 @@ const styleProps = {
 const transformProps = {
   isChecked: 'value',
   onToggle: 'onValueChange',
+  onChange: 'onValueChange',
   isDisabled: 'disabled',
 }
 
