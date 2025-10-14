@@ -93,6 +93,7 @@ function main(fileInfo, api, options = {}) {
   }
 
   const styles = createStyleContext()
+  const warnings = []
 
   boxElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -161,11 +162,29 @@ function main(fileInfo, api, options = {}) {
     path.node.name = targetName
   })
 
+  // Check for BoxProps type references that cannot be auto-fixed
+  root.find(j.Identifier, { name: 'BoxProps' }).forEach((path) => {
+    const parent = path.parent.node
+    // Skip if it's the import specifier itself
+    if (parent.type === 'ImportSpecifier') return
+    // Found type reference usage
+    warnings.push(`BoxProps type reference found - manual migration required (${fileInfo.path})`)
+  })
+
   // Always remove Box import from source
   removeNamedImport(imports, 'Box', j)
 
   // Add View import from react-native
   addNamedImport(root, targetImport, targetName, j)
+
+  // Output warnings if any
+  if (warnings.length > 0) {
+    console.warn('⚠️  Box migration warnings:')
+    const uniqueWarnings = [...new Set(warnings)]
+    for (const w of uniqueWarnings) {
+      console.warn(`   ${w}`)
+    }
+  }
 
   styles.applyToRoot(root, { wrap: false, tokenImport }, j)
 
