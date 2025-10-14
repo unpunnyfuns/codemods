@@ -20,6 +20,33 @@ import {
 } from './mappings/nordlys-props.js'
 
 /**
+ * Style properties not supported on React Native View
+ * These are web CSS properties that don't exist in React Native
+ */
+const INVALID_VIEW_STYLE_PROPS = [
+  'justifyItems', // CSS Grid property not in RN
+  'textAlign', // Text property, should be on Text component
+  'textAlignVertical',
+  'textDecorationLine',
+  'textDecorationStyle',
+  'textDecorationColor',
+  'textShadowColor',
+  'textShadowOffset',
+  'textShadowRadius',
+  'textTransform',
+  'fontFamily',
+  'fontSize',
+  'fontStyle',
+  'fontWeight',
+  'fontVariant',
+  'letterSpacing',
+  'lineHeight',
+  'includeFontPadding',
+  'color',
+  'tintColor',
+]
+
+/**
  * Validation constants from Nordlys model
  * Re-exported for backward compatibility with existing tests/code
  */
@@ -64,8 +91,8 @@ export function validateTokenValue(value, validTokens, allowNumeric = false) {
  * Returns { isValid: boolean, reason?: string }
  */
 function validateStyleValue(styleName, value) {
-  // textAlign and justifyItems are never valid (React Native doesn't support them on View)
-  if (styleName === 'textAlign' || styleName === 'justifyItems') {
+  // Check if prop is unsupported on React Native View
+  if (INVALID_VIEW_STYLE_PROPS.includes(styleName)) {
     const displayValue = value.type === 'StringLiteral' ? `"${value.value}"` : '{...}'
     return { isValid: false, reason: displayValue }
   }

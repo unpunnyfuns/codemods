@@ -323,30 +323,6 @@ export const DIMENSION_VALUES = {
   keywords: ['auto'],
 }
 
-/**
- * Props Not Supported on React Native View (but exist in web CSS)
- */
-export const UNSUPPORTED_ON_VIEW = [
-  'textAlign',
-  'textAlignVertical',
-  'textDecorationLine',
-  'textDecorationStyle',
-  'textDecorationColor',
-  'textShadowColor',
-  'textShadowOffset',
-  'textShadowRadius',
-  'textTransform',
-  'fontFamily',
-  'fontSize',
-  'fontStyle',
-  'fontWeight',
-  'fontVariant',
-  'letterSpacing',
-  'lineHeight',
-  'includeFontPadding',
-  'color',
-  'tintColor',
-]
 
 /**
  * React Native Text Style Props
