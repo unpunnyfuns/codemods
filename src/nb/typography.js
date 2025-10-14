@@ -94,10 +94,16 @@ function main(fileInfo, api, options = {}) {
       hasManualFailures,
     } = categorizeProps(attributes, typographyPropConfig, j)
 
-    // Skip transformation if manual intervention required
-    if (hasManualFailures) {
+    // Skip transformation if manual intervention required (unless --unsafe)
+    if (hasManualFailures && !options.unsafe) {
       console.warn(`⚠️  Typography element skipped - manual fixes required (${fileInfo.path})`)
       return
+    }
+
+    if (hasManualFailures && options.unsafe) {
+      console.warn(
+        `⚠️  Typography element: unsafe mode - proceeding with partial migration (${fileInfo.path})`,
+      )
     }
 
     styles.addHelpers(newHelpers)

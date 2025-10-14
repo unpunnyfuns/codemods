@@ -1,0 +1,70 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`remove-unused > preserves used identifiers 1`] = `
+"import { Button, Text } from 'native-base'
+import { useState } from 'react'
+
+export function Component() {
+  const [count, setCount] = useState(0)
+  const doubled = count * 2
+
+  return (
+    <Button onPress={() => setCount(count + 1)}>
+      <Text>
+        Count: {count}, Doubled: {doubled}
+      </Text>
+    </Button>
+  )
+}
+"
+`;
+
+exports[`remove-unused > removes both imports and variables 1`] = `
+"import { Text } from 'native-base';
+import { useState } from 'react';
+
+export function Component() {
+  const [value, setValue] = useState('')
+  const config = { enabled: true }
+
+  return (
+    <Text>
+      Value: {value}
+      Config: {config.enabled ? 'on' : 'off'}
+    </Text>
+  )
+}
+"
+`;
+
+exports[`remove-unused > removes unused imports 1`] = `
+"import { Text } from 'native-base';
+import { useEffect, useState } from 'react';
+
+export function Example() {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    console.log(count)
+  }, [count])
+
+  return <Text>Count: {count}</Text>
+}
+"
+`;
+
+exports[`remove-unused > removes unused variables 1`] = `
+"export function calculate() {
+  const result = 42
+  const temp = 100
+
+  return result + temp
+}
+
+export function multipleDeclarations() {
+  const a = 1, c = 3;
+
+  return a + c
+}
+"
+`;

@@ -114,10 +114,16 @@ function main(fileInfo, api, options = {}) {
       hasManualFailures,
     } = categorizeProps(attributes, inputProps, j)
 
-    // Skip transformation if manual intervention required
-    if (hasManualFailures) {
+    // Skip transformation if manual intervention required (unless --unsafe)
+    if (hasManualFailures && !options.unsafe) {
       console.warn(`⚠️  Input element skipped - manual fixes required (${fileInfo.path})`)
       return
+    }
+
+    if (hasManualFailures && options.unsafe) {
+      console.warn(
+        `⚠️  Input element: unsafe mode - proceeding with partial migration (${fileInfo.path})`,
+      )
     }
 
     styles.addHelpers(newHelpers)
