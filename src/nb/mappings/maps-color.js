@@ -32,9 +32,11 @@ export const COLOR_PATH_REMAPPING = {
 
   // Basic colors
   gray: 'core.neutral.HN3',
+  account: 'brand.primary',
 
   // Background semantic colors
   'background.info': 'feedback.info.subtle',
+  'background.error': 'feedback.error.subtle',
 
   // Input colors
   'input.backgroundDefault': 'background.secondary',

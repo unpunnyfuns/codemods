@@ -64,8 +64,8 @@ export function validateTokenValue(value, validTokens, allowNumeric = false) {
  * Returns { isValid: boolean, reason?: string }
  */
 function validateStyleValue(styleName, value) {
-  // textAlign is never valid (React Native doesn't support it on View)
-  if (styleName === 'textAlign') {
+  // textAlign and justifyItems are never valid (React Native doesn't support them on View)
+  if (styleName === 'textAlign' || styleName === 'justifyItems') {
     const displayValue = value.type === 'StringLiteral' ? `"${value.value}"` : '{...}'
     return { isValid: false, reason: displayValue }
   }
