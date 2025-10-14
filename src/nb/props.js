@@ -10,7 +10,7 @@
 import { buildTokenPath } from '@puns/shiftkit'
 import { transformStringsInExpression } from '@puns/shiftkit/jsx'
 import { shouldExtractToStyleSheet } from '@puns/shiftkit/rn'
-import { getNordlysColorPath } from './mappings/maps-color.js'
+import { getNordlysColorPath, isLiteralColor } from './mappings/maps-color.js'
 import { convertRadiusToken, convertSpaceToken } from './mappings/maps-tokens.js'
 import {
   DIMENSION_PROPS,
@@ -256,6 +256,11 @@ export function transformPropValue(value, config, j) {
         if (/^\d+$/.test(tokenPath)) {
           const numericValue = Number.parseInt(tokenPath, 10)
           return { value: j.numericLiteral(numericValue), isTokenHelper: false, tokenHelper: null }
+        }
+
+        // Special case: literal colors should remain as string literals
+        if (tokenHelper === 'color' && isLiteralColor(tokenPath)) {
+          return { value: j.stringLiteral(tokenPath), isTokenHelper: false, tokenHelper: null }
         }
 
         // Apply token-specific conversions

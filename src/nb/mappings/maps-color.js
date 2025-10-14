@@ -30,6 +30,12 @@ export const COLOR_PATH_REMAPPING = {
   'white.0': 'white.HW1',
   'black.900': 'core.neutral.HN1',
 
+  // Basic colors
+  gray: 'core.neutral.HN3',
+
+  // Background semantic colors
+  'background.info': 'feedback.info.subtle',
+
   // Input colors
   'input.backgroundDefault': 'background.secondary',
   'input.backgroundFocus': 'background.secondary',
@@ -42,8 +48,13 @@ export const COLOR_PATH_REMAPPING = {
 }
 
 /**
+ * Special color values that should not use the color token helper
+ */
+export const LITERAL_COLORS = ['transparent']
+
+/**
  * Get the Nordlys color path for a NativeBase color path
- * Returns null if no mapping exists (pass through to token helper)
+ * Returns the mapped color path, or null for special literal colors
  */
 export function getNordlysColorPath(nbColorPath) {
   // Check if it needs remapping
@@ -53,4 +64,11 @@ export function getNordlysColorPath(nbColorPath) {
 
   // Otherwise return as-is (will be handled by token helper)
   return nbColorPath
+}
+
+/**
+ * Check if a color value should be a literal string instead of using color token helper
+ */
+export function isLiteralColor(colorValue) {
+  return LITERAL_COLORS.includes(colorValue)
 }

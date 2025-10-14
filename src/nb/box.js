@@ -151,7 +151,23 @@ function main(fileInfo, api, options = {}) {
     addElementComment(path, droppedProps, invalidStyles, j)
   })
 
-  removeNamedImport(imports, 'Box', j)
+  // Check if Box is used in non-JSX contexts (e.g., withAnimated(Box), type annotations)
+  const boxIdentifierUsages = root.find(j.Identifier, { name: 'Box' })
+  let hasNonJSXUsage = false
+  boxIdentifierUsages.forEach((path) => {
+    const parent = path.parent.node
+    // Skip import specifiers and JSX element names
+    if (parent.type === 'ImportSpecifier') return
+    if (parent.type === 'JSXOpeningElement' || parent.type === 'JSXClosingElement') return
+    // Found non-JSX usage (e.g., in CallExpression like withAnimated(Box))
+    hasNonJSXUsage = true
+  })
+
+  // Only remove Box import if it's not used elsewhere
+  if (!hasNonJSXUsage) {
+    removeNamedImport(imports, 'Box', j)
+  }
+
   addNamedImport(root, targetImport, targetName, j)
 
   styles.applyToRoot(root, { wrap: false, tokenImport }, j)

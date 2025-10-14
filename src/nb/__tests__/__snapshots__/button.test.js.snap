@@ -28,6 +28,7 @@ export function MyComponent() {
       </View>
       <Button
         onPress={() => {}}
+        isDisabled
         size={"lg"}
         icon={undefined}
         text={'Simple text'}

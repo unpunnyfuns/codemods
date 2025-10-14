@@ -203,7 +203,23 @@ function main(fileInfo, api, options = {}) {
       addElementComment(path, droppedProps, invalidStyles, j)
     })
 
-    removeNamedImport(imports, componentName, j)
+    // Check if component is used in non-JSX contexts (e.g., withAnimated(HStack))
+    const componentIdentifierUsages = root.find(j.Identifier, { name: componentName })
+    let hasNonJSXUsage = false
+    componentIdentifierUsages.forEach((path) => {
+      const parent = path.parent.node
+      // Skip import specifiers and JSX element names
+      if (parent.type === 'ImportSpecifier') return
+      if (parent.type === 'JSXOpeningElement' || parent.type === 'JSXClosingElement') return
+      // Found non-JSX usage (e.g., in CallExpression like withAnimated(HStack))
+      hasNonJSXUsage = true
+    })
+
+    // Only remove import if it's not used elsewhere
+    if (!hasNonJSXUsage) {
+      removeNamedImport(imports, componentName, j)
+    }
+
     transformed = true
   }
 
