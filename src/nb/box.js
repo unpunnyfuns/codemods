@@ -151,23 +151,20 @@ function main(fileInfo, api, options = {}) {
     addElementComment(path, droppedProps, invalidStyles, j)
   })
 
-  // Check if Box is used in non-JSX contexts (e.g., withAnimated(Box), type annotations)
-  const boxIdentifierUsages = root.find(j.Identifier, { name: 'Box' })
-  let hasNonJSXUsage = false
-  boxIdentifierUsages.forEach((path) => {
+  // Replace Box identifier references with View (e.g., withAnimated(Box) -> withAnimated(View))
+  root.find(j.Identifier, { name: 'Box' }).forEach((path) => {
     const parent = path.parent.node
-    // Skip import specifiers and JSX element names
+    // Skip import specifiers and JSX element names (already handled)
     if (parent.type === 'ImportSpecifier') return
     if (parent.type === 'JSXOpeningElement' || parent.type === 'JSXClosingElement') return
-    // Found non-JSX usage (e.g., in CallExpression like withAnimated(Box))
-    hasNonJSXUsage = true
+    // Replace identifier: withAnimated(Box) -> withAnimated(View)
+    path.node.name = targetName
   })
 
-  // Only remove Box import if it's not used elsewhere
-  if (!hasNonJSXUsage) {
-    removeNamedImport(imports, 'Box', j)
-  }
+  // Always remove Box import from source
+  removeNamedImport(imports, 'Box', j)
 
+  // Add View import from react-native
   addNamedImport(root, targetImport, targetName, j)
 
   styles.applyToRoot(root, { wrap: false, tokenImport }, j)
