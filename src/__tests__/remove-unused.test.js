@@ -31,4 +31,9 @@ describe('remove-unused', () => {
     const output = testTransform('remove-unused', 'remove-unused/generics', 'tsx')
     expect(output).toMatchSnapshot()
   })
+
+  it('preserves advanced TypeScript type usage', () => {
+    const output = testTransform('remove-unused', 'remove-unused/typescript-advanced', 'tsx')
+    expect(output).toMatchSnapshot()
+  })
 })

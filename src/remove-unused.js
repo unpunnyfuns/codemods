@@ -4,6 +4,95 @@
 import { removeNamedImport } from '@puns/shiftkit'
 
 /**
+ * Recursively extract all type names from a TypeScript type node
+ */
+function extractTypeNames(typeNode, used) {
+  if (!typeNode) return
+
+  // TSTypeReference: the main type node
+  if (typeNode.type === 'TSTypeReference' && typeNode.typeName) {
+    if (typeNode.typeName.type === 'Identifier') {
+      used.add(typeNode.typeName.name)
+    }
+    // Handle qualified names like Screens.PAYMENT_DETAILS
+    if (typeNode.typeName.type === 'TSQualifiedName') {
+      let current = typeNode.typeName
+      while (current.type === 'TSQualifiedName') {
+        if (current.right && current.right.type === 'Identifier') {
+          used.add(current.right.name)
+        }
+        current = current.left
+      }
+      if (current && current.type === 'Identifier') {
+        used.add(current.name)
+      }
+    }
+
+    // Recursively process type parameters (nested generics)
+    if (typeNode.typeParameters && typeNode.typeParameters.params) {
+      for (const param of typeNode.typeParameters.params) {
+        extractTypeNames(param, used)
+      }
+    }
+  }
+
+  // Union types: Type1 | Type2
+  if (typeNode.type === 'TSUnionType' && typeNode.types) {
+    for (const t of typeNode.types) {
+      extractTypeNames(t, used)
+    }
+  }
+
+  // Intersection types: Type1 & Type2
+  if (typeNode.type === 'TSIntersectionType' && typeNode.types) {
+    for (const t of typeNode.types) {
+      extractTypeNames(t, used)
+    }
+  }
+
+  // Array types: Type[]
+  if (typeNode.type === 'TSArrayType' && typeNode.elementType) {
+    extractTypeNames(typeNode.elementType, used)
+  }
+
+  // Tuple types: [Type1, Type2]
+  if (typeNode.type === 'TSTupleType' && typeNode.elementTypes) {
+    for (const t of typeNode.elementTypes) {
+      extractTypeNames(t, used)
+    }
+  }
+
+  // Indexed access types: Props['variant']
+  if (typeNode.type === 'TSIndexedAccessType') {
+    if (typeNode.objectType) {
+      extractTypeNames(typeNode.objectType, used)
+    }
+    if (typeNode.indexType) {
+      extractTypeNames(typeNode.indexType, used)
+    }
+  }
+
+  // Type query: typeof Type
+  if (typeNode.type === 'TSTypeQuery' && typeNode.exprName) {
+    if (typeNode.exprName.type === 'Identifier') {
+      used.add(typeNode.exprName.name)
+    }
+    if (typeNode.exprName.type === 'TSQualifiedName') {
+      let current = typeNode.exprName
+      while (current.type === 'TSQualifiedName') {
+        if (current.right && current.right.type === 'Identifier') {
+          used.add(current.right.name)
+        }
+        current = current.left
+      }
+      if (current && current.type === 'Identifier') {
+        used.add(current.name)
+      }
+    }
+  }
+}
+
+/**
  * Find all identifier references in the AST (excluding imports)
  * Includes both runtime and TypeScript type usage
  */
@@ -61,84 +150,39 @@ function findUsedIdentifiers(root, j) {
     used.add(path.node.name)
   })
 
-  // Find TypeScript type references
-  // TSTypeReference: type annotations like `: FC` or `<FC>`
-  root.find(j.TSTypeReference).forEach((path) => {
-    if (path.node.typeName.type === 'Identifier') {
-      used.add(path.node.typeName.name)
-    }
-    // Handle qualified names like `React.FC` or `Screens.UPDATE_PHONE_NUMBER`
-    if (path.node.typeName.type === 'TSQualifiedName') {
-      let current = path.node.typeName
-      while (current.type === 'TSQualifiedName') {
-        if (current.right.type === 'Identifier') {
-          used.add(current.right.name)
-        }
-        current = current.left
-      }
-      if (current.type === 'Identifier') {
-        used.add(current.name)
-      }
+  // Find TypeScript type annotations on variables, parameters, etc.
+  // These include type annotations like `: Type`, return types, etc.
+  root.find(j.TSTypeAnnotation).forEach((path) => {
+    if (path.node.typeAnnotation) {
+      extractTypeNames(path.node.typeAnnotation, used)
     }
   })
 
-  // TSTypeQuery: typeof expressions in types
-  root.find(j.TSTypeQuery).forEach((path) => {
-    if (path.node.exprName.type === 'Identifier') {
-      used.add(path.node.exprName.name)
+  // Type alias declarations: type Foo = Bar
+  root.find(j.TSTypeAliasDeclaration).forEach((path) => {
+    if (path.node.typeAnnotation) {
+      extractTypeNames(path.node.typeAnnotation, used)
     }
   })
 
   // TypeScript type parameters in generics: useForm<Type>(), new Array<Type>(), etc.
   // These are attached to CallExpression and NewExpression nodes
+  // Use extractTypeNames to recursively handle nested generics
   root.find(j.CallExpression).forEach((path) => {
     const typeParams = path.node.typeParameters || path.node.typeArguments
     if (typeParams && typeParams.params) {
-      typeParams.params.forEach((param) => {
-        if (param.type === 'TSTypeReference' && param.typeName) {
-          if (param.typeName.type === 'Identifier') {
-            used.add(param.typeName.name)
-          }
-          // Handle qualified names in generics like Screens.UPDATE_PHONE_NUMBER
-          if (param.typeName.type === 'TSQualifiedName') {
-            let current = param.typeName
-            while (current.type === 'TSQualifiedName') {
-              if (current.right && current.right.type === 'Identifier') {
-                used.add(current.right.name)
-              }
-              current = current.left
-            }
-            if (current && current.type === 'Identifier') {
-              used.add(current.name)
-            }
-          }
-        }
-      })
+      for (const param of typeParams.params) {
+        extractTypeNames(param, used)
+      }
     }
   })
 
   root.find(j.NewExpression).forEach((path) => {
     const typeParams = path.node.typeParameters || path.node.typeArguments
     if (typeParams && typeParams.params) {
-      typeParams.params.forEach((param) => {
-        if (param.type === 'TSTypeReference' && param.typeName) {
-          if (param.typeName.type === 'Identifier') {
-            used.add(param.typeName.name)
-          }
-          if (param.typeName.type === 'TSQualifiedName') {
-            let current = param.typeName
-            while (current.type === 'TSQualifiedName') {
-              if (current.right && current.right.type === 'Identifier') {
-                used.add(current.right.name)
-              }
-              current = current.left
-            }
-            if (current && current.type === 'Identifier') {
-              used.add(current.name)
-            }
-          }
-        }
-      })
+      for (const param of typeParams.params) {
+        extractTypeNames(param, used)
+      }
     }
   })
 

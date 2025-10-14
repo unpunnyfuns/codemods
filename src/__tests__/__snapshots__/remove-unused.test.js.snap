@@ -15,10 +15,33 @@ const styles = StyleSheet.create({
 "
 `;
 
+exports[`remove-unused > preserves advanced TypeScript type usage 1`] = `
+"import { useState } from 'react';
+import {
+  type EncryptionDetailsResponseProps,
+  type PreventSecondApplicationSheetProps,
+  type RootStack,
+  type SharedValue,
+} from './app-types';
+import type { ResponseType } from './types'
+
+export function Component() {
+  const [data, setData] = useState<ResponseType<EncryptionDetailsResponseProps>>()
+  const [value, setValue] = useState<SharedValue<number> | null>(null)
+
+  type NavRef = typeof RootStack
+
+  type Variant = PreventSecondApplicationSheetProps['variant']
+
+  return null
+}
+"
+`;
+
 exports[`remove-unused > preserves types used in generics 1`] = `
-"import { useForm } from 'react-hook-form'
-import { PhoneNumberFormValues, Screens } from '@hb-frontend/types'
-import { useRoute } from '@hb-frontend/app/src/navigation/useRoute'
+"import { useRoute } from '@hb-frontend/app/src/navigation/useRoute'
+import type { PhoneNumberFormValues, Screens } from '@hb-frontend/types'
+import { useForm } from 'react-hook-form'
 
 export function Component() {
   const form = useForm<PhoneNumberFormValues>()
