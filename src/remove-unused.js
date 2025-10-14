@@ -92,6 +92,15 @@ function extractTypeNames(typeNode, used) {
       }
     }
   }
+
+  // Type literals: { prop: Type }
+  if (typeNode.type === 'TSTypeLiteral' && typeNode.members) {
+    for (const member of typeNode.members) {
+      if (member.type === 'TSPropertySignature' && member.typeAnnotation) {
+        extractTypeNames(member.typeAnnotation.typeAnnotation, used)
+      }
+    }
+  }
 }
 
 /**

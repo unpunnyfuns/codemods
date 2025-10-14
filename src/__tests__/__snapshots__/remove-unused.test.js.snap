@@ -38,6 +38,18 @@ export function Component() {
 "
 `;
 
+exports[`remove-unused > preserves types in type literals 1`] = `
+"import type { PreventSecondApplicationSheetProps } from './types'
+
+it.each<{ variant: PreventSecondApplicationSheetProps['variant'] }>([
+  { variant: 'in_progress' },
+  { variant: 'waiting' },
+])('renders $variant sheet info', ({ variant }) => {
+  console.log(variant)
+})
+"
+`;
+
 exports[`remove-unused > preserves types used in generics 1`] = `
 "import { useRoute } from '@hb-frontend/app/src/navigation/useRoute'
 import type { PhoneNumberFormValues, Screens } from '@hb-frontend/types'

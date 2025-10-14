@@ -36,4 +36,9 @@ describe('remove-unused', () => {
     const output = testTransform('remove-unused', 'remove-unused/typescript-advanced', 'tsx')
     expect(output).toMatchSnapshot()
   })
+
+  it('preserves types in type literals', () => {
+    const output = testTransform('remove-unused', 'remove-unused/type-literal', 'tsx')
+    expect(output).toMatchSnapshot()
+  })
 })
