@@ -78,6 +78,7 @@ function main(fileInfo, api, options = {}) {
   }
 
   const styles = createStyleContext()
+  let migrated = 0
   const warnings = []
 
   typographyElements.forEach((path, index) => {
@@ -143,6 +144,7 @@ function main(fileInfo, api, options = {}) {
     path.node.openingElement.attributes = typographyAttributes
 
     addElementComment(path, droppedProps, invalidStyles, j)
+    migrated++
 
     const hasStyleProps = Object.keys(styleProps).length > 0
 
@@ -164,6 +166,11 @@ function main(fileInfo, api, options = {}) {
     for (const w of warnings) {
       console.warn(`   ${w}`)
     }
+  }
+
+  // Only change imports if we migrated at least one element
+  if (migrated === 0) {
+    return fileInfo.source
   }
 
   removeNamedImport(imports, 'Typography', j)

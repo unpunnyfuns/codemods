@@ -92,6 +92,7 @@ function main(fileInfo, api, options = {}) {
 
   const warnings = []
   const styles = createStyleContext()
+  let migrated = 0
 
   inputElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -129,6 +130,7 @@ function main(fileInfo, api, options = {}) {
     styles.addHelpers(newHelpers)
 
     addElementComment(path, droppedProps, invalidStyles, j)
+    migrated++
 
     const allowList = [...directPropsList, ...complexProps].filter(
       (prop) => !propsToRemove.includes(prop),
@@ -171,6 +173,11 @@ function main(fileInfo, api, options = {}) {
     for (const w of warnings) {
       console.warn(`   ${w}`)
     }
+  }
+
+  // Only change imports if we migrated at least one element
+  if (migrated === 0) {
+    return fileInfo.source
   }
 
   removeNamedImport(imports, 'Input', j)

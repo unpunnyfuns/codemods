@@ -94,6 +94,7 @@ function main(fileInfo, api, options = {}) {
 
   const styles = createStyleContext()
   const warnings = []
+  let migrated = 0
 
   boxElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -111,9 +112,15 @@ function main(fileInfo, api, options = {}) {
     } = categorizeProps(attributes, boxProps, j)
 
     // Skip transformation if manual intervention required
-    if (hasManualFailures) {
+    if (hasManualFailures && !options.unsafe) {
       warnings.push(`Box element skipped - manual fixes required (${fileInfo.path})`)
       return
+    }
+
+    if (hasManualFailures && options.unsafe) {
+      warnings.push(
+        `Box element: unsafe mode - proceeding with partial migration (${fileInfo.path})`,
+      )
     }
 
     styles.addHelpers(newHelpers)
@@ -157,7 +164,20 @@ function main(fileInfo, api, options = {}) {
     path.node.openingElement.attributes = viewAttributes
 
     addElementComment(path, droppedProps, invalidStyles, j)
+    migrated++
   })
+
+  // If nothing was migrated, return original source
+  if (migrated === 0) {
+    if (warnings.length > 0) {
+      console.warn('⚠️  Box migration warnings:')
+      const uniqueWarnings = [...new Set(warnings)]
+      for (const w of uniqueWarnings) {
+        console.warn(`   ${w}`)
+      }
+    }
+    return fileInfo.source
+  }
 
   // Replace Box identifier references with View (e.g., withAnimated(Box) -> withAnimated(View))
   root.find(j.Identifier, { name: 'Box' }).forEach((path) => {

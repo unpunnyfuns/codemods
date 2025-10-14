@@ -95,6 +95,7 @@ function main(fileInfo, api, options = {}) {
 
   const warnings = []
   const styles = createStyleContext()
+  let migrated = 0
 
   avatarElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -166,6 +167,7 @@ function main(fileInfo, api, options = {}) {
     path.node.openingElement.attributes = avatarAttributes
 
     addElementComment(path, droppedProps, invalidStyles, j)
+    migrated++
 
     const hasStyleProps = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
 
@@ -190,6 +192,11 @@ function main(fileInfo, api, options = {}) {
     for (const w of warnings) {
       console.warn(`   ${w}`)
     }
+  }
+
+  // Only change imports if we migrated at least one element
+  if (migrated === 0) {
+    return fileInfo.source
   }
 
   removeNamedImport(imports, 'Avatar', j)

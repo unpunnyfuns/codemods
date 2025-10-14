@@ -105,6 +105,7 @@ function main(fileInfo, api, options = {}) {
   }
 
   const styles = createStyleContext()
+  let migrated = 0
 
   pressableElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -175,7 +176,13 @@ function main(fileInfo, api, options = {}) {
     path.node.openingElement.attributes = pressableAttributes
 
     addElementComment(path, droppedProps, invalidStyles, j)
+    migrated++
   })
+
+  // Only change imports if we migrated at least one element
+  if (migrated === 0) {
+    return fileInfo.source
+  }
 
   removeNamedImport(imports, 'Pressable', j)
   addNamedImport(root, targetImport, targetName, j)

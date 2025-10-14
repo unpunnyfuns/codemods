@@ -89,6 +89,7 @@ function main(fileInfo, api, options = {}) {
   }
 
   const styles = createStyleContext()
+  let migrated = 0
 
   switchElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
@@ -132,6 +133,7 @@ function main(fileInfo, api, options = {}) {
     path.node.openingElement.attributes = switchAttributes
 
     addElementComment(path, droppedProps, invalidStyles, j)
+    migrated++
 
     const labelElement = createMemberElement('Switch', 'Label', [], children, j)
 
@@ -174,6 +176,11 @@ function main(fileInfo, api, options = {}) {
       j(path).replaceWith(viewElement)
     }
   })
+
+  // Only change imports if we migrated at least one element
+  if (migrated === 0) {
+    return fileInfo.source
+  }
 
   removeNamedImport(imports, 'Switch', j)
   addNamedImport(root, targetImport, targetName, j)
