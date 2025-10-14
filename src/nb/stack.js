@@ -142,7 +142,16 @@ function main(fileInfo, api, options = {}) {
         droppedProps,
         invalidStyles,
         existingStyleReferences,
+        hasManualFailures,
       } = categorizeProps(attributes, stackProps, j)
+
+      // Skip transformation if manual intervention required
+      if (hasManualFailures) {
+        console.warn(
+          `⚠️  ${componentName} element skipped - manual fixes required (${fileInfo.path})`,
+        )
+        return
+      }
 
       styles.addHelpers(newHelpers)
 
@@ -207,8 +216,12 @@ function main(fileInfo, api, options = {}) {
     root.find(j.Identifier, { name: componentName }).forEach((path) => {
       const parent = path.parent.node
       // Skip import specifiers and JSX element names (already handled)
-      if (parent.type === 'ImportSpecifier') return
-      if (parent.type === 'JSXOpeningElement' || parent.type === 'JSXClosingElement') return
+      if (parent.type === 'ImportSpecifier') {
+        return
+      }
+      if (parent.type === 'JSXOpeningElement' || parent.type === 'JSXClosingElement') {
+        return
+      }
       // Replace identifier: withAnimated(HStack) -> withAnimated(Stack)
       path.node.name = targetName
     })

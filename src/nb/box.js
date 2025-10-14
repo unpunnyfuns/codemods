@@ -107,7 +107,14 @@ function main(fileInfo, api, options = {}) {
       droppedProps,
       invalidStyles,
       existingStyleReferences,
+      hasManualFailures,
     } = categorizeProps(attributes, boxProps, j)
+
+    // Skip transformation if manual intervention required
+    if (hasManualFailures) {
+      warnings.push(`Box element skipped - manual fixes required (${fileInfo.path})`)
+      return
+    }
 
     styles.addHelpers(newHelpers)
 
@@ -156,8 +163,12 @@ function main(fileInfo, api, options = {}) {
   root.find(j.Identifier, { name: 'Box' }).forEach((path) => {
     const parent = path.parent.node
     // Skip import specifiers and JSX element names (already handled)
-    if (parent.type === 'ImportSpecifier') return
-    if (parent.type === 'JSXOpeningElement' || parent.type === 'JSXClosingElement') return
+    if (parent.type === 'ImportSpecifier') {
+      return
+    }
+    if (parent.type === 'JSXOpeningElement' || parent.type === 'JSXClosingElement') {
+      return
+    }
     // Replace identifier: withAnimated(Box) -> withAnimated(View)
     path.node.name = targetName
   })
@@ -166,7 +177,9 @@ function main(fileInfo, api, options = {}) {
   root.find(j.Identifier, { name: 'BoxProps' }).forEach((path) => {
     const parent = path.parent.node
     // Skip if it's the import specifier itself
-    if (parent.type === 'ImportSpecifier') return
+    if (parent.type === 'ImportSpecifier') {
+      return
+    }
     // Found type reference usage
     warnings.push(`BoxProps type reference found - manual migration required (${fileInfo.path})`)
   })

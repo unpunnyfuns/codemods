@@ -2,7 +2,8 @@
  * NativeBase-specific prop categorization and transformation utilities
  * Handles prop mapping, StyleSheet extraction, and NativeBase->Nordlys token remapping
  *
- * Validation derives from:
+ * Validation derives from three-model architecture:
+ * - react-native-props.js: Platform model (what React Native components support)
  * - nordlys-props.js: Target model (what's valid in Nordlys output)
  * - nativebase-styled-props.js: Source model (NativeBase props documentation)
  */
@@ -12,39 +13,8 @@ import { transformStringsInExpression } from '@puns/shiftkit/jsx'
 import { shouldExtractToStyleSheet } from '@puns/shiftkit/rn'
 import { getNordlysColorPath, isLiteralColor } from './mappings/maps-color.js'
 import { convertRadiusToken, convertSpaceToken } from './mappings/maps-tokens.js'
-import {
-  DIMENSION_PROPS,
-  NUMERIC_ONLY_PROPS,
-  RADIUS_TOKENS,
-  SPACE_TOKENS,
-} from './mappings/nordlys-props.js'
-
-/**
- * Style properties not supported on React Native View
- * These are web CSS properties that don't exist in React Native
- */
-const INVALID_VIEW_STYLE_PROPS = [
-  'justifyItems', // CSS Grid property not in RN
-  'textAlign', // Text property, should be on Text component
-  'textAlignVertical',
-  'textDecorationLine',
-  'textDecorationStyle',
-  'textDecorationColor',
-  'textShadowColor',
-  'textShadowOffset',
-  'textShadowRadius',
-  'textTransform',
-  'fontFamily',
-  'fontSize',
-  'fontStyle',
-  'fontWeight',
-  'fontVariant',
-  'letterSpacing',
-  'lineHeight',
-  'includeFontPadding',
-  'color',
-  'tintColor',
-]
+import { DIMENSION_PROPS, RADIUS_TOKENS, SPACE_TOKENS } from './mappings/nordlys-props.js'
+import { VIEW_STYLE_PROPS } from './mappings/react-native-props.js'
 
 /**
  * Validation constants from Nordlys model
@@ -53,7 +23,21 @@ const INVALID_VIEW_STYLE_PROPS = [
 export const validSpaceTokens = SPACE_TOKENS
 export const validRadiusTokens = RADIUS_TOKENS
 const dimensionProps = DIMENSION_PROPS
-const numericProps = NUMERIC_ONLY_PROPS
+
+/**
+ * Auto-transform safe numeric string values to numeric literals
+ * Converts "4" → {4}, "1.5" → {1.5}
+ */
+function autoTransformNumericString(value, j) {
+  if (value.type === 'StringLiteral' || value.type === 'Literal') {
+    const val = String(value.value)
+    // Pure numeric strings (no units, no tokens)
+    if (/^\d+(\.\d+)?$/.test(val)) {
+      return j.numericLiteral(Number.parseFloat(val))
+    }
+  }
+  return value
+}
 
 /**
  * Validate a value against a list of valid token names
@@ -88,13 +72,13 @@ export function validateTokenValue(value, validTokens, allowNumeric = false) {
 
 /**
  * Check if a style value is valid for the given style property
- * Returns { isValid: boolean, reason?: string }
+ * Returns { isValid: boolean, reason?: string, category?: string }
  */
 function validateStyleValue(styleName, value) {
-  // Check if prop is unsupported on React Native View
-  if (INVALID_VIEW_STYLE_PROPS.includes(styleName)) {
+  // Check if prop is valid on React Native View
+  if (!VIEW_STYLE_PROPS[styleName]) {
     const displayValue = value.type === 'StringLiteral' ? `"${value.value}"` : '{...}'
-    return { isValid: false, reason: displayValue }
+    return { isValid: false, reason: displayValue, category: 'manual' }
   }
 
   if (value.type === 'StringLiteral' || value.type === 'Literal') {
@@ -105,19 +89,14 @@ function validateStyleValue(styleName, value) {
 
     const val = String(value.value)
 
-    // Flag "0", "1", "2px", "230px" but allow percentages
-    if (/^\d+px$/.test(val) || (/^\d+$/.test(val) && !val.endsWith('%'))) {
-      return { isValid: false, reason: `"${val}"` }
+    // Flag values with units - these need manual intervention
+    if (/^\d+px$/.test(val)) {
+      return { isValid: false, reason: `"${val}"`, category: 'manual' }
     }
 
     // Semantic tokens like "sm" aren't valid for dimension props that expect numbers
     if (dimensionProps.includes(styleName) && validSpaceTokens.includes(val)) {
-      return { isValid: false, reason: `"${val}"` }
-    }
-
-    // Numeric props shouldn't be strings
-    if (numericProps.includes(styleName) && /^\d+(\.\d+)?$/.test(val)) {
-      return { isValid: false, reason: `"${val}"` }
+      return { isValid: false, reason: `"${val}"`, category: 'manual' }
     }
   }
 
@@ -131,25 +110,25 @@ function validateStyleValue(styleName, value) {
 
     if (tokenName === 'space') {
       if (/^\d+$/.test(property)) {
-        return { isValid: false, reason: `${tokenName}['${property}']` }
+        return { isValid: false, reason: `${tokenName}['${property}']`, category: 'manual' }
       }
       if (!validSpaceTokens.includes(property)) {
         const displayValue = value.computed
           ? `${tokenName}['${property}']`
           : `${tokenName}.${property}`
-        return { isValid: false, reason: displayValue }
+        return { isValid: false, reason: displayValue, category: 'manual' }
       }
     }
 
     if (tokenName === 'radius' && (styleName.includes('radius') || styleName.includes('Radius'))) {
       if (/^\d+$/.test(property)) {
-        return { isValid: false, reason: `${tokenName}['${property}']` }
+        return { isValid: false, reason: `${tokenName}['${property}']`, category: 'manual' }
       }
       if (!validRadiusTokens.includes(property)) {
         const displayValue = value.computed
           ? `${tokenName}['${property}']`
           : `${tokenName}.${property}`
-        return { isValid: false, reason: displayValue }
+        return { isValid: false, reason: displayValue, category: 'manual' }
       }
     }
   }
@@ -323,6 +302,7 @@ export function transformPropValue(value, config, j) {
  * - droppedProps: Array of { name, attr } for dropped props
  * - invalidStyles: Array of { styleName, value } for invalid style values
  * - existingStyleReferences: Array of MemberExpression for existing StyleSheet refs
+ * - hasManualFailures: Boolean indicating if any manual-category failures occurred
  */
 export function categorizeProps(attributes, mappings, j) {
   const {
@@ -337,6 +317,7 @@ export function categorizeProps(attributes, mappings, j) {
   const usedTokenHelpers = new Set()
   const droppedProps = []
   const invalidStyles = []
+  const manualFailures = []
   // StyleSheet references like styles.foo
   const existingStyleReferences = []
 
@@ -361,12 +342,16 @@ export function categorizeProps(attributes, mappings, j) {
               for (const prop of element.properties) {
                 if (prop.type === 'Property' && prop.key.type === 'Identifier') {
                   const styleName = prop.key.name
-                  // space['4'] -> 4
-                  const transformedValue = transformNumericTokenAccess(prop.value, j)
+                  // Apply transformations: space['4'] -> 4, "4" -> {4}
+                  let transformedValue = transformNumericTokenAccess(prop.value, j)
+                  transformedValue = autoTransformNumericString(transformedValue, j)
 
                   const validation = validateStyleValue(styleName, transformedValue)
                   if (!validation.isValid) {
                     invalidStyles.push({ styleName, value: validation.reason })
+                    if (validation.category === 'manual') {
+                      manualFailures.push({ styleName, value: validation.reason })
+                    }
                     continue
                   }
 
@@ -387,12 +372,16 @@ export function categorizeProps(attributes, mappings, j) {
           for (const prop of expr.properties) {
             if (prop.type === 'Property' && prop.key.type === 'Identifier') {
               const styleName = prop.key.name
-              // space['4'] -> 4
-              const transformedValue = transformNumericTokenAccess(prop.value, j)
+              // Apply transformations: space['4'] -> 4, "4" -> {4}
+              let transformedValue = transformNumericTokenAccess(prop.value, j)
+              transformedValue = autoTransformNumericString(transformedValue, j)
 
               const validation = validateStyleValue(styleName, transformedValue)
               if (!validation.isValid) {
                 invalidStyles.push({ styleName, value: validation.reason })
+                if (validation.category === 'manual') {
+                  manualFailures.push({ styleName, value: validation.reason })
+                }
                 continue
               }
 
@@ -431,6 +420,9 @@ export function categorizeProps(attributes, mappings, j) {
       }
 
       if (value) {
+        // Apply auto-transform first
+        value = autoTransformNumericString(value, j)
+
         // Use priority chain transformation (valueMap -> tokenHelper -> pass-through)
         const result = transformPropValue(value, config, j)
         const processedValue = result.value
@@ -446,6 +438,9 @@ export function categorizeProps(attributes, mappings, j) {
             const validation = validateStyleValue(prop, processedValue)
             if (!validation.isValid) {
               invalidStyles.push({ styleName: prop, value: validation.reason })
+              if (validation.category === 'manual') {
+                manualFailures.push({ styleName: prop, value: validation.reason })
+              }
               continue
             }
 
@@ -461,6 +456,9 @@ export function categorizeProps(attributes, mappings, j) {
             validPropAdded = true
           } else {
             invalidStyles.push({ styleName, value: validation.reason })
+            if (validation.category === 'manual') {
+              manualFailures.push({ styleName, value: validation.reason })
+            }
           }
         }
 
@@ -524,6 +522,7 @@ export function categorizeProps(attributes, mappings, j) {
     droppedProps,
     invalidStyles,
     existingStyleReferences,
+    hasManualFailures: manualFailures.length > 0,
   }
 }
 

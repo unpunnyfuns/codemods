@@ -119,7 +119,14 @@ function main(fileInfo, api, options = {}) {
       usedTokenHelpers: newHelpers,
       droppedProps,
       invalidStyles,
+      hasManualFailures,
     } = categorizeProps(attributes, badgeProps, j)
+
+    // Skip transformation if manual intervention required
+    if (hasManualFailures) {
+      console.warn(`⚠️  Badge element skipped - manual fixes required (${fileInfo.path})`)
+      return
+    }
 
     styles.addHelpers(newHelpers)
 

@@ -118,7 +118,14 @@ function main(fileInfo, api, options = {}) {
       droppedProps,
       invalidStyles,
       existingStyleReferences,
+      hasManualFailures,
     } = categorizeProps(attributes, pressableProps, j)
+
+    // Skip transformation if manual intervention required
+    if (hasManualFailures) {
+      console.warn(`⚠️  Pressable element skipped - manual fixes required (${fileInfo.path})`)
+      return
+    }
 
     styles.addHelpers(newHelpers)
 

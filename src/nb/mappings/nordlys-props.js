@@ -323,7 +323,6 @@ export const DIMENSION_VALUES = {
   keywords: ['auto'],
 }
 
-
 /**
  * React Native Text Style Props
  *
