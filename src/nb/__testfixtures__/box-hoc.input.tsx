@@ -7,7 +7,9 @@ export function Example() {
   return (
     <>
       <Box mb="lg">Direct Box</Box>
-      <AnimatedBox mt="md" p="sm">Animated Box</AnimatedBox>
+      <AnimatedBox mt="md" p="sm">
+        Animated Box
+      </AnimatedBox>
     </>
   )
 }

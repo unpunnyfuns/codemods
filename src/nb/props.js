@@ -276,6 +276,33 @@ export function transformProp(value, config, j) {
         usedHelper = tokenHelper
       }
     }
+    // Handle MemberExpression (e.g., color.gray['100'])
+    else if (processedValue.type === 'MemberExpression' && tokenHelper === 'color') {
+      // Extract the full path: color.gray['100'] -> 'gray.100'
+      let colorPath = ''
+      let node = processedValue
+
+      // Walk the MemberExpression tree
+      const parts = []
+      while (node && node.type === 'MemberExpression') {
+        if (node.computed && node.property?.type === 'StringLiteral') {
+          parts.unshift(node.property.value)
+        } else if (!node.computed && node.property?.type === 'Identifier') {
+          parts.unshift(node.property.name)
+        }
+        node = node.object
+      }
+
+      // Skip if root is not 'color'
+      if (node?.type === 'Identifier' && node.name === 'color') {
+        colorPath = parts.join('.')
+        // Apply color remapping
+        const mappedPath = getNordlysColorPath(colorPath)
+        processedValue = buildTokenPath(j, 'color', mappedPath)
+        isTokenHelper = true
+        usedHelper = 'color'
+      }
+    }
   }
 
   // Priority 3: pass-through (numbers, expressions, unknown strings)

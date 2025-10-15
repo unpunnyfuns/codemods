@@ -32,7 +32,17 @@ export const COLOR_PATH_REMAPPING = {
 
   // Basic colors
   gray: 'core.neutral.HN3',
+  'gray.100': 'core.neutral.HN1',
+  'gray.200': 'core.neutral.HN2',
+  'gray.300': 'core.neutral.HN3',
+  'gray.400': 'core.neutral.HN4',
+  'gray.500': 'core.neutral.HN5',
+  'gray.600': 'core.neutral.HN6',
+  'gray.700': 'core.neutral.HN7',
+  'gray.800': 'core.neutral.HN8',
+  'gray.900': 'core.neutral.HN9',
   account: 'brand.primary',
+  'account.solid.default': 'brand.primary',
 
   // Background semantic colors
   'background.info': 'feedback.info.subtle',

@@ -12,7 +12,9 @@ export function Example() {
   return (
     <>
       <View style={styles.box0}>Direct Box</View>
-      <AnimatedBox style={styles.box1}>Animated Box</AnimatedBox>
+      <AnimatedBox style={styles.box1}>
+        Animated Box
+      </AnimatedBox>
     </>
   );
 }
