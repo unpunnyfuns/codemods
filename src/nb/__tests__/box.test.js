@@ -6,4 +6,9 @@ describe('box migration', () => {
     const output = testTransform('nb/box', 'nb/box', 'tsx')
     expect(output).toMatchSnapshot()
   })
+
+  it('does not process local components that use Box in JSX', () => {
+    const output = testTransform('nb/box', 'nb/box-local-component', 'tsx')
+    expect(output).toMatchSnapshot()
+  })
 })

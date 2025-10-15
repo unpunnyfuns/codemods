@@ -1,5 +1,53 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`box migration > does not process local components that use Box in JSX 1`] = `
+"import { HStack } from 'native-base';
+import { FC } from 'react'
+
+import { View, StyleSheet } from 'react-native';
+import { space } from '@hb-frontend/nordlys';
+
+type SectionProps = {
+  testID?: string
+  title: string
+  value: string
+}
+
+// Local component that uses Box in its JSX - should NOT be processed
+const Section: FC<SectionProps> = ({ testID, title, value }) => {
+  return (
+    <HStack mt="lg">
+      <View style={styles.box0}>
+        <Icon name="test" />
+      </View>
+      <HStack ml="sm" testID={testID}>
+        <Text>{title}</Text>
+        <Text>{value}</Text>
+      </HStack>
+    </HStack>
+  );
+}
+
+export function Example() {
+  return (
+    <View style={styles.box1}>
+      <Section testID="test-section" title="Title" value="Value" />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  box0: {
+    marginTop: space['2xs']
+  },
+
+  box1: {
+    padding: space.lg
+  }
+});
+"
+`;
+
 exports[`box migration > migrates Box to View with StyleSheet styles 1`] = `
 "import { View, StyleSheet } from 'react-native';
 import { space, color, radius } from '@hb-frontend/nordlys';

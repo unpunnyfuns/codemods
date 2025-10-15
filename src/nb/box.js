@@ -91,28 +91,33 @@ function main(fileInfo, api, options = {}) {
   const boxElements = findJSXElements(root, 'Box', j)
 
   // Find derived names: const AnimatedBox = withAnimated(Box)
+  // Only match HOC patterns, not components that use Box in JSX body
   const derivedNames = new Set()
   root
     .find(j.VariableDeclarator)
     .filter((path) => {
-      // Look for patterns like: const AnimatedBox = ...Box...
       const init = path.node.init
       if (!init) {
         return false
       }
 
-      // Check if Box is referenced in the initializer
-      let hasBoxRef = false
-      j(init)
-        .find(j.Identifier, { name: 'Box' })
-        .forEach(() => {
-          hasBoxRef = true
-        })
-
-      if (hasBoxRef && path.node.id && path.node.id.type === 'Identifier') {
-        derivedNames.add(path.node.id.name)
-        return true
+      // Only match CallExpression patterns: withAnimated(Box), Animated.createAnimatedComponent(Box)
+      // Skip ArrowFunctionExpression and FunctionExpression (component definitions)
+      if (init.type === 'ArrowFunctionExpression' || init.type === 'FunctionExpression') {
+        return false
       }
+
+      // For CallExpression, check if Box is a direct argument
+      if (init.type === 'CallExpression') {
+        const hasBoxArg = init.arguments.some(
+          (arg) => arg.type === 'Identifier' && arg.name === 'Box',
+        )
+        if (hasBoxArg && path.node.id && path.node.id.type === 'Identifier') {
+          derivedNames.add(path.node.id.name)
+          return true
+        }
+      }
+
       return false
     })
     .forEach(() => {})
