@@ -11,4 +11,9 @@ describe('box migration', () => {
     const output = testTransform('nb/box', 'nb/box-local-component', 'tsx')
     expect(output).toMatchSnapshot()
   })
+
+  it('adds View import when some elements are migrated and some are skipped', () => {
+    const output = testTransform('nb/box', 'nb/box-partial-migration', 'tsx')
+    expect(output).toMatchSnapshot()
+  })
 })

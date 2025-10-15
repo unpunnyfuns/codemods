@@ -1,5 +1,38 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`box migration > adds View import when some elements are migrated and some are skipped 1`] = `
+"import { Box } from 'native-base'
+
+import { View, StyleSheet } from 'react-native';
+import { space, color } from '@hb-frontend/nordlys';
+
+export function Example() {
+  return (
+    <>
+      <View style={styles.box0}>
+        Successfully migrated
+      </View>
+
+      {/* TODO: Box requires manual migration
+        Props that need manual handling:
+          textAlign: "left" */
+      }
+      <Box textAlign="left" p="md">
+        Skipped due to textAlign
+      </Box>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  box0: {
+    padding: space.lg,
+    backgroundColor: color.blue['500']
+  }
+});
+"
+`;
+
 exports[`box migration > does not process local components that use Box in JSX 1`] = `
 "import { HStack } from 'native-base';
 import { FC } from 'react'

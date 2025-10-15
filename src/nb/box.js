@@ -250,12 +250,15 @@ function main(fileInfo, api, options = {}) {
     warnings.push(`BoxProps type reference found - manual migration required (${fileInfo.path})`)
   })
 
+  // Add View import if any elements were successfully migrated
+  if (migrated > 0) {
+    addNamedImport(root, targetImport, targetName, j)
+  }
+
   // Only remove Box import if no elements were skipped
   // If elements were skipped, they still reference Box in JSX
   if (skipped === 0) {
     removeNamedImport(imports, 'Box', j)
-    // Add View import from react-native
-    addNamedImport(root, targetImport, targetName, j)
   } else {
     warnings.push(
       `Box import kept - ${skipped} element(s) skipped and still reference Box (${fileInfo.path})`,
