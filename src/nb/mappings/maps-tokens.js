@@ -41,15 +41,18 @@ export const SPACE_TOKEN_MAP = {
  *
  * Maps NativeBase radii token names to Nordlys radius token names.
  *
- * NB scale: sm(4), md(8), lg(12)
+ * NB scale: sm(4), md(8), lg(12), xl(?), full(9999)
  * Nordlys scale: xs(2), sm(4), md(8), lg(12), xl(16), 2xl(20)
  *
- * These map 1:1 for existing tokens.
+ * Note: NB "full" (9999px for pill shapes) maps to Nordlys 2xl (20px)
+ * This is the closest match for pill/fully-rounded shapes in Nordlys
  */
 export const RADIUS_TOKEN_MAP = {
   sm: 'sm',
   md: 'md',
   lg: 'lg',
+  xl: 'xl',
+  full: '2xl', // NativeBase full (9999px) -> Nordlys 2xl (20px) for pill shapes
 }
 
 /**

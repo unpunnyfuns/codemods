@@ -3,7 +3,7 @@
 exports[`nb/badge > migrates Badge component 1`] = `
 "import { Badge } from '@hb-frontend/app/src/components/nordlys/Badge';
 import { View, StyleSheet } from 'react-native';
-import { space } from '@hb-frontend/nordlys';
+import { radius, color, space } from '@hb-frontend/nordlys';
 
 export function Example() {
   return (
@@ -19,16 +19,7 @@ export function Example() {
         Large
       </Badge>
       {/* Indicator dot pattern (no text, just styles) */}
-      <Badge
-        rounded="full"
-        p="0"
-        w="12px"
-        h="12px"
-        bg="icon.brand"
-        position="absolute"
-        top="0"
-        right="0"
-      />
+      <View style={styles.badge4} />
       {/* Badge with testID */}
       <Badge testID="status-badge" text='Active' size='md' />
       {/* Badge with layout props */}
@@ -40,6 +31,15 @@ export function Example() {
 }
 
 const styles = StyleSheet.create({
+  badge4: {
+    borderRadius: radius['2xl'],
+    padding: 0,
+    backgroundColor: color.icon.brand,
+    position: "absolute",
+    top: 0,
+    right: 0
+  },
+
   badge6: {
     marginTop: space.sm,
     marginLeft: space.xs
