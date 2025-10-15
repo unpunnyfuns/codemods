@@ -87,8 +87,46 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
+  // Find all JSX elements named Box
   const boxElements = findJSXElements(root, 'Box', j)
-  if (boxElements.length === 0) {
+
+  // Find derived names: const AnimatedBox = withAnimated(Box)
+  const derivedNames = new Set()
+  root
+    .find(j.VariableDeclarator)
+    .filter((path) => {
+      // Look for patterns like: const AnimatedBox = ...Box...
+      const init = path.node.init
+      if (!init) {
+        return false
+      }
+
+      // Check if Box is referenced in the initializer
+      let hasBoxRef = false
+      j(init)
+        .find(j.Identifier, { name: 'Box' })
+        .forEach(() => {
+          hasBoxRef = true
+        })
+
+      if (hasBoxRef && path.node.id && path.node.id.type === 'Identifier') {
+        derivedNames.add(path.node.id.name)
+        return true
+      }
+      return false
+    })
+    .forEach(() => {})
+
+  // Collect all elements (direct Box + derived names)
+  const allElements = [...boxElements.paths()]
+  for (const name of derivedNames) {
+    const derivedElements = findJSXElements(root, name, j)
+    allElements.push(...derivedElements.paths())
+  }
+
+  if (allElements.length === 0) {
+    // Box imported but not used at all - safe to remove
+    removeNamedImport(imports, 'Box', j)
     return fileInfo.source
   }
 
@@ -96,7 +134,8 @@ function main(fileInfo, api, options = {}) {
   const warnings = []
   let migrated = 0
 
-  boxElements.forEach((path, index) => {
+  allElements.forEach((path, index) => {
+    const elementName = path.node.openingElement.name.name
     const attributes = path.node.openingElement.attributes || []
 
     const {
@@ -114,11 +153,11 @@ function main(fileInfo, api, options = {}) {
     // Skip if manual fixes needed (unless --unsafe mode)
     if (hasManualFailures) {
       const msg = options.unsafe
-        ? `Box: unsafe mode - proceeding with partial migration (${fileInfo.path})`
-        : `Box skipped - manual fixes required (${fileInfo.path})`
+        ? `${elementName}: unsafe mode - proceeding with partial migration (${fileInfo.path})`
+        : `${elementName} skipped - manual fixes required (${fileInfo.path})`
       warnings.push(msg)
       if (!options.unsafe) {
-        addTodoComment(path, 'Box', invalidStyles, j)
+        addTodoComment(path, elementName, invalidStyles, j)
         return
       }
     }
@@ -154,9 +193,12 @@ function main(fileInfo, api, options = {}) {
     }
 
     // Update element name and attributes
-    path.node.openingElement.name = j.jsxIdentifier(targetName)
-    if (path.node.closingElement) {
-      path.node.closingElement.name = j.jsxIdentifier(targetName)
+    // Only rename if it's the direct Box component, not a derived name
+    if (elementName === 'Box') {
+      path.node.openingElement.name = j.jsxIdentifier(targetName)
+      if (path.node.closingElement) {
+        path.node.closingElement.name = j.jsxIdentifier(targetName)
+      }
     }
     path.node.openingElement.attributes = attrs
 
