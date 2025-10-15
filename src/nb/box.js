@@ -133,6 +133,7 @@ function main(fileInfo, api, options = {}) {
   const styles = createStyleContext()
   const warnings = []
   let migrated = 0
+  let skipped = 0
 
   allElements.forEach((path, index) => {
     const elementName = path.node.openingElement.name.name
@@ -158,6 +159,7 @@ function main(fileInfo, api, options = {}) {
       warnings.push(msg)
       if (!options.unsafe) {
         addTodoComment(path, elementName, invalidStyles, j)
+        skipped++
         return
       }
     }
@@ -243,11 +245,17 @@ function main(fileInfo, api, options = {}) {
     warnings.push(`BoxProps type reference found - manual migration required (${fileInfo.path})`)
   })
 
-  // Always remove Box import from source
-  removeNamedImport(imports, 'Box', j)
-
-  // Add View import from react-native
-  addNamedImport(root, targetImport, targetName, j)
+  // Only remove Box import if no elements were skipped
+  // If elements were skipped, they still reference Box in JSX
+  if (skipped === 0) {
+    removeNamedImport(imports, 'Box', j)
+    // Add View import from react-native
+    addNamedImport(root, targetImport, targetName, j)
+  } else {
+    warnings.push(
+      `Box import kept - ${skipped} element(s) skipped and still reference Box (${fileInfo.path})`,
+    )
+  }
 
   // Output warnings if any
   if (warnings.length > 0) {
