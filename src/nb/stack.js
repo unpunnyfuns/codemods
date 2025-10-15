@@ -28,7 +28,13 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, categorizeProps, validateToken, validSpaceTokens } from './props.js'
+import {
+  addElementComment,
+  addTodoComment,
+  categorizeProps,
+  validateToken,
+  validSpaceTokens,
+} from './props.js'
 
 // Stack prop mappings
 const styleProps = {
@@ -145,6 +151,7 @@ function main(fileInfo, api, options = {}) {
         console.warn(
           `⚠️  ${componentName} element skipped - manual fixes required (${fileInfo.path})`,
         )
+        addTodoComment(path, componentName, invalidStyles, j)
         return
       }
 

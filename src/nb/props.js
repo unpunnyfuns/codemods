@@ -623,3 +623,35 @@ export function addElementComment(path, droppedProps, invalidStyles, j) {
     }
   }
 }
+
+/**
+ * Add TODO comment before element that requires manual migration
+ */
+export function addTodoComment(path, componentName, invalidStyles, j) {
+  const lines = [`TODO: ${componentName} requires manual migration`]
+
+  if (invalidStyles.length > 0) {
+    lines.push('Props that need manual handling:')
+    for (const { styleName, value } of invalidStyles) {
+      lines.push(`  ${styleName}: ${value}`)
+    }
+  }
+
+  const commentText = ` ${lines.join('\n  ')} `
+  const comment = j.commentBlock(commentText, true, false)
+
+  // Create JSX comment: {/* ... */}
+  const jsxEmptyExpr = j.jsxEmptyExpression()
+  jsxEmptyExpr.comments = [comment]
+  const jsxComment = j.jsxExpressionContainer(jsxEmptyExpr)
+
+  // Insert comment before the element with proper spacing
+  const parent = path.parent.node
+  if (parent.type === 'JSXElement' || parent.type === 'JSXFragment') {
+    const children = parent.children
+    const index = children.indexOf(path.node)
+    if (index !== -1) {
+      children.splice(index, 0, j.jsxText('\n      '), jsxComment, j.jsxText('\n      '))
+    }
+  }
+}

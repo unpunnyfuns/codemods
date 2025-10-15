@@ -26,7 +26,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, categorizeProps } from './props.js'
+import { addElementComment, addTodoComment, categorizeProps } from './props.js'
 
 // Switch prop mappings
 const styleProps = {
@@ -117,6 +117,7 @@ function main(fileInfo, api, options = {}) {
         : `⚠️  Switch skipped - manual fixes required (${fileInfo.path})`
       console.warn(msg)
       if (!options.unsafe) {
+        addTodoComment(path, 'Switch', invalidStyles, j)
         return
       }
     }

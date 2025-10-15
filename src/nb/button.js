@@ -29,7 +29,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, categorizeProps } from './props.js'
+import { addElementComment, addTodoComment, categorizeProps } from './props.js'
 
 // Button prop mappings
 const styleProps = {
@@ -179,6 +179,7 @@ function main(fileInfo, api, options = {}) {
         : `⚠️  Button skipped - manual fixes required (${fileInfo.path})`
       console.warn(msg)
       if (!options.unsafe) {
+        addTodoComment(path, 'Button', invalidStyles, j)
         return
       }
     }

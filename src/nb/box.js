@@ -27,7 +27,7 @@ import {
   spacing,
   text,
 } from './mappings/props-style.js'
-import { addElementComment, categorizeProps } from './props.js'
+import { addElementComment, addTodoComment, categorizeProps } from './props.js'
 
 // Box to View prop mappings
 const styleProps = {
@@ -118,6 +118,7 @@ function main(fileInfo, api, options = {}) {
         : `Box skipped - manual fixes required (${fileInfo.path})`
       warnings.push(msg)
       if (!options.unsafe) {
+        addTodoComment(path, 'Box', invalidStyles, j)
         return
       }
     }
