@@ -207,6 +207,15 @@ export function transformProp(value, config, j) {
   let isTokenHelper = false
   let usedHelper = null
 
+  // Convert numeric strings to numeric literals FIRST (before valueMap/tokenHelper)
+  // This handles cases like zIndex="10" where there's no tokenHelper
+  if (processedValue.type === 'StringLiteral' || processedValue.type === 'Literal') {
+    const val = processedValue.value
+    if (typeof val === 'string' && /^\d+(\.\d+)?$/.test(val)) {
+      return { value: j.numericLiteral(Number(val)), isTokenHelper: false, tokenHelper: null }
+    }
+  }
+
   // Priority 1: valueMap (explicit transformations)
   if (valueMap) {
     processedValue = applyValueMap(processedValue, valueMap, j)
