@@ -133,8 +133,14 @@ function main(fileInfo, api, options = {}) {
   const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
   const wrap = options.wrap ?? true
 
-  const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length || !hasNamedImport(imports, 'Alert')) {
+  // Check for Alert imports from both source and target (for re-running)
+  const sourceImports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
+  const targetImports = root.find(j.ImportDeclaration, { source: { value: targetImport } })
+
+  const hasSourceAlert = sourceImports.length > 0 && hasNamedImport(sourceImports, 'Alert')
+  const hasTargetAlert = targetImports.length > 0 && hasNamedImport(targetImports, 'Alert')
+
+  if (!hasSourceAlert && !hasTargetAlert) {
     return fileInfo.source
   }
 
@@ -237,7 +243,10 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  removeNamedImport(imports, 'Alert', j)
+  // Remove Alert from source import (if it exists) and add to target
+  if (hasSourceAlert) {
+    removeNamedImport(sourceImports, 'Alert', j)
+  }
   addNamedImport(root, targetImport, targetName, j)
 
   styles.applyToRoot(root, { wrap, tokenImport }, j)

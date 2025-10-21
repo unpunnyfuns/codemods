@@ -79,8 +79,14 @@ function main(fileInfo, api, options = {}) {
   // Default: true (wrap in View when style props exist)
   const wrap = options.wrap ?? true
 
-  const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length || !hasNamedImport(imports, 'Input')) {
+  // Check for Input imports from both source and target (for re-running)
+  const sourceImports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
+  const targetImports = root.find(j.ImportDeclaration, { source: { value: targetImport } })
+
+  const hasSourceInput = sourceImports.length > 0 && hasNamedImport(sourceImports, 'Input')
+  const hasTargetInput = targetImports.length > 0 && hasNamedImport(targetImports, 'Input')
+
+  if (!hasSourceInput && !hasTargetInput) {
     return fileInfo.source
   }
 
@@ -180,7 +186,10 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  removeNamedImport(imports, 'Input', j)
+  // Remove Input from source import (if it exists) and add to target
+  if (hasSourceInput) {
+    removeNamedImport(sourceImports, 'Input', j)
+  }
   addNamedImport(root, targetImport, targetName, j)
 
   styles.applyToRoot(root, { wrap, tokenImport }, j)

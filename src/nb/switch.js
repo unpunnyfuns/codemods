@@ -78,9 +78,14 @@ function main(fileInfo, api, options = {}) {
   // Default: true (wrap in View when style props exist)
   const wrap = options.wrap ?? true
 
-  // import { Switch } from '@hb-frontend/common/src/components'
-  const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length || !hasNamedImport(imports, 'Switch')) {
+  // Check for Switch imports from both source and target (for re-running)
+  const sourceImports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
+  const targetImports = root.find(j.ImportDeclaration, { source: { value: targetImport } })
+
+  const hasSourceSwitch = sourceImports.length > 0 && hasNamedImport(sourceImports, 'Switch')
+  const hasTargetSwitch = targetImports.length > 0 && hasNamedImport(targetImports, 'Switch')
+
+  if (!hasSourceSwitch && !hasTargetSwitch) {
     return fileInfo.source
   }
 
@@ -182,7 +187,10 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  removeNamedImport(imports, 'Switch', j)
+  // Remove Switch from source import (if it exists) and add to target
+  if (hasSourceSwitch) {
+    removeNamedImport(sourceImports, 'Switch', j)
+  }
   addNamedImport(root, targetImport, targetName, j)
 
   styles.applyToRoot(root, { wrap, tokenImport }, j)

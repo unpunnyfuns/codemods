@@ -36,8 +36,14 @@ function main(fileInfo, api, options = {}) {
   const targetImport = options.targetImport ?? '@hb-frontend/app/src/components/nordlys/Icon'
   const targetName = options.targetName ?? 'Icon'
 
-  const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length || !hasNamedImport(imports, 'Icon')) {
+  // Check for Icon imports from both source and target (for re-running)
+  const sourceImports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
+  const targetImports = root.find(j.ImportDeclaration, { source: { value: targetImport } })
+
+  const hasSourceIcon = sourceImports.length > 0 && hasNamedImport(sourceImports, 'Icon')
+  const hasTargetIcon = targetImports.length > 0 && hasNamedImport(targetImports, 'Icon')
+
+  if (!hasSourceIcon && !hasTargetIcon) {
     return fileInfo.source
   }
 
@@ -145,7 +151,10 @@ function main(fileInfo, api, options = {}) {
     }
   }
 
-  removeNamedImport(imports, 'Icon', j)
+  // Remove Icon from source import (if it exists) and add to target
+  if (hasSourceIcon) {
+    removeNamedImport(sourceImports, 'Icon', j)
+  }
   addNamedImport(root, targetImport, targetName, j)
 
   return root.toSource({

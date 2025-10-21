@@ -90,8 +90,14 @@ function main(fileInfo, api, options = {}) {
   // Default: true (wrap in View when style props exist)
   const wrap = options.wrap ?? true
 
-  const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length || !hasNamedImport(imports, 'Badge')) {
+  // Check for Badge imports from both source and target (for re-running)
+  const sourceImports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
+  const targetImports = root.find(j.ImportDeclaration, { source: { value: targetImport } })
+
+  const hasSourceBadge = sourceImports.length > 0 && hasNamedImport(sourceImports, 'Badge')
+  const hasTargetBadge = targetImports.length > 0 && hasNamedImport(targetImports, 'Badge')
+
+  if (!hasSourceBadge && !hasTargetBadge) {
     return fileInfo.source
   }
 
@@ -218,7 +224,10 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  removeNamedImport(imports, 'Badge', j)
+  // Remove Badge from source import (if it exists) and add to target
+  if (hasSourceBadge) {
+    removeNamedImport(sourceImports, 'Badge', j)
+  }
   addNamedImport(root, targetImport, targetName, j)
 
   styles.applyToRoot(root, { wrap, tokenImport }, j)

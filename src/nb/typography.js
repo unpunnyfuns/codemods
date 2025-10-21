@@ -63,11 +63,20 @@ function main(fileInfo, api, options = {}) {
   // Default: true (wrap in View when style props exist)
   const wrap = options.wrap ?? true
 
-  const imports = root.find(j.ImportDeclaration, {
+  // Check for Typography imports from both source and target (for re-running)
+  const sourceImports = root.find(j.ImportDeclaration, {
     source: { value: sourceImport },
   })
+  const targetImports = root.find(j.ImportDeclaration, {
+    source: { value: targetImport },
+  })
 
-  if (!imports.length || !hasNamedImport(imports, 'Typography')) {
+  const hasSourceTypography =
+    sourceImports.length > 0 && hasNamedImport(sourceImports, 'Typography')
+  const hasTargetTypography =
+    targetImports.length > 0 && hasNamedImport(targetImports, 'Typography')
+
+  if (!hasSourceTypography && !hasTargetTypography) {
     return fileInfo.source
   }
 
@@ -173,7 +182,10 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  removeNamedImport(imports, 'Typography', j)
+  // Remove Typography from source import (if it exists) and add to target
+  if (hasSourceTypography) {
+    removeNamedImport(sourceImports, 'Typography', j)
+  }
   addNamedImport(root, targetImport, targetName, j)
 
   styles.applyToRoot(root, { wrap, tokenImport }, j)

@@ -91,11 +91,18 @@ function main(fileInfo, api, options = {}) {
   const targetName = options.targetName ?? 'Pressable'
   const tokenImport = options.tokenImport ?? '@hb-frontend/nordlys'
 
-  // import { Pressable } from '@hb-frontend/common/src/components'
-  const imports = root.find(j.ImportDeclaration, {
+  // Check for Pressable imports from both source and target (for re-running)
+  const sourceImports = root.find(j.ImportDeclaration, {
     source: { value: sourceImport },
   })
-  if (!imports.length || !hasNamedImport(imports, 'Pressable')) {
+  const targetImports = root.find(j.ImportDeclaration, {
+    source: { value: targetImport },
+  })
+
+  const hasSourcePressable = sourceImports.length > 0 && hasNamedImport(sourceImports, 'Pressable')
+  const hasTargetPressable = targetImports.length > 0 && hasNamedImport(targetImports, 'Pressable')
+
+  if (!hasSourcePressable && !hasTargetPressable) {
     return fileInfo.source
   }
 
@@ -184,7 +191,10 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  removeNamedImport(imports, 'Pressable', j)
+  // Remove Pressable from source import (if it exists) and add to target
+  if (hasSourcePressable) {
+    removeNamedImport(sourceImports, 'Pressable', j)
+  }
   addNamedImport(root, targetImport, targetName, j)
 
   styles.applyToRoot(root, { wrap: false, tokenImport }, j)
