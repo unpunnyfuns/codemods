@@ -83,30 +83,64 @@ function main(fileInfo, api, options = {}) {
   const wrap = options.wrap ?? true
 
   // import { Button } from '@hb-frontend/common/src/components'
-  const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length || !hasNamedImport(imports, 'Button')) {
+  const sourceImports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
+
+  // Also check for imports from targetImport (for re-running on partially migrated files)
+  const targetImports = root.find(j.ImportDeclaration, { source: { value: targetImport } })
+
+  const hasSourceButton = sourceImports.length > 0 && hasNamedImport(sourceImports, 'Button')
+  const hasTargetButton = targetImports.length > 0 && hasNamedImport(targetImports, 'Button')
+
+  if (!hasSourceButton && !hasTargetButton) {
     return fileInfo.source
   }
 
   // Get the local name of Button import from sourceImport
   let sourceButtonName = null
-  imports.forEach((path) => {
-    const specifiers = path.node.specifiers || []
-    for (const spec of specifiers) {
-      if (spec.type === 'ImportSpecifier' && spec.imported.name === 'Button') {
-        sourceButtonName = spec.local.name
-        break
+  if (hasSourceButton) {
+    sourceImports.forEach((path) => {
+      const specifiers = path.node.specifiers || []
+      for (const spec of specifiers) {
+        if (spec.type === 'ImportSpecifier' && spec.imported.name === 'Button') {
+          sourceButtonName = spec.local.name
+          break
+        }
       }
-    }
-  })
+    })
+  }
 
-  if (!sourceButtonName) {
+  // Get the local name of Button import from targetImport (for re-running)
+  let targetButtonName = null
+  if (hasTargetButton) {
+    targetImports.forEach((path) => {
+      const specifiers = path.node.specifiers || []
+      for (const spec of specifiers) {
+        if (spec.type === 'ImportSpecifier' && spec.imported.name === 'Button') {
+          targetButtonName = spec.local.name
+          break
+        }
+      }
+    })
+  }
+
+  if (!sourceButtonName && !targetButtonName) {
     return fileInfo.source
   }
 
-  const buttonElements = findJSXElements(root, sourceButtonName, j)
+  // Find button elements from both source and target imports
+  const allButtonElements = []
 
-  if (buttonElements.length === 0) {
+  if (sourceButtonName) {
+    const sourceElements = findJSXElements(root, sourceButtonName, j)
+    allButtonElements.push(...sourceElements.paths())
+  }
+
+  if (targetButtonName) {
+    const targetElements = findJSXElements(root, targetButtonName, j)
+    allButtonElements.push(...targetElements.paths())
+  }
+
+  if (allButtonElements.length === 0) {
     return fileInfo.source
   }
 
@@ -115,7 +149,7 @@ function main(fileInfo, api, options = {}) {
   let skipped = 0
   const styles = createStyleContext()
 
-  buttonElements.forEach((path, index) => {
+  allButtonElements.forEach((path, index) => {
     const attributes = path.node.openingElement.attributes || []
     const children = path.node.children || []
 
@@ -289,53 +323,14 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  // Only remove the Button import from sourceImport
-  removeNamedImport(imports, 'Button', j)
-
-  // Check if there's already an import from targetImport and use its alias
-  const existingTargetImport = root.find(j.ImportDeclaration, {
-    source: { value: targetImport },
-  })
-
-  let actualTargetName = targetName
-  if (existingTargetImport.length > 0) {
-    // Use existing import alias if it exists
-    existingTargetImport.forEach((path) => {
-      const specifiers = path.node.specifiers || []
-      for (const spec of specifiers) {
-        if (spec.type === 'ImportSpecifier' && spec.imported.name === 'Button') {
-          actualTargetName = spec.local.name
-          break
-        }
-      }
-    })
-  } else {
-    // Add new import only if it doesn't exist
-    addNamedImport(root, targetImport, targetName, j)
+  // Remove the Button import from sourceImport (if it exists)
+  if (hasSourceButton) {
+    removeNamedImport(sourceImports, 'Button', j)
   }
 
-  // If we used a different target name (alias), update all transformed button elements
-  if (actualTargetName !== targetName) {
-    root
-      .find(j.JSXElement, {
-        openingElement: { name: { name: targetName } },
-      })
-      .forEach((path) => {
-        path.node.openingElement.name.name = actualTargetName
-        if (path.node.closingElement) {
-          path.node.closingElement.name.name = actualTargetName
-        }
-      })
-
-    root
-      .find(j.JSXOpeningElement, {
-        name: { name: targetName },
-        selfClosing: true,
-      })
-      .forEach((path) => {
-        path.node.name.name = actualTargetName
-      })
-  }
+  // Always add/ensure Button import to targetImport
+  // If it already exists, addNamedImport is smart enough to not duplicate it
+  addNamedImport(root, targetImport, targetName, j)
 
   // Remove Icon import if no longer used anywhere
   const iconImports = root.find(j.ImportDeclaration).filter((path) => {
