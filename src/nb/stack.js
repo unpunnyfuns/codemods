@@ -131,6 +131,8 @@ function main(fileInfo, api, options = {}) {
       continue
     }
 
+    let skippedForComponent = 0
+
     stackElements.forEach((path, index) => {
       const attributes = path.node.openingElement.attributes || []
 
@@ -152,6 +154,7 @@ function main(fileInfo, api, options = {}) {
           `⚠️  ${componentName} element skipped - manual fixes required (${fileInfo.path})`,
         )
         addTodoComment(path, componentName, invalidStyles, j)
+        skippedForComponent++
         return
       }
 
@@ -228,8 +231,14 @@ function main(fileInfo, api, options = {}) {
       path.node.name = targetName
     })
 
-    // Always remove component import from source
-    removeNamedImport(imports, componentName, j)
+    // Only remove component import if no elements were skipped
+    if (skippedForComponent === 0) {
+      removeNamedImport(imports, componentName, j)
+    } else {
+      console.warn(
+        `⚠️  ${componentName} import kept - ${skippedForComponent} element(s) skipped and still reference ${componentName} (${fileInfo.path})`,
+      )
+    }
 
     transformed = true
   }
