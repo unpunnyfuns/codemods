@@ -82,11 +82,18 @@ function main(fileInfo, api, options = {}) {
   // Default: true (wrap in View when style props exist)
   const wrap = options.wrap ?? true
 
-  const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length || !hasNamedImport(imports, 'Avatar')) {
+  // Check for Avatar imports from both source and target (for re-running)
+  const sourceImports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
+  const targetImports = root.find(j.ImportDeclaration, { source: { value: targetImport } })
+
+  const hasSourceAvatar = sourceImports.length > 0 && hasNamedImport(sourceImports, 'Avatar')
+  const hasTargetAvatar = targetImports.length > 0 && hasNamedImport(targetImports, 'Avatar')
+
+  if (!hasSourceAvatar && !hasTargetAvatar) {
     return fileInfo.source
   }
 
+  // Find Avatar elements (works for both source and target since both use 'Avatar')
   const avatarElements = findJSXElements(root, 'Avatar', j)
 
   if (avatarElements.length === 0) {
@@ -190,7 +197,10 @@ function main(fileInfo, api, options = {}) {
     return fileInfo.source
   }
 
-  removeNamedImport(imports, 'Avatar', j)
+  // Remove Avatar from source import (if it exists) and add to target
+  if (hasSourceAvatar) {
+    removeNamedImport(sourceImports, 'Avatar', j)
+  }
   addNamedImport(root, targetImport, targetName, j)
 
   // Add View import if we created View wrappers with inline styles only
