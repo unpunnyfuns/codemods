@@ -55,6 +55,10 @@ function normalizeValue(value, j) {
     if (/^\d+(\.\d+)?$/.test(val)) {
       return j.numericLiteral(Number.parseFloat(val))
     }
+    // "10px" → 10 (RN uses density-independent pixels, no units)
+    if (/^\d+(\.\d+)?px$/.test(val)) {
+      return j.numericLiteral(Number.parseFloat(val.replace('px', '')))
+    }
   }
 
   return value
@@ -109,11 +113,6 @@ function validateStyle(styleName, value) {
     }
 
     const val = String(value.value)
-
-    // Flag values with units - these need manual intervention
-    if (/^\d+px$/.test(val)) {
-      return { isValid: false, reason: `"${val}"`, category: 'manual' }
-    }
 
     // Semantic tokens like "sm" aren't valid for dimension props that expect numbers
     if (dimensionProps.includes(styleName) && validSpaceTokens.includes(val)) {

@@ -198,13 +198,13 @@ export const flexbox = generateMappings(FLEXBOX_PROPS, {
 /**
  * Position Props
  * Source: NativeBase POSITION_PROPS
- * Token: space for top/right/bottom/left
+ * Note: Coordinates are pass-through (support numbers, %, expressions)
  */
 const positionCoordinateProps = ['top', 'right', 'bottom', 'left', 'start', 'end']
 const positionOtherProps = ['position', 'zIndex']
 export const position = {
   ...generateMappings(positionOtherProps, {}),
-  ...generateMappings(positionCoordinateProps, { tokenHelper: 'space' }),
+  ...generateMappings(positionCoordinateProps, {}), // No tokenHelper - pass through
 }
 
 /**
