@@ -189,7 +189,7 @@ function main(fileInfo, api, options = {}) {
 
     if (!icon && !text) {
       warnings.push(
-        `Button without text or icon cannot be migrated (icon-only requires manual setup) (${fileInfo.path})`,
+        `Button without text or icon cannot be migrated - empty button (${fileInfo.path})`,
       )
       skipped++
       return
