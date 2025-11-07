@@ -2,75 +2,115 @@
 
 exports[`nb/stack-comprehensive > handles all edge cases: multi-property expansion, tokens, flexbox, position 1`] = `
 "import { SomeOtherComponent } from '@org/common/src/other'
-import { HStack, VStack } from 'native-base'
+import { Stack } from '@target/components/Stack';
+import { StyleSheet } from 'react-native';
+import { color, radius } from '@design-tokens';
 
 export function ComprehensiveExample() {
   return (
     <>
       {/* Test multi-property expansion with tokens */}
-      <VStack roundedTop="lg" roundedBottom="md" size="full" space="md">
+      <Stack direction='vertical' gap="md" style={styles.vstack4}>
         <SomeOtherComponent />
-      </VStack>
-
+      </Stack>
       {/* Test marginX/marginY expansion */}
-      <HStack marginX={4} marginY={2} space="sm">
+      <Stack direction='horizontal' gap="sm" style={styles.hstack0}>
         <SomeOtherComponent />
-      </HStack>
-
+      </Stack>
       {/* Test flexbox props */}
-      <VStack flex={1} flexGrow={2} flexShrink={0} flexWrap="wrap" alignSelf="center">
+      <Stack direction='vertical' style={styles.vstack5}>
         <SomeOtherComponent />
-      </VStack>
-
+      </Stack>
       {/* Test position props */}
-      <HStack position="absolute" top={10} left={20} zIndex={999}>
+      <Stack direction='horizontal' style={styles.hstack1}>
         <SomeOtherComponent />
-      </HStack>
-
+      </Stack>
       {/* Test full prop names */}
-      <VStack
-        margin={8}
-        padding={4}
-        width="100%"
-        height={200}
-        backgroundColor="blue.500"
-        borderRadius="xl"
-        borderWidth={2}
-        borderColor="gray.200"
-      >
+      <Stack direction='vertical' style={styles.vstack6}>
         <SomeOtherComponent />
-      </VStack>
-
+      </Stack>
       {/* Test mixed shortcuts and value mappings */}
-      <HStack
-        bg="red.500"
-        p={3}
-        mx={2}
-        align="center"
-        justify="between"
-        flex={1}
-        overflow="hidden"
-        display="flex"
-      >
+      <Stack direction='horizontal' style={styles.hstack2}>
         <SomeOtherComponent />
-      </HStack>
-
+      </Stack>
       {/* Test edge case: boxSize instead of size */}
-      <VStack boxSize={100} roundedLeft="sm" roundedRight="md">
+      <Stack direction='vertical' style={styles.vstack7}>
         <SomeOtherComponent />
-      </VStack>
-
+      </Stack>
       {/* Test all border radius corners */}
-      <HStack
-        borderTopLeftRadius="xs"
-        borderTopRightRadius="sm"
-        borderBottomLeftRadius="md"
-        borderBottomRightRadius="lg"
-      >
+      <Stack direction='horizontal' style={styles.hstack3}>
         <SomeOtherComponent />
-      </HStack>
+      </Stack>
     </>
-  )
+  );
 }
+
+const styles = StyleSheet.create({
+  hstack0: {
+    marginHorizontal: 4,
+    marginVertical: 2
+  },
+
+  hstack1: {
+    position: "absolute",
+    top: 10,
+    left: 20,
+    zIndex: 999
+  },
+
+  hstack2: {
+    backgroundColor: color.red['500'],
+    padding: 3,
+    marginHorizontal: 2,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flex: 1,
+    overflow: "hidden",
+    display: "flex"
+  },
+
+  hstack3: {
+    borderTopRightRadius: radius.sm,
+    borderBottomLeftRadius: radius.md,
+    borderBottomRightRadius: radius.lg
+  },
+
+  vstack4: {
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    borderBottomLeftRadius: radius.md,
+    borderBottomRightRadius: radius.md,
+    width: '100%',
+    height: '100%'
+  },
+
+  vstack5: {
+    flex: 1,
+    flexGrow: 2,
+    flexShrink: 0,
+    flexWrap: "wrap",
+    alignSelf: "center"
+  },
+
+  vstack6: {
+    margin: 8,
+    padding: 4,
+    width: "100%",
+    height: 200,
+    backgroundColor: color.core.blue.HB5,
+    borderRadius: radius.xl,
+    borderWidth: 2,
+    borderColor: color.core.neutral.HN8
+  },
+
+  vstack7: {
+    width: 100,
+    height: 100,
+    borderTopLeftRadius: radius.sm,
+    borderBottomLeftRadius: radius.sm,
+    borderTopRightRadius: radius.md,
+    borderBottomRightRadius: radius.md
+  }
+});
 "
 `;

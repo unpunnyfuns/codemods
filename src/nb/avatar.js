@@ -9,12 +9,7 @@
  * Re-runnable on partially migrated files
  */
 
-import {
-  addNamedImport,
-  createNestedObject,
-  hasNamedImport,
-  removeNamedImport,
-} from '@puns/shiftkit'
+import { createNestedObject } from '@puns/shiftkit'
 import {
   addTransformedProps,
   buildStyleValue,
@@ -22,12 +17,21 @@ import {
   createAttribute,
   createViewWrapper,
   filterAttributes,
-  findJSXElements,
   getAttributeValue,
 } from '@puns/shiftkit/jsx'
-import { createStyleContext } from '../helpers/style-context.js'
-import { accessibility } from './mappings/props-direct.js'
-import { allPseudoProps } from './mappings/props-drop.js'
+import { pipeline } from '../infrastructure/core/pipeline.js'
+import {
+  applyCollectedStyles,
+  applyStyleSheet,
+  checkImports,
+  findElements,
+  initStyleContext,
+  manageImports,
+  parseOptions,
+  transformElements,
+} from '../infrastructure/steps/pipeline-steps.js'
+import { accessibility } from './configs/props-direct.js'
+import { allPseudoProps } from './configs/props-drop.js'
 import {
   border,
   color,
@@ -38,13 +42,18 @@ import {
   sizing,
   spacing,
   text,
-} from './mappings/props-style.js'
-import { addElementComment, categorizeProps } from './props.js'
+} from './configs/props-style.js'
+import { categorizeProps } from './props.js'
 
-// styleProps: spacing, sizing, colors, borders, layout, flexbox, position (excludes 'size')
-// transformProps: none
-// directProps: size, accessibility
-// dropProps: iconName, imageUri, imageSource, letters, lettersColor, isSecondaryColor, placeholder, resizeMode, source, pseudo-props
+// Avatar configuration
+const avatarConfig = {
+  sourceImport: '@hb-frontend/common/src/components',
+  targetImport: '@hb-frontend/app/src/components/nordlys/Avatar',
+  targetName: 'Avatar',
+  tokenImport: '@hb-frontend/nordlys',
+  wrap: true,
+}
+
 const styleProps = {
   ...spacing,
   ...sizing,
@@ -58,183 +67,108 @@ const styleProps = {
 }
 delete styleProps.size // 'size' is an Avatar prop, not a style
 
-const transformProps = {}
-
-const directPropsList = ['size', ...accessibility]
-
-const dropPropsList = [
-  ...allPseudoProps, // _hover, _pressed, etc.
-  'iconName', // Converted to icon object
-  'imageUri', // Converted to image object
-  'imageSource', // Converted to image object
-  'letters', // NOT SUPPORTED
-  'lettersColor', // Not supported
-  'isSecondaryColor', // Not supported
-  'placeholder', // Not supported
-  'resizeMode', // Not supported
-  'source', // Not supported
-]
+const DIRECT_PROPS = ['size', ...accessibility]
 
 const avatarProps = {
   styleProps,
-  transformProps,
-  directProps: directPropsList,
-  dropProps: dropPropsList,
+  transformProps: {},
+  directProps: DIRECT_PROPS,
+  dropProps: [
+    ...allPseudoProps,
+    'iconName',
+    'imageUri',
+    'imageSource',
+    'letters',
+    'lettersColor',
+    'isSecondaryColor',
+    'placeholder',
+    'resizeMode',
+    'source',
+  ],
 }
 
-function main(fileInfo, api, options = {}) {
-  const j = api.jscodeshift
-  const root = j(fileInfo.source)
-
-  const sourceImport = options.sourceImport
-  const targetImport = options.targetImport
-  const targetName = options.targetName ?? 'Avatar'
-  const tokenImport = options.tokenImport
-  const wrap = options.wrap ?? true
-
-  if (!sourceImport) {
-    throw new Error('--sourceImport is required (e.g., --sourceImport="@your/common/components")')
-  }
-  if (!targetImport) {
-    throw new Error('--targetImport is required (e.g., --targetImport="@your/components/Avatar")')
-  }
-  if (!tokenImport) {
-    throw new Error('--tokenImport is required (e.g., --tokenImport="@your/design-tokens")')
-  }
-
-  // Check for Avatar imports from both source and target (for re-running)
-  const sourceImports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  const targetImports = root.find(j.ImportDeclaration, { source: { value: targetImport } })
-
-  const hasSourceAvatar = sourceImports.length > 0 && hasNamedImport(sourceImports, 'Avatar')
-  const hasTargetAvatar = targetImports.length > 0 && hasNamedImport(targetImports, 'Avatar')
-
-  if (!hasSourceAvatar && !hasTargetAvatar) {
-    return fileInfo.source
-  }
-
-  // Find Avatar elements (works for both source and target since both use 'Avatar')
-  const avatarElements = findJSXElements(root, 'Avatar', j)
-
-  if (avatarElements.length === 0) {
-    return fileInfo.source
-  }
-
+/**
+ * Transform a single Avatar element to Nordlys Avatar
+ *
+ * Returns { element, warnings, tokenHelpers, styles } instead of mutating context.
+ */
+function transformAvatar(path, index, ctx) {
+  const { j } = ctx
+  const attributes = path.node.openingElement.attributes || []
   const warnings = []
-  const styles = createStyleContext()
-  let migrated = 0
-  let hasViewWrappers = false
 
-  avatarElements.forEach((path, index) => {
-    const attributes = path.node.openingElement.attributes || []
+  // Categorize props
+  const categorized = categorizeProps(attributes, avatarProps, j)
+  const { styleProps, inlineStyles, transformedProps, propsToRemove, usedTokenHelpers } =
+    categorized
 
-    // Extract Avatar props (iconName, imageUri, imageSource, letters)
-    const iconName = getAttributeValue(attributes, 'iconName')
-    const imageUri = getAttributeValue(attributes, 'imageUri')
-    const imageSource = getAttributeValue(attributes, 'imageSource')
-    const letters = getAttributeValue(attributes, 'letters')
+  // Extract Avatar props
+  const iconName = getAttributeValue(attributes, 'iconName')
+  const imageUri = getAttributeValue(attributes, 'imageUri')
+  const imageSource = getAttributeValue(attributes, 'imageSource')
+  const letters = getAttributeValue(attributes, 'letters')
 
-    // Cannot migrate: letters prop not supported in Nordlys
-    if (letters) {
-      warnings.push('Avatar with letters prop cannot be migrated (not supported in Nordlys Avatar)')
-      return
-    }
+  // Cannot migrate: letters prop not supported
+  if (letters) {
+    warnings.push('Avatar with letters prop cannot be migrated (not supported in Nordlys Avatar)')
+    return { element: null, warnings }
+  }
 
-    // Categorize props into style/transform/direct/drop buckets
-    const {
-      styleProps,
-      inlineStyles,
-      transformedProps,
-      propsToRemove,
-      usedTokenHelpers,
-      droppedProps,
-      invalidStyles,
-      hasManualFailures,
-    } = categorizeProps(attributes, avatarProps, j)
-
-    // Skip if manual fixes needed (unless --unsafe mode)
-    if (hasManualFailures) {
-      const msg = options.unsafe
-        ? `⚠️  Avatar: unsafe mode - proceeding with partial migration (${fileInfo.path})`
-        : `⚠️  Avatar skipped - manual fixes required (${fileInfo.path})`
-      console.warn(msg)
-      if (!options.unsafe) {
-        return
-      }
-    }
-
-    // Track token helpers used
-    styles.addHelpers(usedTokenHelpers)
-
-    // Build Nordlys Avatar attributes
-    const attrs = filterAttributes(attributes, {
-      allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
-    })
-    addTransformedProps(attrs, transformedProps, j)
-
-    // Convert iconName/imageUri/imageSource to Nordlys object props
-    if (iconName) {
-      attrs.push(
-        createAttribute('icon', createNestedObject({ name: iconName, fill: 'blue' }, j), j),
-      )
-    } else if (imageUri) {
-      attrs.push(createAttribute('image', createNestedObject({ source: { uri: imageUri } }, j), j))
-    } else if (imageSource) {
-      attrs.push(createAttribute('image', createNestedObject({ source: imageSource }, j), j))
-    }
-
-    path.node.openingElement.attributes = attrs
-
-    addElementComment(path, droppedProps, invalidStyles, j)
-    migrated++
-
-    // Wrap in <View style={styles.avatarN}> if style props exist
-    const hasStyles = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
-    if (wrap && hasStyles) {
-      const styleName = `avatar${index}`
-      const element = cloneElement(path.node, j)
-      const tempStyles = []
-      const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
-      if (tempStyles.length > 0) {
-        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
-      }
-      const wrapper = createViewWrapper(element, style, j)
-      j(path).replaceWith(wrapper)
-      hasViewWrappers = true
-    }
+  // Build attributes
+  const attrs = filterAttributes(attributes, {
+    allow: DIRECT_PROPS.filter((prop) => !propsToRemove.includes(prop)),
   })
+  addTransformedProps(attrs, transformedProps, j)
 
-  if (warnings.length > 0) {
-    console.warn('⚠️  Avatar migration warnings:')
-    const uniqueWarnings = [...new Set(warnings)]
-    for (const w of uniqueWarnings) {
-      console.warn(`   ${w}`)
+  // Convert iconName/imageUri/imageSource to Nordlys object props
+  if (iconName) {
+    attrs.push(createAttribute('icon', createNestedObject({ name: iconName, fill: 'blue' }, j), j))
+  } else if (imageUri) {
+    attrs.push(createAttribute('image', createNestedObject({ source: { uri: imageUri } }, j), j))
+  } else if (imageSource) {
+    attrs.push(createAttribute('image', createNestedObject({ source: imageSource }, j), j))
+  }
+
+  path.node.openingElement.attributes = attrs
+
+  // Wrap in View if style props exist
+  const hasStyles = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
+  const tempStyles = []
+
+  if (avatarConfig.wrap && hasStyles) {
+    const styleName = `avatar${index}`
+    const element = cloneElement(path.node, j)
+    const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+    const wrappedElement = createViewWrapper(element, style, j)
+
+    return {
+      element: wrappedElement,
+      warnings,
+      tokenHelpers: usedTokenHelpers,
+      styles: tempStyles,
     }
   }
 
-  // Only change imports if we migrated at least one element
-  if (migrated === 0) {
-    return fileInfo.source
+  return {
+    element: path.node,
+    warnings,
+    tokenHelpers: usedTokenHelpers,
+    styles: tempStyles,
   }
-
-  // Remove Avatar from source import (if it exists) and add to target
-  if (hasSourceAvatar) {
-    removeNamedImport(sourceImports, 'Avatar', j)
-  }
-  addNamedImport(root, targetImport, targetName, j)
-
-  // Add View import if we created View wrappers with inline styles only
-  if (hasViewWrappers && styles.length === 0) {
-    addNamedImport(root, 'react-native', 'View', j)
-  }
-
-  styles.applyToRoot(root, { wrap, tokenImport }, j)
-
-  return root.toSource({
-    quote: 'single',
-    tabWidth: 2,
-    useTabs: false,
-  })
 }
 
-export default main
+/**
+ * Main transform - functional pipeline composition
+ */
+export default function transform(fileInfo, api, options) {
+  return pipeline(fileInfo, api, options, [
+    parseOptions(avatarConfig),
+    checkImports('Avatar'),
+    findElements('Avatar'),
+    initStyleContext(),
+    transformElements(transformAvatar),
+    applyCollectedStyles(),
+    manageImports('Avatar'),
+    applyStyleSheet(),
+  ])
+}

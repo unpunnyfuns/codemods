@@ -6,12 +6,12 @@ General-purpose transform to redirect import paths, optionally renaming imported
 
 ```bash
 # Simple redirect (no renaming)
-./run.sh transforms/redirect-imports "src/**/*.tsx" \
+./run.sh redirect-imports "src/**/*.tsx" \
   --sourceImport="native-base" \
   --targetImport="@org/common/native-base"
 
 # Redirect with renaming
-./run.sh transforms/redirect-imports "src/**/*.tsx" \
+./run.sh redirect-imports "src/**/*.tsx" \
   --sourceImport="react-native" \
   --targetImport="react-native" \
   --sourceName="View" \
@@ -37,7 +37,7 @@ import { Text } from 'react-native'
 
 **Command:**
 ```bash
-./run.sh transforms/redirect-imports "src/**/*.tsx" \
+./run.sh redirect-imports "src/**/*.tsx" \
   --sourceImport="native-base" \
   --targetImport="@org/common/native-base"
 ```

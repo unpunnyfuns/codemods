@@ -2,22 +2,44 @@
 
 exports[`nb/stack > migrates HStack to Stack with full prop mapping 1`] = `
 "import { SomeOtherComponent } from '@org/common/src/other'
-import { HStack } from 'native-base'
+import { Stack } from '@target/components/Stack';
+import { StyleSheet } from 'react-native';
+import { radius } from '@design-tokens';
 
 export function MyComponent() {
   return (
     <>
-      <HStack space={2} m={4} align="start" rounded="md">
+      <Stack direction='horizontal' gap={2} style={styles.hstack0}>
         <SomeOtherComponent />
-      </HStack>
-      <HStack mt={8} px={3} py={2} justify="between" testID="test-stack">
+      </Stack>
+      <Stack testID="test-stack" direction='horizontal' style={styles.hstack1}>
         <SomeOtherComponent />
-      </HStack>
-      <HStack mx={5} mb={1} reversed={true} onPress={() => {}} divider={<Divider />}>
+      </Stack>
+      <Stack onPress={() => {}} direction='horizontal' style={styles.hstack2}>
         <SomeOtherComponent />
-      </HStack>
+      </Stack>
     </>
-  )
+  );
 }
+
+const styles = StyleSheet.create({
+  hstack0: {
+    margin: 4,
+    alignItems: 'flex-start',
+    borderRadius: radius.md
+  },
+
+  hstack1: {
+    marginTop: 8,
+    paddingHorizontal: 3,
+    paddingVertical: 2,
+    justifyContent: 'space-between'
+  },
+
+  hstack2: {
+    marginHorizontal: 5,
+    marginBottom: 1
+  }
+});
 "
 `;

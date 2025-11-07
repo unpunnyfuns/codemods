@@ -1,12 +1,19 @@
-// NativeBase to Nordlys color mappings
-//
-// Initially thought we could auto-generate this from color tokens, but NativeBase
-// uses numeric scales (gray.100-900) while Nordlys uses semantic names (HN1-9).
-// Built this map by running migration on real files and collecting mismatches.
+/**
+ * NativeBase → Nordlys Color Transformations
+ *
+ * Part of the transformation layer: Source (NativeBase) → Target (Nordlys) mappings.
+ *
+ * Initially thought we could auto-generate this from color tokens, but NativeBase
+ * uses numeric scales (gray.100-900) while Nordlys uses semantic names (HN1-9).
+ * Built this map by running migration on real files and collecting mismatches.
+ *
+ * This is semantic mapping, not value-based - preserves design intent.
+ */
 
 // Paths that match directly between NB and Nordlys - rare but they exist
 export const DIRECT_COLOR_PATHS = [
   'background.primary',
+  'background.primary-alternate',
   'background.secondary',
   'background.tertiary',
   'background.screen',
@@ -19,17 +26,28 @@ export const COLOR_PATH_REMAPPING = {
   'white.0': 'white.HW1',
   'black.900': 'core.neutral.HN1',
 
-  // Basic colors
-  gray: 'core.neutral.HN3',
-  'gray.100': 'core.neutral.HN1',
-  'gray.200': 'core.neutral.HN2',
-  'gray.300': 'core.neutral.HN3',
-  'gray.400': 'core.neutral.HN4',
+  // Gray scale - semantic mapping by lightness (NB cool tint vs Nordlys warm tint)
+  gray: 'core.neutral.HN5',
+  'gray.0': 'core.neutral.HN10', // Lightest
+  'gray.100': 'core.neutral.HN9',
+  'gray.200': 'core.neutral.HN8',
+  'gray.300': 'core.neutral.HN7',
+  'gray.400': 'core.neutral.HN6',
   'gray.500': 'core.neutral.HN5',
-  'gray.600': 'core.neutral.HN6',
-  'gray.700': 'core.neutral.HN7',
-  'gray.800': 'core.neutral.HN8',
-  'gray.900': 'core.neutral.HN9',
+  'gray.600': 'core.neutral.HN4',
+  'gray.700': 'core.neutral.HN3',
+  'gray.800': 'core.neutral.HN2',
+  'gray.900': 'core.neutral.HN1', // Darkest
+
+  // Blue scale - semantic mapping by lightness
+  'blue.0': 'core.blue.HB10', // Lightest (exact match)
+  'blue.100': 'core.blue.HB9',
+  'blue.500': 'core.blue.HB5',
+
+  // Pink scale - map to closest warm neutrals (Nordlys has no pink)
+  'pink.200': 'core.neutral.HN9',
+  'pink.400': 'core.neutral.HN8',
+
   account: 'brand.primary',
   'account.solid.default': 'brand.primary',
 

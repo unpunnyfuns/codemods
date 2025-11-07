@@ -17,19 +17,31 @@ export const DEFAULT_TEST_OPTIONS = {
  * This ensures formatting differences don't cause test failures
  *
  * @param {string} transformPath - Path to transform relative to src/ (e.g., 'nb/box' or 'transforms/redirect-imports')
- * @param {string} fixturePath - Path to fixture (e.g., 'nb/box')
+ * @param {string} fixturePath - Path to fixture (e.g., 'nb/box') - can be null if sourceInput provided
  * @param {string} extension - File extension for fixture (default: 'js')
- * @param {object} options - Options to pass to transform (default: {})
+ * @param {object} options - Options to pass to transform (default: {}). Can include sourceInput.
  */
 export function testTransform(transformPath, fixturePath, extension = 'js', options = {}) {
   const transform = require(resolve(__dirname, `../${transformPath}.js`)).default
   const j = jscodeshift.withParser('tsx')
 
-  // All fixtures live in src/__testfixtures__/${fixturePath}
-  const fixturesPath = resolve(__dirname, '../__testfixtures__')
-  const inputPath = resolve(fixturesPath, `${fixturePath}.input.${extension}`)
+  // Support direct source input or file-based fixtures
+  let input
+  let inputPath
 
-  const input = readFileSync(inputPath, 'utf8')
+  if (options.sourceInput) {
+    input = options.sourceInput
+    inputPath = 'inline-test.tsx'
+    // Remove sourceInput from options passed to transform
+    // biome-ignore lint/correctness/noUnusedVariables: destructuring to remove property
+    const { sourceInput, ...transformOptions } = options
+    options = transformOptions
+  } else {
+    // All fixtures live in src/__testfixtures__/${fixturePath}
+    const fixturesPath = resolve(__dirname, '../__testfixtures__')
+    inputPath = resolve(fixturesPath, `${fixturePath}.input.${extension}`)
+    input = readFileSync(inputPath, 'utf8')
+  }
 
   const fileInfo = {
     path: inputPath,

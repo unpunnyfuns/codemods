@@ -14,12 +14,6 @@ export function MyComponent() {
       <Pressable accessibilityRole="link" onPress={() => {}} style={styles.pressable1}>
         <Text>Custom role</Text>
       </Pressable>
-
-      {/* Dropped during migration (not supported in React Native):
-        isDisabled={true}
-        _hover={...}
-        _pressed={...} */
-      }
       <Pressable onPress={() => {}} accessibilityRole='button'>
         <Text>With pseudo props</Text>
       </Pressable>
@@ -29,7 +23,7 @@ export function MyComponent() {
 
 const styles = StyleSheet.create({
   pressable0: {
-    backgroundColor: color.blue['500'],
+    backgroundColor: color.core.blue.HB5,
     padding: 4,
     margin: 2
   },

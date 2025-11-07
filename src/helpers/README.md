@@ -1,293 +1,80 @@
-# Utils
+# Helpers
 
-Shared utility functions for JSX transformations, import management, prop processing, and AST manipulation.
+Project-specific helper utilities for codemod transformations.
 
 ## Structure
 
 | File | Purpose |
 |------|---------|
-| `imports.js` | Import statement manipulation (add, remove, redirect) |
-| `jsx-extraction.js` | Extract values from JSX elements and children |
-| `jsx-transforms.js` | JSX element transformations (name, props, styles) |
-| `jsx.js` | JSX element queries and predicates |
-| `props.js` | Prop categorization, value mapping, StyleSheet generation |
-| `token-helpers.js` | Design token helper transformations |
+| `style-context.js` | StyleSheet context management for accumulating and applying styles |
 
 ## Module Details
 
-### imports.js
+### style-context.js
 
-Comprehensive import statement manipulation utilities.
-
-**Exports:**
-```javascript
-// Query helpers
-matchesImportPath(importPath) to function
-hasNamedImport(imports, importName) to boolean
-
-// Transformations
-redirectImport(importNode, newPath, j) to ImportDeclaration
-insertImports(root, newImports, j) to void
-addNamedImport(root, modulePath, importName, j) to void
-removeNamedImport(imports, importName, j) to void
-```
-
-**Key features:**
-- Preserves `importKind` for TypeScript type imports
-- Handles trailing slashes in import paths
-- Merges into existing imports when possible
-- Removes empty import statements
-
----
-
-### jsx-extraction.js
-
-Extract values from nested JSX elements and children with complexity detection.
+Manages StyleSheet accumulation and application across element transformations.
 
 **Exports:**
 ```javascript
-extractPropFromJSXElement(element, expectedElementName, propName, j) to string|ASTNode|null
-extractSimpleChild(children, j, options?) to { value: ASTNode|null, isComplex: boolean }
-```
-
-**Use cases:**
-- Extract `name="Plus"` from `<Icon name="Plus" />` in `leftIcon` prop
-- Extract simple text/expressions from children while detecting complexity
-- Configurable allowed expression types for children validation
-
-**Example:**
-```javascript
-// Extract icon name from nested element
-const iconName = extractPropFromJSXElement(iconElement, 'Icon', 'name', j)
-// Returns: "Plus" or expression node
-
-// Extract child with complexity check
-const { value, isComplex } = extractSimpleChild(children, j, {
-  allowedExpressionTypes: ['Identifier', 'CallExpression']
-})
-if (isComplex) {
-  // Handle complex children (multiple elements, JSX, etc)
+createStyleContext() to {
+  addStyle(name, styles)
+  addHelpers(helpers)
+  length
+  hasStyles()
+  applyToRoot(root, options, j)
 }
 ```
 
----
-
-### jsx-transforms.js
-
-JSX element transformation utilities for name, props, and style manipulation.
-
-**Exports:**
+**Usage:**
 ```javascript
-updateElementName(path, targetName) to void
-removePropsFromElement(attributes, propsToRemove) to void
-addPropsToElement(attributes, transformedProps, j) to void
-buildStyleValue(styleProps, inlineStyles, styleName, elementStyles, j) to ASTNode|null
-addStyleProp(attributes, styleValue, j) to void
-```
+import { createStyleContext } from '../helpers/style-context.js'
 
-**Use cases:**
-- Rename JSX elements (Box to View)
-- Add/remove props from elements
-- Build style prop values combining StyleSheet references and inline styles
-- Handle array-based style merging
+const styles = createStyleContext()
 
-**Example:**
-```javascript
-updateElementName(path, 'View')
-removePropsFromElement(attributes, propsToRemove)
-addPropsToElement(attributes, { flex: j.numericLiteral(1) }, j)
-
-const styleValue = buildStyleValue(
-  { padding: 4 },           // StyleSheet styles
-  { borderRadius: 16 },     // Inline styles
-  'box0',                   // StyleSheet key
-  elementStyles,            // Accumulator
-  j
-)
-addStyleProp(attributes, styleValue, j)
-// Results in: style={[styles.box0, { borderRadius: 16 }]}
-```
-
----
-
-### jsx.js
-
-Simple JSX element predicates.
-
-**Exports:**
-```javascript
-hasAttributes(jsxElements) to boolean
-```
-
-Checks if any JSX elements in collection have attributes.
-
----
-
-### props.js
-
-Core prop processing engine for categorizing, transforming, and extracting props to StyleSheet.
-
-**Exports:**
-```javascript
-// Value processing
-shouldExtractToStyleSheet(value, isTokenHelper) to boolean
-processTokenHelper(value, tokenHelper, j, usedTokenHelpers) to { value, isTokenHelper }
-applyValueMapping(value, valueMap, j) to ASTNode
-
-// Main categorization
-categorizeProps(attributes, mappings, j) to {
-  styleProps,        // Extract to StyleSheet
-  inlineStyles,      // Keep as inline styles
-  transformedProps,  // Rename/transform on element
-  propsToRemove,     // Remove from element
-  usedTokenHelpers   // Track token helpers used
-}
-
-// StyleSheet generation
-buildStyleSheetProperties(styleProps, j) to Array<Property>
-addOrExtendStyleSheet(root, elementStyles, j) to void
-```
-
-**Mapping configuration:**
-```javascript
-const mappings = {
-  STYLE_PROPS: {
-    // Simple mapping
-    p: 'padding',
-
-    // With value mapping
-    space: {
-      styleName: 'gap',
-      valueMap: { 1: 4, 2: 8 }
-    },
-
-    // With token helper
-    bg: {
-      styleName: 'backgroundColor',
-      tokenHelper: 'color'
-    }
-  },
-
-  TRANSFORM_PROPS: {
-    // Simple rename
-    isDisabled: 'disabled',
-
-    // With value mapping
-    align: {
-      propName: 'alignItems',
-      valueMap: { start: 'flex-start', end: 'flex-end' }
-    }
-  },
-
-  DROP_PROPS: ['_hover', '_pressed', '_web']
-}
-```
-
-**Key features:**
-- Handles token helpers (color.blue.500, space.md) with auto-import
-- Applies value mappings for numeric/string literals
-- Decides StyleSheet vs inline based on value type
-- Extends existing StyleSheet.create() or creates new one
-- Tracks used token helpers for import management
-
----
-
-### token-helpers.js
-
-Build nested member expressions from dot-separated token paths.
-
-**Exports:**
-```javascript
-buildTokenPath(j, tokenHelper, tokenPath) to MemberExpression
-```
-
-**Handles:**
-- Dot notation: `color.background.primary` to `color.background.primary`
-- Bracket notation: `color.white.900` to `color.white['900']`
-- Mixed: `space.md` to `space.md`
-
-**Example:**
-```javascript
-buildTokenPath(j, 'color', 'background.secondary')
-// Returns AST for: color.background.secondary
-
-buildTokenPath(j, 'color', 'white.900')
-// Returns AST for: color.white['900']
-```
-
-## Usage Patterns
-
-### Simple component migration
-```javascript
-import { addNamedImport, removeNamedImport } from './utils/imports.js'
-import { updateElementName } from './utils/jsx-transforms.js'
-
-// Find and update elements
-buttonElements.forEach(path => {
-  updateElementName(path, 'Pressable')
-})
-
-// Update imports
-removeNamedImport(imports, 'Button', j)
-addNamedImport(root, 'react-native', 'Pressable', j)
-
-return root.toSource({ quote: 'single', tabWidth: 2, useTabs: false })
-```
-
-### Prop-based migration with StyleSheet
-```javascript
-import { categorizeProps, addOrExtendStyleSheet } from './utils/props.js'
-import { addPropsToElement, buildStyleValue, addStyleProp } from './utils/jsx-transforms.js'
-import * as boxProps from '../mappings/box-props.js'
-
-const elementStyles = []
-const usedTokenHelpers = new Set()
-
+// Accumulate styles for each element
 boxElements.forEach((path, index) => {
-  const { styleProps, inlineStyles, transformedProps, propsToRemove } =
-    categorizeProps(attributes, boxProps, j)
-
-  removePropsFromElement(attributes, propsToRemove)
-  addPropsToElement(attributes, transformedProps, j)
-
-  const styleValue = buildStyleValue(
-    styleProps, inlineStyles, `box${index}`, elementStyles, j
-  )
-  addStyleProp(attributes, styleValue, j)
+  styles.addStyle(`box${index}`, {
+    padding: 16,
+    backgroundColor: 'blue'
+  })
 })
 
-addOrExtendStyleSheet(root, elementStyles, j)
-usedTokenHelpers.forEach(h => addNamedImport(root, './tokens', h, j))
-```
+// Track used token helpers
+styles.addHelpers(['color', 'space'])
 
-### JSX extraction and transformation
-```javascript
-import { extractPropFromJSXElement, extractSimpleChild } from './utils/jsx-extraction.js'
-
-// Extract from nested component
-const iconName = extractPropFromJSXElement(
-  leftIconAttr.value.expression,
-  'Icon',
-  'name',
-  j
-)
-
-// Extract from children
-const { value: text, isComplex } = extractSimpleChild(children, j)
-if (isComplex) {
-  warnings.push('Complex children cannot be migrated')
-  return
+// Apply accumulated styles at end of transform
+if (styles.hasStyles()) {
+  styles.applyToRoot(root, { wrap: false }, j)
 }
 ```
 
-## Design Principles
+**Key features:**
+- Accumulates element styles during transformation
+- Creates or extends existing StyleSheet.create()
+- Tracks token helper imports needed
+- Handles StyleSheet import management
+- Configurable wrapping behavior
 
-**Composability:** Each utility does one thing well and composes with others
+**Options:**
+- `wrap: boolean` - Whether to wrap file in IIFE (default: true)
 
-**Immutability:** Functions don't mutate input; they return new values or modify via side effects explicitly
+## External Utilities
 
-**Consistency:** All functions follow the same parameter ordering (data, config, j)
+Other commonly used utilities come from `@puns/shiftkit`:
 
-**Type safety:** Return structured objects `{ value, isComplex }` instead of mixed types
+**Import utilities:**
+```javascript
+import { addNamedImport, removeNamedImport, hasNamedImport } from '@puns/shiftkit'
+```
 
-**Error handling:** Return null/undefined for missing values; throw only for programmer errors
+**JSX utilities:**
+```javascript
+import { findJSXElements, filterAttributes, buildStyleValue } from '@puns/shiftkit/jsx'
+```
+
+**RN utilities:**
+```javascript
+import { shouldExtractToStyleSheet, addOrExtendStyleSheet } from '@puns/shiftkit/rn'
+```
+
+See [@puns/shiftkit documentation](https://github.com/puns/shiftkit) for details.

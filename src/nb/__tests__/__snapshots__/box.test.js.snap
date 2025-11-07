@@ -31,7 +31,7 @@ export function Example() {
 const styles = StyleSheet.create({
   box0: {
     padding: space.lg,
-    backgroundColor: color.blue['500']
+    backgroundColor: color.core.blue.HB5
   }
 });
 "
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   },
 
   box1: {
-    marginBottom: space['2xl'],
+    marginBottom: space.xl,
     backgroundColor: color.white.HW1,
     flex: 1
   },

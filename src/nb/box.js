@@ -15,14 +15,25 @@ import {
   filterAttributes,
   findJSXElements,
 } from '@puns/shiftkit/jsx'
-import { createStyleContext } from '../helpers/style-context.js'
-import { directProps } from './mappings/props-direct.js'
+import { pipeline } from '../infrastructure/core/pipeline.js'
+import {
+  applyCollectedStyles,
+  applyStyleSheet,
+  checkImports,
+  findElements,
+  initStyleContext,
+  manageImports,
+  parseOptions,
+  preprocess,
+  transformElements,
+} from '../infrastructure/steps/pipeline-steps.js'
+import { directProps } from './configs/props-direct.js'
 import {
   allPseudoProps,
   platformPseudoProps,
   themePseudoProps,
   unsupportedProps,
-} from './mappings/props-drop.js'
+} from './configs/props-drop.js'
 import {
   border,
   color,
@@ -33,203 +44,179 @@ import {
   sizing,
   spacing,
   text,
-} from './mappings/props-style.js'
+} from './configs/props-style.js'
+import { getTokenValue } from './models/target-nordlys.js'
 import { addElementComment, addTodoComment, categorizeProps } from './props.js'
 
-// Variant to borderRadius mapping observed from Box component API
-// Default borderRadius values applied when variant prop is set
+// Box configuration
+const boxConfig = {
+  sourceImport: 'native-base',
+  targetImport: 'react-native',
+  targetName: 'View',
+  tokenImport: '@hb-frontend/nordlys',
+  wrap: false,
+}
+
+// Variant to borderRadius token mapping
 const VARIANT_BORDER_RADIUS = {
-  container: 'lg', // Used for outer containers
-  content: 'md', // Used for content boxes
+  container: 'lg',
+  content: 'md',
 }
 
-// Radii token to numeric value mapping from documented design tokens
-// Converts semantic tokens to actual pixel values for React Native StyleSheet
-const RADII_VALUES = {
-  sm: 4,
-  md: 8,
-  lg: 12,
-}
-
-// styleProps: spacing, sizing, colors, borders, layout, flexbox, position, text
-// transformProps: none
-// directProps: event handlers, accessibility, testID, children
-// dropProps: pseudo-props, platform/theme overrides, variant, disableTopRounding, disableBottomRounding, safeArea*
-const styleProps = {
-  ...spacing,
-  ...sizing,
-  ...color,
-  ...border,
-  ...layout,
-  ...flexbox,
-  ...position,
-  ...text, // Text-only props will fail validation and be marked for manual migration
-  ...extra,
-}
-
-const transformProps = {}
-
-const directPropsList = [...directProps]
-
-// Explicit drop list for Box
-// NOTE: Box is a layout component (migrates to View), not themed - drop colorScheme/variant
-// The 'size' prop is handled by styleProps as layout (width/height)
-const dropPropsList = [
-  ...allPseudoProps, // _hover, _pressed, _focus, _disabled, etc.
-  ...platformPseudoProps, // _ios, _android, _web
-  ...themePseudoProps, // _light, _dark
-  ...unsupportedProps, // Props that don't map to React Native
-  // Box-specific drops (theme props from NativeBase)
-  'colorScheme',
-  'variant',
-  // Common Box props (handled in preprocessing)
-  'disableTopRounding',
-  'disableBottomRounding',
-  // Safe area props (not supported in vanilla RN View)
-  'safeAreaBottom',
-  'safeAreaTop',
-]
+const DIRECT_PROPS = [...directProps]
 
 const boxProps = {
-  styleProps,
-  transformProps,
-  directProps: directPropsList,
-  dropProps: dropPropsList,
+  styleProps: {
+    ...spacing,
+    ...sizing,
+    ...color,
+    ...border,
+    ...layout,
+    ...flexbox,
+    ...position,
+    ...text,
+    ...extra,
+  },
+  transformProps: {},
+  directProps: DIRECT_PROPS,
+  dropProps: [
+    ...allPseudoProps,
+    ...platformPseudoProps,
+    ...themePseudoProps,
+    ...unsupportedProps,
+    'colorScheme',
+    'variant',
+    'disableTopRounding',
+    'disableBottomRounding',
+    'safeAreaBottom',
+    'safeAreaTop',
+  ],
 }
 
-// Convert variant and disable* props to explicit borderRadius before categorization
-// variant="container" -> borderRadius=12, disableTopRounding -> borderTopRadius=0
-function preprocessBoxAttributes(attributes, j) {
-  // STEP 1: Find variant prop to determine default borderRadius
-  const variantAttr = attributes.find(
-    (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'variant',
-  )
+/**
+ * Preprocess Box attributes: convert variant and disable* props to explicit borderRadius
+ *
+ * This function is wrapped by preprocess() factory, so it just mutates elements in place.
+ */
+function preprocessBoxVariantImpl(ctx) {
+  const { elements, j } = ctx
 
-  // Look up the default borderRadius for this variant (e.g., "container" → 12, "content" → 8)
-  let defaultBorderRadius = null
-  if (variantAttr?.value?.type === 'StringLiteral') {
-    const variantValue = variantAttr.value.value
-    const radiusToken = VARIANT_BORDER_RADIUS[variantValue] // e.g., "lg"
-    if (radiusToken) {
-      defaultBorderRadius = RADII_VALUES[radiusToken] // e.g., 12
-    }
-  }
+  // Process each element's attributes
+  for (const path of elements) {
+    const attributes = path.node.openingElement.attributes || []
 
-  // STEP 2: Check if borderRadius is already explicitly set
-  // If any of these exist, we DON'T add variant defaults (explicit values win)
-  const borderRadius = attributes.find(
-    (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'borderRadius',
-  )
-  const borderTopRadius = attributes.find(
-    (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'borderTopRadius',
-  )
-  const borderBottomRadius = attributes.find(
-    (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'borderBottomRadius',
-  )
+    // Find variant prop to determine default borderRadius
+    const variantAttr = attributes.find(
+      (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'variant',
+    )
 
-  // STEP 3: Find the disable* props that need to be converted to borderRadius values
-  const disableTopRounding = attributes.find(
-    (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'disableTopRounding',
-  )
-  const disableBottomRounding = attributes.find(
-    (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'disableBottomRounding',
-  )
-
-  /**
-   * Helper to determine if a boolean prop is truthy
-   * Returns:
-   * - true: Prop is definitely truthy (disableTopRounding or disableTopRounding={true})
-   * - false: Prop is definitely falsy (disableTopRounding={false})
-   * - null: Prop is conditional (disableTopRounding={someCondition}) - needs ternary expression
-   */
-  const isTruthy = (attr) => {
-    if (!attr || !attr.value) {
-      return true // <Box disableTopRounding> means {true}
-    }
-    if (attr.value.type === 'JSXExpressionContainer') {
-      const expr = attr.value.expression
-      if (expr.type === 'BooleanLiteral' || expr.type === 'Literal') {
-        return expr.value === true
+    let defaultBorderRadius = null
+    if (variantAttr?.value?.type === 'StringLiteral') {
+      const variantValue = variantAttr.value.value
+      const radiusToken = VARIANT_BORDER_RADIUS[variantValue]
+      if (radiusToken) {
+        defaultBorderRadius = getTokenValue('radius', radiusToken)
       }
-      // For other expressions (Identifier, LogicalExpression, etc.), we can't determine
-      // at transform time, so return null to indicate conditional logic is needed
-      return null
     }
-    return false
-  }
 
-  const addRadiusAttribute = (propName, disableAttr, explicitAttr) => {
-    if (disableAttr) {
-      const truthyCheck = isTruthy(disableAttr)
-      if (truthyCheck === true) {
-        newAttributes.push(
-          j.jsxAttribute(j.jsxIdentifier(propName), j.jsxExpressionContainer(j.numericLiteral(0))),
-        )
-      } else if (truthyCheck === null) {
-        const condition = disableAttr.value.expression
-        const fallback =
-          defaultBorderRadius !== null
-            ? j.numericLiteral(defaultBorderRadius)
-            : j.identifier('undefined')
+    // Check if borderRadius is already explicitly set
+    const borderRadius = attributes.find(
+      (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'borderRadius',
+    )
+    const borderTopRadius = attributes.find(
+      (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'borderTopRadius',
+    )
+    const borderBottomRadius = attributes.find(
+      (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'borderBottomRadius',
+    )
+
+    // Find disable* props
+    const disableTopRounding = attributes.find(
+      (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'disableTopRounding',
+    )
+    const disableBottomRounding = attributes.find(
+      (attr) => attr.type === 'JSXAttribute' && attr.name?.name === 'disableBottomRounding',
+    )
+
+    // Helper to determine if a boolean prop is truthy
+    const isTruthy = (attr) => {
+      if (!attr || !attr.value) {
+        return true // <Box disableTopRounding> means {true}
+      }
+      if (attr.value.type === 'JSXExpressionContainer') {
+        const expr = attr.value.expression
+        if (expr.type === 'BooleanLiteral' || expr.type === 'Literal') {
+          return expr.value === true
+        }
+        return null // Conditional
+      }
+      return false
+    }
+
+    const addRadiusAttribute = (propName, disableAttr, explicitAttr) => {
+      if (disableAttr) {
+        const truthyCheck = isTruthy(disableAttr)
+        if (truthyCheck === true) {
+          newAttributes.push(
+            j.jsxAttribute(
+              j.jsxIdentifier(propName),
+              j.jsxExpressionContainer(j.numericLiteral(0)),
+            ),
+          )
+        } else if (truthyCheck === null) {
+          const condition = disableAttr.value.expression
+          const fallback =
+            defaultBorderRadius !== null
+              ? j.numericLiteral(defaultBorderRadius)
+              : j.identifier('undefined')
+          newAttributes.push(
+            j.jsxAttribute(
+              j.jsxIdentifier(propName),
+              j.jsxExpressionContainer(
+                j.conditionalExpression(condition, j.numericLiteral(0), fallback),
+              ),
+            ),
+          )
+        }
+      } else if (defaultBorderRadius !== null && !explicitAttr && !borderRadius) {
         newAttributes.push(
           j.jsxAttribute(
             j.jsxIdentifier(propName),
-            j.jsxExpressionContainer(
-              j.conditionalExpression(condition, j.numericLiteral(0), fallback),
-            ),
+            j.jsxExpressionContainer(j.numericLiteral(defaultBorderRadius)),
           ),
         )
       }
-    } else if (defaultBorderRadius !== null && !explicitAttr && !borderRadius) {
-      newAttributes.push(
-        j.jsxAttribute(
-          j.jsxIdentifier(propName),
-          j.jsxExpressionContainer(j.numericLiteral(defaultBorderRadius)),
-        ),
-      )
     }
+
+    const newAttributes = []
+    addRadiusAttribute('borderTopRadius', disableTopRounding, borderTopRadius)
+    addRadiusAttribute('borderBottomRadius', disableBottomRounding, borderBottomRadius)
+
+    const filteredAttributes = attributes.filter(
+      (attr) =>
+        !(
+          attr.type === 'JSXAttribute' &&
+          (attr.name?.name === 'disableTopRounding' || attr.name?.name === 'disableBottomRounding')
+        ),
+    )
+
+    path.node.openingElement.attributes = [...filteredAttributes, ...newAttributes]
   }
-
-  const newAttributes = []
-  addRadiusAttribute('borderTopRadius', disableTopRounding, borderTopRadius)
-  addRadiusAttribute('borderBottomRadius', disableBottomRounding, borderBottomRadius)
-
-  const filteredAttributes = attributes.filter(
-    (attr) =>
-      !(
-        attr.type === 'JSXAttribute' &&
-        (attr.name?.name === 'disableTopRounding' || attr.name?.name === 'disableBottomRounding')
-      ),
-  )
-
-  return [...filteredAttributes, ...newAttributes]
+  // No return needed - wrapped by preprocess() factory
 }
 
-function main(fileInfo, api, options = {}) {
-  const j = api.jscodeshift
-  const root = j(fileInfo.source)
+/**
+ * Custom element finder: Find Box elements + derived names (withAnimated(Box))
+ *
+ * This is used as the customFinder parameter to findElements()
+ */
+function findBoxElementsImpl(ctx) {
+  const { root, j } = ctx
 
-  const sourceImport = options.sourceImport ?? 'native-base'
-  const targetImport = options.targetImport ?? 'react-native'
-  const targetName = options.targetName ?? 'View'
-  const tokenImport = options.tokenImport
-
-  if (!tokenImport) {
-    throw new Error('--tokenImport is required (e.g., --tokenImport="@your/design-tokens")')
-  }
-
-  // import { Box } from 'native-base'
-  const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-
-  if (!imports.length || !hasNamedImport(imports, 'Box')) {
-    return fileInfo.source
-  }
-
-  // Find all JSX elements named Box
+  // Find direct Box elements
   const boxElements = findJSXElements(root, 'Box', j)
 
   // Find derived names: const AnimatedBox = withAnimated(Box)
-  // Only match HOC patterns, not components that use Box in JSX body
   const derivedNames = new Set()
   root
     .find(j.VariableDeclarator)
@@ -239,13 +226,11 @@ function main(fileInfo, api, options = {}) {
         return false
       }
 
-      // Only match CallExpression patterns: withAnimated(Box), Animated.createAnimatedComponent(Box)
-      // Skip ArrowFunctionExpression and FunctionExpression (component definitions)
+      // Only match HOC patterns like withAnimated(Box)
       if (init.type === 'ArrowFunctionExpression' || init.type === 'FunctionExpression') {
         return false
       }
 
-      // For CallExpression, check if Box is a direct argument
       if (init.type === 'CallExpression') {
         const hasBoxArg = init.arguments.some(
           (arg) => arg.type === 'Identifier' && arg.name === 'Box',
@@ -260,113 +245,115 @@ function main(fileInfo, api, options = {}) {
     })
     .forEach(() => {})
 
-  // Collect all elements (direct Box + derived names)
+  // Collect all elements
   const allElements = [...boxElements.paths()]
   for (const name of derivedNames) {
     const derivedElements = findJSXElements(root, name, j)
     allElements.push(...derivedElements.paths())
   }
 
-  if (allElements.length === 0) {
-    // Box imported but not used at all - safe to remove
-    removeNamedImport(imports, 'Box', j)
-    return fileInfo.source
+  // Store derivedNames on ctx for later use
+  ctx.derivedNames = derivedNames
+
+  return allElements // Return array directly, findElements() will wrap it
+}
+
+/**
+ * Transform a single Box element to View
+ *
+ * Returns { element, warnings, tokenHelpers, styles } instead of mutating context.
+ */
+function transformBox(path, index, ctx) {
+  const { j, parsedOptions } = ctx
+  const attributes = path.node.openingElement.attributes || []
+  const elementName = path.node.openingElement.name.name
+  const warnings = []
+
+  // Categorize props
+  const {
+    styleProps,
+    inlineStyles,
+    transformedProps,
+    propsToRemove,
+    existingStyleReferences,
+    usedTokenHelpers,
+    droppedProps,
+    invalidStyles,
+    hasManualFailures,
+  } = categorizeProps(attributes, boxProps, j)
+
+  // Check if we should skip this element (manual failures)
+  if (hasManualFailures && !parsedOptions.unsafe) {
+    warnings.push('Box skipped - manual fixes required')
+    addTodoComment(path, 'Box', invalidStyles, j)
+    return { element: null, warnings } // Return, don't mutate!
   }
 
-  const styles = createStyleContext()
-  const warnings = []
-  let migrated = 0
-  let skipped = 0
-
-  allElements.forEach((path, index) => {
-    const elementName = path.node.openingElement.name.name
-    const attributes = path.node.openingElement.attributes || []
-
-    // Pre-process to make variant borderRadius and disable* props explicit
-    const processedAttributes = preprocessBoxAttributes(attributes, j)
-
-    const {
-      styleProps,
-      inlineStyles,
-      transformedProps,
-      propsToRemove,
-      usedTokenHelpers,
-      droppedProps,
-      invalidStyles,
-      existingStyleReferences,
-      hasManualFailures,
-    } = categorizeProps(processedAttributes, boxProps, j)
-
-    // Skip if manual fixes needed (unless --unsafe mode)
-    if (hasManualFailures) {
-      const msg = options.unsafe
-        ? `${elementName}: unsafe mode - proceeding with partial migration (${fileInfo.path})`
-        : `${elementName} skipped - manual fixes required (${fileInfo.path})`
-      warnings.push(msg)
-      if (!options.unsafe) {
-        addTodoComment(path, elementName, invalidStyles, j)
-        skipped++
-        return
-      }
-    }
-
-    styles.addHelpers(usedTokenHelpers)
-
-    // Keep only direct props (filter out style props and dropped props)
-    const attrs = filterAttributes(processedAttributes, {
-      allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
-    })
-
-    // Add transformed props
-    addTransformedProps(attrs, transformedProps, j)
-
-    // Build and add style prop
-    const tempStyles = []
-    const style = buildStyleValue(
-      styleProps,
-      inlineStyles,
-      `box${index}`,
-      tempStyles,
-      j,
-      existingStyleReferences,
-    )
-    if (tempStyles.length > 0) {
-      styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
-    }
-
-    // Add style prop to element (only if style is not null)
-    if (style) {
-      const styleProp = j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(style))
-      attrs.push(styleProp)
-    }
-
-    // Update element name and attributes
-    // Only rename if it's the direct Box component, not a derived name
-    if (elementName === 'Box') {
-      path.node.openingElement.name = j.jsxIdentifier(targetName)
-      if (path.node.closingElement) {
-        path.node.closingElement.name = j.jsxIdentifier(targetName)
-      }
-    }
-    path.node.openingElement.attributes = attrs
-
-    addElementComment(path, droppedProps, invalidStyles, j)
-    migrated++
+  // Filter to keep only direct props
+  const attrs = filterAttributes(attributes, {
+    allow: DIRECT_PROPS.filter((prop) => !propsToRemove.includes(prop)),
   })
 
-  // If nothing was migrated, return original source
-  if (migrated === 0) {
-    if (warnings.length > 0) {
-      console.warn('⚠️  Box migration warnings:')
-      const uniqueWarnings = [...new Set(warnings)]
-      for (const w of uniqueWarnings) {
-        console.warn(`   ${w}`)
-      }
-    }
-    return fileInfo.source
+  // Add transformed props
+  addTransformedProps(attrs, transformedProps, j)
+
+  // Build and add style prop
+  const tempStyles = []
+  const style = buildStyleValue(
+    styleProps,
+    inlineStyles,
+    `box${index}`,
+    tempStyles,
+    j,
+    existingStyleReferences,
+  )
+
+  if (style) {
+    attrs.push(j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(style)))
   }
 
-  // Replace Box identifier references with View (e.g., withAnimated(Box) -> withAnimated(View))
+  // Update element name (Box → View, but keep derived names unchanged)
+  if (elementName === 'Box') {
+    path.node.openingElement.name = j.jsxIdentifier('View')
+    if (path.node.closingElement) {
+      path.node.closingElement.name = j.jsxIdentifier('View')
+    }
+  }
+  path.node.openingElement.attributes = attrs
+
+  // Add migration comment for dropped props and invalid styles
+  addElementComment(path, droppedProps, invalidStyles, j)
+
+  // Return results immutably
+  return {
+    element: path.node,
+    warnings,
+    tokenHelpers: usedTokenHelpers,
+    styles: tempStyles,
+  }
+}
+
+/**
+ * Custom import management: Replace Box identifier references with View
+ *
+ * This is used as the customManager parameter to manageImports()
+ */
+function manageBoxImportsImpl(ctx) {
+  const { root, j, parsedOptions, skipped } = ctx
+  const { sourceImport, targetImport, targetName } = parsedOptions
+
+  // Remove Box from source import
+  const sourceImports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
+  if (sourceImports.length > 0 && hasNamedImport(sourceImports, 'Box')) {
+    // Only remove if no elements were skipped
+    if (skipped === 0) {
+      removeNamedImport(sourceImports, 'Box', j)
+    } else {
+      ctx.warnings.push(`Box import kept - ${skipped} element(s) skipped and still reference Box`)
+    }
+  }
+
+  // Replace Box identifier references: withAnimated(Box) → withAnimated(View)
   root.find(j.Identifier, { name: 'Box' }).forEach((path) => {
     const parent = path.parent.node
     // Skip import specifiers and JSX element names (already handled)
@@ -376,52 +363,41 @@ function main(fileInfo, api, options = {}) {
     if (parent.type === 'JSXOpeningElement' || parent.type === 'JSXClosingElement') {
       return
     }
-    // Replace identifier: withAnimated(Box) -> withAnimated(View)
+    // Replace identifier
     path.node.name = targetName
   })
 
-  // Check for BoxProps type references that cannot be auto-fixed
+  // Check for BoxProps type references
   root.find(j.Identifier, { name: 'BoxProps' }).forEach((path) => {
     const parent = path.parent.node
-    // Skip if it's the import specifier itself
     if (parent.type === 'ImportSpecifier') {
       return
     }
-    // Found type reference usage
-    warnings.push(`BoxProps type reference found - manual migration required (${fileInfo.path})`)
+    ctx.warnings.push('BoxProps type reference found - manual migration required')
   })
 
-  // Add View import if any elements were successfully migrated
-  if (migrated > 0) {
-    addNamedImport(root, targetImport, targetName, j)
-  }
-
-  // Only remove Box import if no elements were skipped
-  // If elements were skipped, they still reference Box in JSX
-  if (skipped === 0) {
-    removeNamedImport(imports, 'Box', j)
-  } else {
-    warnings.push(
-      `Box import kept - ${skipped} element(s) skipped and still reference Box (${fileInfo.path})`,
-    )
-  }
-
-  // Output warnings if any
-  if (warnings.length > 0) {
-    console.warn('⚠️  Box migration warnings:')
-    const uniqueWarnings = [...new Set(warnings)]
-    for (const w of uniqueWarnings) {
-      console.warn(`   ${w}`)
-    }
-  }
-
-  styles.applyToRoot(root, { wrap: false, tokenImport }, j)
-
-  return root.toSource({
-    quote: 'single',
-    tabWidth: 2,
-    useTabs: false,
-  })
+  // Add View import
+  addNamedImport(root, targetImport, targetName, j)
+  // No return needed - wrapped by manageImports() factory
 }
 
-export default main
+/**
+ * Main transform - functional pipeline composition
+ *
+ * The pipeline array is self-documenting: read top-to-bottom to understand flow
+ * ALL steps are factory functions (consistent pattern)
+ * Transform functions return results (immutable pattern)
+ */
+export default function transform(fileInfo, api, options) {
+  return pipeline(fileInfo, api, options, [
+    parseOptions(boxConfig),
+    checkImports('Box'),
+    findElements('Box', findBoxElementsImpl), // Custom finder for derived names
+    preprocess(preprocessBoxVariantImpl), // Preprocess variant → borderRadius
+    initStyleContext(),
+    transformElements(transformBox), // Returns { element, warnings, metadata }
+    applyCollectedStyles(), // Applies collected metadata to styles
+    manageImports('Box', manageBoxImportsImpl), // Custom manager for Box→View identifiers
+    applyStyleSheet(),
+  ])
+}

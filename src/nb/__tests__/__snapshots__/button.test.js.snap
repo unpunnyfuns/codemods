@@ -48,7 +48,7 @@ export function MyComponent() {
 
 const styles = StyleSheet.create({
   button0: {
-    marginTop: space['2xl']
+    marginTop: space.xl
   }
 });
 "

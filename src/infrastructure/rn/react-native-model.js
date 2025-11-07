@@ -358,3 +358,33 @@ export function isValidStyleProp(componentType, propName) {
       return false
   }
 }
+
+/**
+ * Get all valid style props for a specific React Native component
+ * Returns the style props object for the component type
+ */
+export function getStylePropsByComponent(componentType) {
+  switch (componentType) {
+    case 'View':
+    case 'ScrollView':
+    case 'Pressable':
+    case 'TouchableOpacity':
+      return VIEW_STYLE_PROPS
+    case 'Text':
+      return TEXT_STYLE_PROPS
+    case 'Image':
+      return IMAGE_STYLE_PROPS
+    case 'TextInput':
+      return TEXT_INPUT_STYLE_PROPS
+    default:
+      return {}
+  }
+}
+
+/**
+ * Compose multiple style prop objects into one
+ * Useful for building component-specific prop sets declaratively
+ */
+export function composeStyleProps(...categories) {
+  return Object.assign({}, ...categories)
+}

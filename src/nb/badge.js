@@ -8,7 +8,6 @@
  * Default size: "md"
  */
 
-import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
 import {
   addTransformedProps,
   buildStyleValue,
@@ -17,12 +16,21 @@ import {
   createStringAttribute,
   createViewWrapper,
   filterAttributes,
-  findJSXElements,
   hasAttribute,
 } from '@puns/shiftkit/jsx'
-import { createStyleContext } from '../helpers/style-context.js'
-import { accessibility } from './mappings/props-direct.js'
-import { allPseudoProps } from './mappings/props-drop.js'
+import { pipeline } from '../infrastructure/core/pipeline.js'
+import {
+  applyCollectedStyles,
+  applyStyleSheet,
+  checkImports,
+  findElements,
+  initStyleContext,
+  manageImports,
+  parseOptions,
+  transformElements,
+} from '../infrastructure/steps/pipeline-steps.js'
+import { accessibility } from './configs/props-direct.js'
+import { allPseudoProps } from './configs/props-drop.js'
 import {
   border,
   color,
@@ -33,41 +41,42 @@ import {
   sizing,
   spacing,
   text,
-} from './mappings/props-style.js'
-import { addElementComment, categorizeProps } from './props.js'
+} from './configs/props-style.js'
+import { categorizeProps } from './props.js'
 
-// styleProps: spacing, sizing, colors, borders, layout, flexbox, position
-// transformProps: colorScheme -> state
-// directProps: size, transparent, accessibility
-// dropProps: variant, pseudo-props
-const styleProps = {
-  ...spacing,
-  ...sizing,
-  ...color,
-  ...border,
-  ...layout,
-  ...flexbox,
-  ...position,
-  ...text,
-  ...extra,
+// Badge configuration
+const badgeConfig = {
+  sourceImport: 'native-base',
+  targetImport: '@hb-frontend/app/src/components/nordlys/Badge',
+  targetName: 'Badge',
+  tokenImport: '@hb-frontend/nordlys',
+  wrap: true,
 }
 
-const transformProps = {
-  colorScheme: 'state',
-}
-
-const directPropsList = ['size', 'transparent', ...accessibility]
-
-const dropPropsList = [...allPseudoProps, 'variant']
+const DIRECT_PROPS = ['size', 'transparent', ...accessibility]
 
 const badgeProps = {
-  styleProps,
-  transformProps,
-  directProps: directPropsList,
-  dropProps: dropPropsList,
+  styleProps: {
+    ...spacing,
+    ...sizing,
+    ...color,
+    ...border,
+    ...layout,
+    ...flexbox,
+    ...position,
+    ...text,
+    ...extra,
+  },
+  transformProps: {
+    colorScheme: { targetName: 'state' },
+  },
+  directProps: DIRECT_PROPS,
+  dropProps: [...allPseudoProps, 'variant'],
 }
 
-// Extract text content from Badge children. Returns text/expression or null if complex.
+/**
+ * Extract text content from Badge children. Returns text/expression or null if complex.
+ */
 function extractTextContent(children) {
   if (!children || children.length === 0) {
     return null
@@ -89,170 +98,113 @@ function extractTextContent(children) {
   return null
 }
 
-function main(fileInfo, api, options = {}) {
-  const j = api.jscodeshift
-  const root = j(fileInfo.source)
-
-  const sourceImport = options.sourceImport ?? 'native-base'
-  const targetImport = options.targetImport
-  const targetName = options.targetName ?? 'Badge'
-  const tokenImport = options.tokenImport
-  const wrap = options.wrap ?? true
-
-  if (!targetImport) {
-    throw new Error('--targetImport is required (e.g., --targetImport="@your/components/Badge")')
-  }
-  if (!tokenImport) {
-    throw new Error('--tokenImport is required (e.g., --tokenImport="@your/design-tokens")')
-  }
-
-  // Check for Badge imports from both source and target (for re-running)
-  const sourceImports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  const targetImports = root.find(j.ImportDeclaration, { source: { value: targetImport } })
-
-  const hasSourceBadge = sourceImports.length > 0 && hasNamedImport(sourceImports, 'Badge')
-  const hasTargetBadge = targetImports.length > 0 && hasNamedImport(targetImports, 'Badge')
-
-  if (!hasSourceBadge && !hasTargetBadge) {
-    return fileInfo.source
-  }
-
-  const badgeElements = findJSXElements(root, 'Badge', j)
-
-  if (badgeElements.length === 0) {
-    return fileInfo.source
-  }
-
+/**
+ * Transform a single Badge element to Nordlys Badge
+ *
+ * Returns { element, warnings, tokenHelpers, styles } instead of mutating context.
+ */
+function transformBadge(path, index, ctx) {
+  const { j } = ctx
+  const attributes = path.node.openingElement.attributes || []
+  const children = path.node.children || []
   const warnings = []
-  const styles = createStyleContext()
-  let migrated = 0
 
-  badgeElements.forEach((path, index) => {
-    const attributes = path.node.openingElement.attributes || []
-    const children = path.node.children || []
+  // Categorize props
+  const categorized = categorizeProps(attributes, badgeProps, j)
+  const { styleProps, inlineStyles, transformedProps, propsToRemove, usedTokenHelpers } =
+    categorized
 
-    // Try to extract text content
-    const textContent = extractTextContent(children)
+  // Try to extract text content
+  const textContent = extractTextContent(children)
+  const hasStyles = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
+  const tempStyles = []
 
-    const {
-      styleProps,
-      inlineStyles,
-      transformedProps,
-      propsToRemove,
-      usedTokenHelpers,
-      droppedProps,
-      invalidStyles,
-      hasManualFailures,
-    } = categorizeProps(attributes, badgeProps, j)
+  // Pattern 1: No text + style props → indicator dot, convert to View
+  if (!textContent && hasStyles) {
+    warnings.push(
+      'Badge: No text content detected, converting to styled View (indicator dot pattern)',
+    )
 
-    // Skip if manual fixes needed (unless --unsafe mode)
-    if (hasManualFailures) {
-      const msg = options.unsafe
-        ? `⚠️  Badge: unsafe mode - proceeding with partial migration (${fileInfo.path})`
-        : `⚠️  Badge skipped - manual fixes required (${fileInfo.path})`
-      console.warn(msg)
-      if (!options.unsafe) {
-        return
-      }
+    const styleName = `badge${index}`
+    const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+
+    // Create self-closing View with style
+    const viewElement = createSelfClosingElement(
+      'View',
+      [j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(style))],
+      j,
+    )
+
+    return {
+      element: viewElement,
+      warnings,
+      tokenHelpers: usedTokenHelpers,
+      styles: tempStyles,
     }
+  }
 
-    styles.addHelpers(usedTokenHelpers)
-
-    addElementComment(path, droppedProps, invalidStyles, j)
-    migrated++
-
-    const hasStyles = Object.keys(styleProps).length > 0 || Object.keys(inlineStyles).length > 0
-
-    // If no text content and has style props -> indicator dot pattern, convert to View
-    if (!textContent && hasStyles) {
-      warnings.push(
-        'Badge: No text content detected, converting to styled View (indicator dot pattern)',
-      )
-
-      // Convert to View with styles
-      const styleName = `badge${index}`
-      const tempStyles = []
-      const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
-      if (tempStyles.length > 0) {
-        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
-      }
-
-      // Create self-closing View with style
-      const element = createSelfClosingElement(
-        'View',
-        [j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(style))],
-        j,
-      )
-
-      // Replace Badge with View
-      j(path).replaceWith(element)
-      return
+  // Pattern 2: No text + no styles → can't migrate
+  if (!textContent) {
+    warnings.push('Badge: No text content or style props, cannot migrate to Nordlys Badge')
+    return {
+      element: null,
+      warnings,
+      tokenHelpers: usedTokenHelpers,
+      styles: tempStyles,
     }
+  }
 
-    // If no text content and no style props -> warn about missing text
-    if (!textContent) {
-      warnings.push('Badge: No text content or style props, cannot migrate to Nordlys Badge')
-      return
-    }
-
-    // Has text content -> migrate to Nordlys Badge
-    const attrs = filterAttributes(attributes, {
-      allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
-    })
-
-    addTransformedProps(attrs, transformedProps, j)
-
-    // Add text prop with extracted content
-    attrs.push(createAttribute('text', textContent, j))
-
-    // Add default size if not specified
-    if (!hasAttribute(attrs, 'size')) {
-      attrs.push(createStringAttribute('size', 'md', j))
-    }
-
-    const element = createSelfClosingElement('Badge', attrs, j)
-
-    // Wrap in View if style props exist
-    if (wrap && hasStyles) {
-      const styleName = `badge${index}`
-      const tempStyles = []
-      const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
-      if (tempStyles.length > 0) {
-        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
-      }
-      const wrapper = createViewWrapper(element, style, j)
-      j(path).replaceWith(wrapper)
-    } else {
-      j(path).replaceWith(element)
-    }
+  // Pattern 3: Has text content → migrate to Nordlys Badge
+  const attrs = filterAttributes(attributes, {
+    allow: DIRECT_PROPS.filter((prop) => !propsToRemove.includes(prop)),
   })
 
-  if (warnings.length > 0) {
-    console.warn('⚠️  Badge migration warnings:')
-    const uniqueWarnings = [...new Set(warnings)]
-    for (const w of uniqueWarnings) {
-      console.warn(`   ${w}`)
+  addTransformedProps(attrs, transformedProps, j)
+
+  // Add text prop with extracted content
+  attrs.push(createAttribute('text', textContent, j))
+
+  // Add default size if not specified
+  if (!hasAttribute(attrs, 'size')) {
+    attrs.push(createStringAttribute('size', 'md', j))
+  }
+
+  const element = createSelfClosingElement('Badge', attrs, j)
+
+  // Wrap in View if style props exist
+  if (badgeConfig.wrap && hasStyles) {
+    const styleName = `badge${index}`
+    const style = buildStyleValue(styleProps, inlineStyles, styleName, tempStyles, j, [])
+    const wrappedElement = createViewWrapper(element, style, j)
+
+    return {
+      element: wrappedElement,
+      warnings,
+      tokenHelpers: usedTokenHelpers,
+      styles: tempStyles,
     }
   }
 
-  // Only change imports if we migrated at least one element
-  if (migrated === 0) {
-    return fileInfo.source
+  return {
+    element,
+    warnings,
+    tokenHelpers: usedTokenHelpers,
+    styles: tempStyles,
   }
-
-  // Remove Badge from source import (if it exists) and add to target
-  if (hasSourceBadge) {
-    removeNamedImport(sourceImports, 'Badge', j)
-  }
-  addNamedImport(root, targetImport, targetName, j)
-
-  styles.applyToRoot(root, { wrap, tokenImport }, j)
-
-  return root.toSource({
-    quote: 'single',
-    tabWidth: 2,
-    useTabs: false,
-  })
 }
 
-export default main
+/**
+ * Main transform - functional pipeline composition
+ */
+export default function transform(fileInfo, api, options) {
+  return pipeline(fileInfo, api, options, [
+    parseOptions(badgeConfig),
+    checkImports('Badge'),
+    findElements('Badge'),
+    initStyleContext(),
+    transformElements(transformBadge),
+    applyCollectedStyles(),
+    manageImports('Badge'),
+    applyStyleSheet(),
+  ])
+}

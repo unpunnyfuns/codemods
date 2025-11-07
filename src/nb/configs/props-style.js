@@ -1,8 +1,8 @@
 // NativeBase to Nordlys style prop mappings
-// Generated from nativebase-props.js and nordlys-props.js models
+// Generated from source-nativebase.js and target-nordlys.js models
 
+import { FLEXBOX_PROPS, SPACING_PROPS } from '../models/source-nativebase.js'
 import { generateMappings } from './generate-mappings.js'
-import { FLEXBOX_PROPS, SPACING_PROPS } from './nativebase-props.js'
 
 // Value mapping for dimension values
 const dimensionValues = {

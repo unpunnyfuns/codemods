@@ -1,29 +1,42 @@
-// NativeBase HStack/VStack to Nordlys Stack
-//
-// Nordlys uses single Stack component with direction prop instead of separate components.
-// HStack becomes <Stack direction="horizontal">, VStack becomes <Stack direction="vertical">
-//
-// space prop becomes gap (must be valid space token)
-// align/justify get value mapping (start becomes flex-start, between becomes space-between, etc)
-//
-// Re-runnable: checks for both source and target imports, only transforms source elements
+/**
+ * NativeBase HStack/VStack to Nordlys Stack
+ *
+ * Nordlys uses single Stack component with direction prop
+ * HStack becomes <Stack direction="horizontal">
+ * VStack becomes <Stack direction="vertical">
+ *
+ * space prop becomes gap (must be valid space token)
+ * align/justify get value mapping (start becomes flex-start, etc)
+ * Re-runnable on partially migrated files
+ */
 
 import { addNamedImport, hasNamedImport, removeNamedImport } from '@puns/shiftkit'
 import {
   addTransformedProps,
   buildStyleValue,
+  createStringAttribute,
   filterAttributes,
   findJSXElements,
 } from '@puns/shiftkit/jsx'
-import { createStyleContext } from '../helpers/style-context.js'
-import { alignValues, justifyValues } from './mappings/maps-values.js'
-import { directProps } from './mappings/props-direct.js'
+import { pipeline } from '../infrastructure/core/pipeline.js'
+import {
+  applyCollectedStyles,
+  applyStyleSheet,
+  checkImports,
+  findElements,
+  initStyleContext,
+  manageImports,
+  parseOptions,
+  transformElements,
+} from '../infrastructure/steps/pipeline-steps.js'
+import { alignValues, justifyValues } from './configs/maps-values.js'
+import { directProps } from './configs/props-direct.js'
 import {
   allPseudoProps,
   platformPseudoProps,
   themePseudoProps,
   unsupportedProps,
-} from './mappings/props-drop.js'
+} from './configs/props-drop.js'
 import {
   border,
   color,
@@ -34,73 +47,17 @@ import {
   sizing,
   spacing,
   text,
-} from './mappings/props-style.js'
-import {
-  addElementComment,
-  addTodoComment,
-  categorizeProps,
-  validateToken,
-  validSpaceTokens,
-} from './props.js'
+} from './configs/props-style.js'
+import { omit } from './helpers/object-utils.js'
+import { categorizeProps, validateToken, validSpaceTokens } from './props.js'
 
-// styleProps: spacing, sizing, colors, borders, layout, flexbox, position (align -> alignItems, justify -> justifyContent with value mapping; space excluded)
-// transformProps: space -> gap (validated as space token)
-// directProps: event handlers, accessibility, testID, children
-// dropProps: colorScheme, variant, divider, reversed, _text, _stack, pseudo-props, platform/theme overrides
-const styleProps = {
-  ...spacing,
-  ...sizing, // Includes 'size' for layout (width/height)
-  ...color,
-  ...border,
-  ...layout,
-  ...flexbox,
-  ...position,
-  ...text,
-  ...extra,
-
-  // Stack-specific props with value mapping
-  align: {
-    styleName: 'alignItems',
-    valueMap: alignValues, // start becomes flex-start, etc.
-  },
-  justify: {
-    styleName: 'justifyContent',
-    valueMap: justifyValues, // between becomes space-between, etc.
-  },
-}
-
-// Remove space from styleProps since it should stay on element as gap
-delete styleProps.space
-
-// Transform space prop to gap prop
-// space="md" becomes gap={space.md} (stays on element, not extracted to StyleSheet)
-const transformProps = {
-  space: 'gap',
-}
-
-const directPropsList = directProps
-
-// Explicit drop list for Stack
-// NOTE: Stack is a layout component, not themed - drop colorScheme/variant
-// The 'size' prop is handled by styleProps as layout (width/height)
-const dropPropsList = [
-  ...allPseudoProps, // _hover, _pressed, _focus, _disabled, etc.
-  ...platformPseudoProps, // _ios, _android, _web
-  ...themePseudoProps, // _light, _dark
-  ...unsupportedProps, // Props that don't map to React Native
-  'colorScheme', // Stack is layout-only, not themed
-  'variant', // Stack is layout-only, not themed
-  'divider', // Not supported in Nordlys
-  'reversed', // Use flexDirection: 'row-reverse' or 'column-reverse' instead
-  '_text', // Style overrides not supported
-  '_stack', // Style overrides not supported
-]
-
-const stackProps = {
-  styleProps,
-  transformProps,
-  directProps: directPropsList,
-  dropProps: dropPropsList,
+// Stack configuration
+const stackConfig = {
+  sourceImport: 'native-base',
+  targetImport: '@hb-frontend/app/src/components/nordlys/Stack',
+  targetName: 'Stack',
+  tokenImport: '@hb-frontend/nordlys',
+  wrap: false,
 }
 
 const STACK_COMPONENTS = [
@@ -108,129 +65,212 @@ const STACK_COMPONENTS = [
   { name: 'VStack', direction: 'vertical' },
 ]
 
-function main(fileInfo, api, options = {}) {
-  const j = api.jscodeshift
-  const root = j(fileInfo.source)
+const DIRECT_PROPS = directProps
 
-  const sourceImport = options.sourceImport ?? 'native-base'
-  const targetImport = options.targetImport
-  const targetName = options.targetName ?? 'Stack'
-  const tokenImport = options.tokenImport
+const stackProps = {
+  styleProps: {
+    ...omit(
+      {
+        ...spacing,
+        ...sizing,
+        ...color,
+        ...border,
+        ...layout,
+        ...flexbox,
+        ...position,
+        ...text,
+        ...extra,
+      },
+      ['space'],
+    ),
+    align: {
+      styleName: 'alignItems',
+      valueMap: alignValues,
+    },
+    justify: {
+      styleName: 'justifyContent',
+      valueMap: justifyValues,
+    },
+  },
+  transformProps: {
+    space: { targetName: 'gap' },
+  },
+  directProps: DIRECT_PROPS,
+  dropProps: [
+    ...allPseudoProps,
+    ...platformPseudoProps,
+    ...themePseudoProps,
+    ...unsupportedProps,
+    'colorScheme',
+    'variant',
+    'divider',
+    'reversed',
+    '_text',
+    '_stack',
+  ],
+}
 
-  if (!targetImport) {
-    throw new Error('--targetImport is required (e.g., --targetImport="@your/components/Stack")')
-  }
-  if (!tokenImport) {
-    throw new Error('--tokenImport is required (e.g., --tokenImport="@your/design-tokens")')
-  }
+/**
+ * Custom element finder: Find all stack component types (HStack, VStack)
+ *
+ * This is used as the customFinder parameter to findElements()
+ */
+function findStackElementsImpl(ctx) {
+  const { root, j, parsedOptions } = ctx
+  const { sourceImport } = parsedOptions
 
-  // import { HStack, VStack } from 'native-base'
   const imports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
-  if (!imports.length) {
-    return fileInfo.source
+  if (imports.length === 0) {
+    return []
   }
 
-  let transformed = false
-  const styles = createStyleContext()
+  const allElements = []
+  const componentInfo = new Map() // Track component info by element
 
-  // Process each stack component type
-  for (const { name: componentName, direction } of STACK_COMPONENTS) {
-    if (!hasNamedImport(imports, componentName)) {
-      continue
-    }
+  for (const component of STACK_COMPONENTS) {
+    if (hasNamedImport(imports, component.name)) {
+      const elements = findJSXElements(root, component.name, j).paths()
 
-    const stackElements = findJSXElements(root, componentName, j)
-    if (stackElements.length === 0) {
-      continue
-    }
-
-    let skippedForComponent = 0
-
-    stackElements.forEach((path, index) => {
-      const attributes = path.node.openingElement.attributes || []
-
-      const {
-        styleProps,
-        inlineStyles,
-        transformedProps,
-        propsToRemove,
-        usedTokenHelpers: newHelpers,
-        droppedProps,
-        invalidStyles,
-        existingStyleReferences,
-        hasManualFailures,
-      } = categorizeProps(attributes, stackProps, j)
-
-      // Skip transformation if manual intervention required
-      if (hasManualFailures) {
-        console.warn(
-          `⚠️  ${componentName} element skipped - manual fixes required (${fileInfo.path})`,
-        )
-        addTodoComment(path, componentName, invalidStyles, j)
-        skippedForComponent++
-        return
+      // Store component info for each element
+      for (const path of elements) {
+        componentInfo.set(path.node, component)
       }
 
-      styles.addHelpers(newHelpers)
+      allElements.push(...elements)
+    }
+  }
 
-      // gap prop must be a valid space token name
-      if (transformedProps.gap) {
-        const gapValue = transformedProps.gap
+  // Store componentInfo map on ctx for later use
+  ctx.stackComponentInfo = componentInfo
+
+  return allElements // Return array directly, findElements() will wrap it
+}
+
+/**
+ * Transform a single Stack element (HStack or VStack) to Nordlys Stack
+ *
+ * Returns { element, warnings, tokenHelpers, styles } instead of mutating context.
+ */
+function transformStack(path, index, ctx) {
+  const { j, stackComponentInfo } = ctx
+  const attributes = path.node.openingElement.attributes || []
+  const warnings = []
+
+  // Determine component type (HStack or VStack)
+  const componentInfo = stackComponentInfo.get(path.node)
+  if (!componentInfo) {
+    warnings.push('Stack: Unknown component type, skipping')
+    return { element: null, warnings }
+  }
+
+  // Categorize props
+  const categorized = categorizeProps(attributes, stackProps, j)
+  const {
+    styleProps,
+    inlineStyles,
+    transformedProps,
+    propsToRemove,
+    existingStyleReferences,
+    usedTokenHelpers,
+  } = categorized
+
+  // Validate gap prop if present (only validate semantic token strings, allow numbers)
+  if (transformedProps.gap) {
+    const gapNode = transformedProps.gap
+
+    // Extract actual value from AST node for validation
+    let gapValue = null
+    let isNumeric = false
+
+    if (gapNode.type === 'StringLiteral' || gapNode.type === 'Literal') {
+      gapValue = gapNode.value
+    } else if (gapNode.type === 'JSXExpressionContainer') {
+      const expr = gapNode.expression
+      if (expr.type === 'StringLiteral' || expr.type === 'Literal') {
+        gapValue = expr.value
+      } else if (expr.type === 'NumericLiteral') {
+        isNumeric = true // Numeric literals are valid, don't validate
+      }
+    } else if (gapNode.type === 'NumericLiteral') {
+      isNumeric = true // Numeric literals are valid, don't validate
+    }
+
+    // Only validate semantic token strings (not numbers, not complex expressions)
+    if (gapValue !== null && !isNumeric) {
+      // Check if it's a numeric string like "1", "2", etc. - these should pass through
+      if (typeof gapValue === 'string' && /^\d+(\.\d+)?$/.test(gapValue)) {
+        // Numeric string - pass through, don't validate as token
+        // PropProcessor will convert "1" → {1} automatically
+      } else {
+        // Semantic token string - validate it
         const validation = validateToken(gapValue, validSpaceTokens, false)
-
         if (!validation.isValid) {
-          const gapAttr = j.jsxAttribute(j.jsxIdentifier('gap'), gapValue)
-          droppedProps.push({ name: 'gap', attr: gapAttr })
+          warnings.push(
+            `Stack: Invalid gap token "${gapValue}" (must be valid space token like xs, sm, md, etc.)`,
+          )
           delete transformedProps.gap
         }
       }
+    }
+    // Else: numeric literal or complex expression - pass through without validation
+  }
 
-      // Keep only direct props (filter out style props and dropped props)
-      const stackAttributes = filterAttributes(attributes, {
-        allow: directPropsList.filter((prop) => !propsToRemove.includes(prop)),
-      })
+  // Build attributes
+  const attrs = filterAttributes(attributes, {
+    allow: DIRECT_PROPS.filter((prop) => !propsToRemove.includes(prop)),
+  })
 
-      // Add direction prop
-      const directionProp = j.jsxAttribute(j.jsxIdentifier('direction'), j.stringLiteral(direction))
-      stackAttributes.push(directionProp)
+  // Add direction prop based on component type
+  const direction = componentInfo.direction
+  attrs.push(createStringAttribute('direction', direction, j))
 
-      // Add transformed props
-      addTransformedProps(stackAttributes, transformedProps, j)
+  // Add transformed props
+  addTransformedProps(attrs, transformedProps, j)
 
-      // Build and add style prop
-      const tempStyles = []
-      const styleValue = buildStyleValue(
-        styleProps,
-        inlineStyles,
-        `${componentName.toLowerCase()}${index}`,
-        tempStyles,
-        j,
-        existingStyleReferences,
-      )
-      if (tempStyles.length > 0) {
-        styles.addStyle(tempStyles[0].name, tempStyles[0].styles)
-      }
+  // Build and add style prop
+  const tempStyles = []
+  const styleValue = buildStyleValue(
+    styleProps,
+    inlineStyles,
+    `${componentInfo.name.toLowerCase()}${index}`,
+    tempStyles,
+    j,
+    existingStyleReferences,
+  )
 
-      // Add style prop to element (only if styleValue is not null)
-      if (styleValue) {
-        const styleProp = j.jsxAttribute(
-          j.jsxIdentifier('style'),
-          j.jsxExpressionContainer(styleValue),
-        )
-        stackAttributes.push(styleProp)
-      }
+  if (styleValue) {
+    attrs.push(j.jsxAttribute(j.jsxIdentifier('style'), j.jsxExpressionContainer(styleValue)))
+  }
 
-      // Update element name and attributes
-      path.node.openingElement.name = j.jsxIdentifier(targetName)
-      if (path.node.closingElement) {
-        path.node.closingElement.name = j.jsxIdentifier(targetName)
-      }
-      path.node.openingElement.attributes = stackAttributes
+  // Update element name
+  path.node.openingElement.name = j.jsxIdentifier('Stack')
+  if (path.node.closingElement) {
+    path.node.closingElement.name = j.jsxIdentifier('Stack')
+  }
+  path.node.openingElement.attributes = attrs
 
-      addElementComment(path, droppedProps, invalidStyles, j)
-    })
+  // Return results immutably
+  return {
+    element: path.node,
+    warnings,
+    tokenHelpers: usedTokenHelpers,
+    styles: tempStyles,
+  }
+}
 
-    // Replace component identifier references with Stack (e.g., withAnimated(HStack) -> withAnimated(Stack))
+/**
+ * Custom import management: Replace HStack/VStack identifiers with Stack
+ *
+ * This is used as the customManager parameter to manageImports()
+ */
+function manageStackImportsImpl(ctx) {
+  const { root, j, parsedOptions } = ctx
+  const { sourceImport, targetImport, targetName } = parsedOptions
+
+  const sourceImports = root.find(j.ImportDeclaration, { source: { value: sourceImport } })
+
+  // Replace identifier references (withAnimated(HStack) → withAnimated(Stack))
+  for (const { name: componentName } of STACK_COMPONENTS) {
     root.find(j.Identifier, { name: componentName }).forEach((path) => {
       const parent = path.parent.node
       // Skip import specifiers and JSX element names (already handled)
@@ -240,35 +280,35 @@ function main(fileInfo, api, options = {}) {
       if (parent.type === 'JSXOpeningElement' || parent.type === 'JSXClosingElement') {
         return
       }
-      // Replace identifier: withAnimated(HStack) -> withAnimated(Stack)
+      // Replace identifier
       path.node.name = targetName
     })
 
-    // Only remove component import if no elements were skipped
-    if (skippedForComponent === 0) {
-      removeNamedImport(imports, componentName, j)
-    } else {
-      console.warn(
-        `⚠️  ${componentName} import kept - ${skippedForComponent} element(s) skipped and still reference ${componentName} (${fileInfo.path})`,
-      )
+    // Remove component from source import
+    if (sourceImports.length > 0) {
+      if (hasNamedImport(sourceImports, componentName)) {
+        removeNamedImport(sourceImports, componentName, j)
+      }
     }
-
-    transformed = true
   }
 
-  if (!transformed) {
-    return fileInfo.source
-  }
-
+  // Add target import
   addNamedImport(root, targetImport, targetName, j)
-
-  styles.applyToRoot(root, { wrap: false, tokenImport }, j)
-
-  return root.toSource({
-    quote: 'single',
-    tabWidth: 2,
-    useTabs: false,
-  })
+  // No return needed - wrapped by manageImports() factory
 }
 
-export default main
+/**
+ * Main transform - functional pipeline composition
+ */
+export default function transform(fileInfo, api, options) {
+  return pipeline(fileInfo, api, options, [
+    parseOptions(stackConfig),
+    checkImports('HStack'), // Check for any stack component
+    findElements('Stack', findStackElementsImpl), // Custom finder for HStack/VStack
+    initStyleContext(),
+    transformElements(transformStack), // Returns { element, warnings, metadata }
+    applyCollectedStyles(), // Applies collected metadata to styles
+    manageImports('Stack', manageStackImportsImpl), // Custom manager for HStack/VStack→Stack
+    applyStyleSheet(),
+  ])
+}

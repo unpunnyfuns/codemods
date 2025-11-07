@@ -1,17 +1,14 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
 exports[`nb/avatar > migrates Avatar to Nordlys with icon/image object transformations 1`] = `
-"import { Avatar } from '@target/components/Avatar';
+"import { Avatar } from '@source/components'
+
 import { View, StyleSheet } from 'react-native';
 import { color } from '@design-tokens';
 
 export function MyComponent() {
   return (
     <>
-
-      {/* Dropped during migration (not supported in React Native):
-        iconName="user" */
-      }
       <View style={styles.avatar0}>
         <Avatar
           size="md"
@@ -20,11 +17,6 @@ export function MyComponent() {
             fill: 'blue'
           }} />
       </View>
-
-      {/* Dropped during migration (not supported in React Native):
-        imageUri="https://example.com/avatar.jpg"
-        isSecondaryColor={true} */
-      }
       <Avatar
         size="lg"
         image={{
@@ -32,11 +24,6 @@ export function MyComponent() {
             uri: "https://example.com/avatar.jpg"
           }
         }} />
-
-      {/* Dropped during migration (not supported in React Native):
-        imageSource={...}
-        placeholder={true} */
-      }
       <Avatar
         size="sm"
         image={{
