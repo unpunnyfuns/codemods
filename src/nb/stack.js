@@ -303,7 +303,7 @@ function manageStackImportsImpl(ctx) {
 export default function transform(fileInfo, api, options) {
   return pipeline(fileInfo, api, options, [
     parseOptions(stackConfig),
-    checkImports('HStack'), // Check for any stack component
+    checkImports(['HStack', 'VStack']), // Check for any stack component
     findElements('Stack', findStackElementsImpl), // Custom finder for HStack/VStack
     initStyleContext(),
     transformElements(transformStack), // Returns { element, warnings, metadata }

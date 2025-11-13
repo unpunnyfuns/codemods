@@ -57,7 +57,7 @@ export function parseOptions(defaults) {
 /**
  * Check if file can be skipped (no relevant imports)
  *
- * @param {string} elementName - Element name to find (e.g., 'Box', 'Icon')
+ * @param {string|string[]} elementName - Element name(s) to find (e.g., 'Box' or ['HStack', 'VStack'])
  * @param {boolean} rerunnable - Whether to also check target imports
  * @returns {Function} Step function
  */
@@ -66,11 +66,14 @@ export function checkImports(elementName, rerunnable = true) {
     const { root, j, parsedOptions } = ctx
     const { sourceImport, targetImport } = parsedOptions
 
-    // Check source import
-    const hasSource = sourceImport && hasImport(root, sourceImport, elementName, j)
+    const names = Array.isArray(elementName) ? elementName : [elementName]
+
+    // Check if any of the names are imported
+    const hasSource = sourceImport && names.some((name) => hasImport(root, sourceImport, name, j))
 
     // Check target import (for re-runnable codemods)
-    const hasTarget = rerunnable && targetImport && hasImport(root, targetImport, elementName, j)
+    const hasTarget =
+      rerunnable && targetImport && names.some((name) => hasImport(root, targetImport, name, j))
 
     if (!hasSource && !hasTarget) {
       return { skip: true, reason: 'No relevant imports found' }
